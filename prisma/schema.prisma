@@ -1,0 +1,102 @@
+// 光電物理實驗室網站 — Prisma schema
+// 單一事實來源見 CLAUDE.md。本檔對應 B(角色/權限)、C(會員系統)、D(共用系統欄位)。
+//
+// 階段零僅奠定「會員核心 + 穩定 ID + 共用欄位」地基,這是 D/E 所述
+// 所有現在與未來模組關聯引用的根。其餘區塊(內容 CMS、儀器)於對應階段再擴充。
+//
+// 驗證(密碼、Google 登入)由 Supabase Auth(auth.users)負責,本表不存密碼雜湊;
+// Member.authUserId 對應 Supabase auth.users.id。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // 應用程式執行期走 Supabase 連線池(pooler, port 6543)
+  url       = env("DATABASE_URL")
+  // 遷移/introspection 走直連(port 5432);Supabase 連線池不支援 DDL
+  directUrl = env("DIRECT_URL")
+}
+
+// ── B. 三層全站角色(權限往上累加) ──────────────────────────────
+enum Role {
+  STUDENT // 第三層:學生(投稿者)
+  ADMIN // 第二層:管理員(助教)
+  SUPERADMIN // 第一層:最高權限者(教授/大助教)
+}
+
+// ── C-2. 會員狀態 ───────────────────────────────────────────────
+enum MemberStatus {
+  PENDING // 未啟用:已建立、未設密碼,不能登入
+  ACTIVE // 已啟用:正常使用
+  DISABLED // 已停用:停止登入但保留歷史資料(取代「刪除」)
+}
+
+// ── 會員核心(C-4 欄位;D 共用系統欄位) ────────────────────────
+// 每個會員擁有穩定不變的主鍵 ID,供現在與未來所有模組關聯引用。
+model Member {
+  id String @id @default(uuid())
+
+  // 對應 Supabase auth.users.id;未啟用前為 null
+  authUserId String? @unique @map("auth_user_id")
+
+  loginEmail String       @unique @map("login_email") // 主要識別
+  role       Role         @default(STUDENT)
+  status     MemberStatus @default(PENDING)
+
+  // C-4 一對多:常用 email(資料層為 1 ─ N,非單欄)
+  contactEmails ContactEmail[]
+
+  // C-1 邀請:一位會員可由一筆邀請產生(最高權限者由手動升級,可無邀請)
+  invitations Invitation[]
+
+  // ── D. 共用系統欄位 ──
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by") // 建立者會員 ID
+  updatedBy String?   @map("updated_by") // 最後更新者會員 ID
+  deletedAt DateTime? @map("deleted_at") // 軟刪除標記(非 NULL 即視為已刪除)
+  deletedBy String?   @map("deleted_by") // 執行刪除者會員 ID
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("members")
+}
+
+// C-4 常用 email(會員 1 ─ N email)
+model ContactEmail {
+  id       String @id @default(uuid())
+  email    String
+  memberId String @map("member_id")
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([memberId, email])
+  @@map("contact_emails")
+}
+
+// ── C-1 / C-3. 邀請會員制 ───────────────────────────────────────
+// 新增邀請即建立一筆未啟用 Member;此表存放邀請連結 token 與時效。
+model Invitation {
+  id String @id @default(uuid())
+
+  email      String // 受邀人 email
+  role       Role      @default(STUDENT) // 最高權限者可指定;管理員固定 STUDENT
+  tokenHash  String    @unique @map("token_hash") // 隨機 token 之雜湊(勿存明碼)
+  expiresAt  DateTime  @map("expires_at") // 建議 7 天
+  acceptedAt DateTime? @map("accepted_at") // 啟用後作廢,不可重用
+  revokedAt  DateTime? @map("revoked_at") // 重寄邀請時舊連結失效
+
+  // 啟用後關聯到實際建立的會員
+  memberId String? @map("member_id")
+  member   Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by") // 發出邀請者(最高權限者/管理員)
+
+  @@index([email])
+  @@map("invitations")
+}

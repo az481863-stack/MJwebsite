@@ -1,0 +1,25 @@
+# Supabase 免費層保活:7 天無資料庫活動會暫停。
+# 每 3 天自動發一筆無害查詢(select now();)維持活動,純自動、不靠人手。
+# 設定:在 GitHub repo → Settings → Secrets and variables → Actions
+#       新增 secret `SUPABASE_DB_URL`(用 Supabase 直連字串,即 .env 的 DIRECT_URL)。
+name: keepalive
+
+on:
+  schedule:
+    # 每 3 天的 06:17 UTC 執行(避開整點尖峰);最大間隔遠小於 7 天暫停門檻
+    - cron: "17 6 */3 * *"
+  workflow_dispatch: {} # 允許手動觸發測試
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret 未設定,跳過保活。請於 repo Secrets 補上。"
+            exit 1
+          fi
+          psql "$SUPABASE_DB_URL" -c "select now();"
