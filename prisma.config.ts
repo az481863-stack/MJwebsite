@@ -11,6 +11,10 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
+    // 應用程式執行期走連線池(pooler, 6543)
     url: env("DATABASE_URL"),
+    // migration / introspection 走直連(5432);連線池不支援 DDL 與 advisory lock,
+    // 少了這條會讓 prisma migrate 誤用 6543 而卡死。
+    directUrl: env("DIRECT_URL"),
   },
 });
