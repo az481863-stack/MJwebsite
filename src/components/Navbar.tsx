@@ -10,6 +10,7 @@ import { useState } from "react";
 import { NAV_ITEMS } from "@/lib/i18n/dictionary";
 import { useLanguage } from "@/lib/i18n/context";
 import { useScrollHidden } from "@/lib/scroll-hide";
+import { useAuthState } from "@/lib/use-auth-state";
 import { Container } from "./ui/Container";
 import { LanguageToggle } from "./LanguageToggle";
 
@@ -17,7 +18,11 @@ export function Navbar() {
   const { t } = useLanguage();
   const pathname = usePathname();
   const hidden = useScrollHidden();
+  const isAuthed = useAuthState();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const authHref = isAuthed ? "/account" : "/login";
+  const authLabel = isAuthed ? t.auth.account : t.auth.login;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -55,8 +60,18 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* 右側:語系 + 手機漢堡 */}
+          {/* 右側:會員入口 + 語系 + 手機漢堡 */}
           <div className="flex items-center gap-3">
+            <Link
+              href={authHref}
+              className={`hidden text-sm transition-colors hover:text-foreground md:inline ${
+                isActive(authHref)
+                  ? "font-semibold text-foreground"
+                  : "text-muted"
+              }`}
+            >
+              {authLabel}
+            </Link>
             <LanguageToggle />
             <button
               type="button"
@@ -107,6 +122,19 @@ export function Navbar() {
                   </Link>
                 </li>
               ))}
+              <li className="border-t border-line">
+                <Link
+                  href={authHref}
+                  onClick={() => setMenuOpen(false)}
+                  className={`block py-3 text-base transition-colors ${
+                    isActive(authHref)
+                      ? "font-semibold text-foreground"
+                      : "text-muted"
+                  }`}
+                >
+                  {authLabel}
+                </Link>
+              </li>
             </ul>
           </Container>
         </nav>
