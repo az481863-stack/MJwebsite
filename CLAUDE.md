@@ -380,11 +380,20 @@
 > 重點不是流水帳,而是記錄**偏差、踩坑與解法、技術債、給後續階段的提醒**——後者是給下次開發(含 Claude Code)的避坑提示。
 
 ### 階段零:環境與帳號建置
-- 完成日期:
+- 完成日期:2026-06-24
 - 實際與規格的偏差:
+  - GitHub repo 最終直接開在**教授個人帳號**(`az481863-stack/MJwebsite`)下,而非規格原本建議的 Organization 容器。因目標本就是歸屬教授名下,效果一致(開發者 `josh79622` 以 collaborator 身分參與)。日後若要團隊化再轉 Organization 即可。
 - 遇到的問題與解決方案:
+  1. **Supabase 連線完全失敗(P1001)**:密碼含特殊字元 `@` 與 `/`,未做 URL 編碼,導致連線字串解析時把密碼中段誤判成主機名(`Can't reach database server at MgrdrytLQP:5432`)。解法:`.env` 兩條連線字串的密碼改用 URL 編碼(`@`→`%40`、`/`→`%2F`)。
+  2. **`prisma migrate` 永久卡死**:`prisma.config.ts` 的 `datasource` 只設了 `url: env("DATABASE_URL")`(連線池 6543),沒帶 `directUrl`,導致 migration 也走連線池;pgbouncer transaction 模式不支援 DDL/advisory lock,migrate 會無限等鎖。解法:`prisma.config.ts` 的 datasource 補上 `directUrl: env("DIRECT_URL")`(走直連 5432)。注意:Prisma 6.19 的 config **強制要有 datasource 區塊**,不能整段移除改靠 schema(會報 `Cannot destructure property 'url'`)。
+  3. **Vercel build 失敗(PrismaConfigEnvError)**:`postinstall` 跑 `prisma generate` 時,`prisma.config.ts` 用 `env()` 嚴格要求 `DATABASE_URL`/`DIRECT_URL`,但 Vercel 環境沒這些變數(`.env` 不上傳)。解法:在 Vercel → Settings → Environment Variables 補上 5 個變數(DATABASE_URL、DIRECT_URL、NEXT_PUBLIC_SUPABASE_URL、NEXT_PUBLIC_SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY),DATABASE_URL 密碼一樣要用已編碼版本。
 - 衍生的新待辦/技術債:
+  - 舊 Organization repo(`Meng-Jer-Wu-s-Team/MJwebsite`)已於本階段刪除,避免混淆。
+  - 交接時提醒:Vercel 環境變數、GitHub Actions 的 `SUPABASE_DB_URL` secret 都需隨擁有權一併移交/重設。
 - 給後續階段的提醒:
+  - **連線字串密碼一律 URL 編碼**,日後換密碼/重設時務必照做,否則重蹈問題 1。
+  - **migration 走 DIRECT_URL(5432)、執行期走 DATABASE_URL(6543)** 的雙線設計要維持;新增 `env()` 依賴時記得 Vercel 也要同步補環境變數,否則 build 會掛(問題 3)。
+  - GitHub Actions 保活已驗證可手動 `workflow_dispatch` 觸發;`SUPABASE_DB_URL` 用的是 DIRECT_URL。
 
 ### 階段一:靜態內容網站
 - 完成日期:
