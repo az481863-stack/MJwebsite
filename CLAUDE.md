@@ -388,7 +388,7 @@
   2. **`prisma migrate` 永久卡死**:`prisma.config.ts` 的 `datasource` 只設了 `url: env("DATABASE_URL")`(連線池 6543),沒帶 `directUrl`,導致 migration 也走連線池;pgbouncer transaction 模式不支援 DDL/advisory lock,migrate 會無限等鎖。解法:`prisma.config.ts` 的 datasource 補上 `directUrl: env("DIRECT_URL")`(走直連 5432)。注意:Prisma 6.19 的 config **強制要有 datasource 區塊**,不能整段移除改靠 schema(會報 `Cannot destructure property 'url'`)。
   3. **Vercel build 失敗(PrismaConfigEnvError)**:`postinstall` 跑 `prisma generate` 時,`prisma.config.ts` 用 `env()` 嚴格要求 `DATABASE_URL`/`DIRECT_URL`,但 Vercel 環境沒這些變數(`.env` 不上傳)。解法:在 Vercel → Settings → Environment Variables 補上 5 個變數(DATABASE_URL、DIRECT_URL、NEXT_PUBLIC_SUPABASE_URL、NEXT_PUBLIC_SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY),DATABASE_URL 密碼一樣要用已編碼版本。
 - 衍生的新待辦/技術債:
-  - 舊 Organization repo(`Meng-Jer-Wu-s-Team/MJwebsite`)已於本階段刪除,避免混淆。
+  - 舊 Organization repo(`Meng-Jer-Wu-s-Team/MJwebsite`)未刪除,保留為孤兒(本機 `origin` 已改指新 repo,push 不會再進舊的,不影響運作)。日後若要清理需由 org admin 於網頁操作。
   - 交接時提醒:Vercel 環境變數、GitHub Actions 的 `SUPABASE_DB_URL` secret 都需隨擁有權一併移交/重設。
 - 給後續階段的提醒:
   - **連線字串密碼一律 URL 編碼**,日後換密碼/重設時務必照做,否則重蹈問題 1。
