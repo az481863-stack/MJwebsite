@@ -396,11 +396,23 @@
   - GitHub Actions 保活已驗證可手動 `workflow_dispatch` 觸發;`SUPABASE_DB_URL` 用的是 DIRECT_URL。
 
 ### 階段一:靜態內容網站
-- 完成日期:
+- 完成日期:2026-06-24
 - 實際與規格的偏差:
+  - 新增規格未列的「本頁目錄(PageNav / On this page)」元件:桌機為 HackMD 式右側 minimap(迷你橫線 → hover 展開文字目錄),手機/平板為導覽列下方的橫向籤條(sticky,非選單)。兩者皆含 scrollspy 高亮與點擊平滑跳轉。僅在區塊數 ≥ 2 的頁面顯示。
+  - i18n 採「React Context + 字典檔(`src/lib/i18n/`)」自建,非外部 i18n 套件。語系以 `useSyncExternalStore` 讀寫 `localStorage`(SSR 安全),全站單一語言切換(A-1)。預設中文。
+  - 所有頁面為 client component(`"use client"`),透過 `useLanguage()` 取文案。視覺用 Tailwind v4 + 自訂 CSS 變數(學院白底風,固定淺色不隨系統深色)。
 - 遇到的問題與解決方案:
+  1. **React 19 的 `react-hooks/set-state-in-effect` lint 報錯**:語系 context 原本在 effect 內讀 localStorage 後 `setState`、Navbar 在路由變更 effect 內關閉選單,皆違規。解法:語系改用 `useSyncExternalStore`(正規外部狀態讀取);選單關閉改在連結 `onClick` 處理。
+  2. **手機籤條與導覽列不同步(跑版)**:導覽列向下捲隱藏時,sticky 籤條留在原處產生 64px 空隙。解法:把「是否隱藏」抽成共用 `ScrollHideProvider`(`src/lib/scroll-hide.tsx`),導覽列與籤條共用同一捲動狀態;籤條於隱藏時 `-translate-y-16` 同步上移。
+  3. **手機選單在頁面中段點開即被收起**:選單在 `<header>` 內,捲動事件令 `hidden=true` 把選單一起收走。解法:選單開啟時強制不隱藏(`hidden && !menuOpen`)。
 - 衍生的新待辦/技術債:
+  - `dictionary.ts` 目前混放「介面文字(nav/footer/labels,長期保留)」與「動態區塊的佔位假資料(動態佈告欄、Publications、成員、校友、職缺、Blog)」。**階段三 CMS 上線時,後者須改由資料庫提供**,字典只留介面文字。
+  - i18n 為純前端(無 SSR 依 URL/cookie 決定語系),SEO 首屏為預設語言。規模小可接受,日後若重視多語 SEO 再評估。
+  - 導覽列項目 `NAV_ITEMS` 目前寫死於 `dictionary.ts`;階段三 Settings 的「頁面顯示/隱藏開關」需能控制導覽項(如儀器頁、產學頁)的顯示。
 - 給後續階段的提醒:
+  - 新頁面請沿用既有模式:`"use client"` + `useLanguage()` + `Container`/`Section`,多區塊頁面加 `PageNav`(`items` 給 `{id,label}`,且對應 `Section` 要設 `id`)。
+  - 文案一律走字典的 zh/en 兩份,勿在 JSX 寫死中英文(違反 A-1 單一語言原則)。
+  - 階段三的雙語內容(G-6 Blog 中英、Tiptap)需與既有 i18n 模式相容。
 
 ### 階段二:會員與權限系統
 - 完成日期:
