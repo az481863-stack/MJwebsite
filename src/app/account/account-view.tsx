@@ -24,14 +24,12 @@ function Msg({ state }: { state: ActionResult | null }) {
 export function AccountView({
   loginEmail,
   roleLabel,
-  isAdmin,
   contactEmails,
   hasGoogle,
   welcome,
 }: {
   loginEmail: string;
   roleLabel: string;
-  isAdmin: boolean;
   contactEmails: { id: string; email: string }[];
   hasGoogle: boolean;
   welcome: boolean;
@@ -86,24 +84,14 @@ export function AccountView({
             {loginEmail} · {roleLabel}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {isAdmin && (
-            <a
-              href="/admin/members"
-              className="text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
-            >
-              會員管理
-            </a>
-          )}
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="border border-line px-3 py-1.5 text-sm transition-colors hover:bg-foreground hover:text-background"
-            >
-              登出
-            </button>
-          </form>
-        </div>
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="border border-line px-3 py-1.5 text-sm transition-colors hover:bg-foreground hover:text-background"
+          >
+            登出
+          </button>
+        </form>
       </header>
 
       {welcome && (

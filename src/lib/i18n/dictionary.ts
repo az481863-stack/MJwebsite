@@ -21,7 +21,7 @@ type NavKey = (typeof NAV_ITEMS)[number]["key"];
 
 export interface Dictionary {
   nav: Record<NavKey, string>;
-  auth: { login: string; account: string };
+  auth: { login: string; account: string; admin: string };
   langToggle: { label: string; toZh: string; toEn: string };
   footer: { rights: string; tagline: string };
   comingSoon: { badge: string; title: string; body: string };
@@ -108,7 +108,7 @@ const zh: Dictionary = {
     blog: "光電小講堂",
     contact: "聯絡教授",
   },
-  auth: { login: "登入", account: "會員" },
+  auth: { login: "登入", account: "會員", admin: "管理" },
   langToggle: { label: "語言", toZh: "中文", toEn: "EN" },
   footer: {
     rights: "光電物理實驗室",
@@ -329,7 +329,7 @@ const en: Dictionary = {
     blog: "Blog",
     contact: "Contact",
   },
-  auth: { login: "Sign in", account: "Account" },
+  auth: { login: "Sign in", account: "Account", admin: "Admin" },
   langToggle: { label: "Language", toZh: "中文", toEn: "EN" },
   footer: {
     rights: "Optoelectronic Physics Lab",

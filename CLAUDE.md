@@ -435,6 +435,7 @@
   - **後台中文單一語言**(延續階段二);內容資料多為單語(依附錄 G,僅 Blog 有中英雙版),前台切換 EN 時非 Blog 的內容顯示原輸入語言。
   - 新增 **2 個前台獨立頁**:`/courses`(課程)、`/for-students`(給高中生的話),由頁尾連結進入(導覽列維持 A-2 的 6 項)。`/for-students` 受 Settings 的 `showHighschool` 控制。
   - 前台內容頁改為 **force-dynamic**(請求時渲染),非靜態預渲染(原因見下「問題」)。
+  - 導覽列調整:語系切換改為**滑動 switch 樣式**(中/EN);**登入後**右上顯示「管理」(→`/admin`)+「會員」(→`/account`),未登入顯示「登入」;會員頁(`/account`)移除原本的「會員管理」連結(改由導覽列「管理」進入)。導覽登入狀態仍以 client 端 `useAuthState` 判斷。
 - 遇到的問題與解決方案:
   1. **build 期連 DB 失敗(PrismaClientInitializationError)**:前台內容頁原為靜態,build 時 7 個 worker 並行查 Supabase,免費層連線數上限導致 prerender 失敗(Vercel 部署也會隨機壞)。解法:內容頁加 `export const dynamic = "force-dynamic"`,移除 build 期 DB 依賴;`getSettings()` 也加 try/catch 容錯回預設值。
   2. **Tiptap v3 與 SSR**:(a) StarterKit v3 已內含 Link/Underline/Strike/Code/CodeBlock/HorizontalRule,勿重複加(會報重複擴充)。(b) 編輯器需 `immediatelyRender: false` 避免 Next SSR hydration 不一致。(c) 前台渲染用 `@tiptap/html/server` 的 `generateHTML`(非瀏覽器版),否則報 "can only be used in a browser"。
