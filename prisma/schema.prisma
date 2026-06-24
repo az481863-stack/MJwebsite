@@ -100,3 +100,253 @@ model Invitation {
   @@index([email])
   @@map("invitations")
 }
+
+// ════════════════════════════════════════════════════════════════
+// 階段三:內容後台 CMS(附錄 G)
+// 共通:每種內容含 D 共用系統欄位 + 發布狀態;前台只顯示
+//       status=PUBLISHED 且 deletedAt=null 者。created_by 等存會員 ID(非 FK)。
+// ════════════════════════════════════════════════════════════════
+
+// 內容發布狀態(草稿/審核流程):學生建 DRAFT,管理員以上 PUBLISHED。
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// G-1 動態佈告欄分類
+enum DashboardCategory {
+  ACADEMIC // 學術快報
+  LAB_LIFE // 實驗室日常
+  HONOR // 榮譽榜
+}
+
+// G-3 現役成員身份階層
+enum TeamTier {
+  POSTDOC // 博後
+  PHD // 博士生
+  MASTER // 碩士生
+  UNDERGRAD // 專題生
+}
+
+// G-5 職缺招募狀態(與內容 status 無關)
+enum RecruitStatus {
+  OPEN // 開放
+  FULL // 額滿
+}
+
+// G-8 產學與專利分類
+enum IndustryCategory {
+  PATENT // 已獲證專利
+  LICENSABLE // 可授權技術
+  COLLABORATION // 企業合作/技轉實績
+}
+
+// G-1 動態佈告欄(Quantum Dashboard)
+model DashboardPost {
+  id            String            @id @default(uuid())
+  category      DashboardCategory
+  title         String
+  body          String
+  imageUrl      String?           @map("image_url")
+  linkUrl       String?           @map("link_url")
+  linkText      String?           @map("link_text")
+  publishedDate DateTime          @map("published_date")
+  status        ContentStatus     @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("dashboard_posts")
+}
+
+// G-2 Publications(階段六可 AI 填)
+model Publication {
+  id        String        @id @default(uuid())
+  authors   String
+  title     String
+  venue     String // 期刊名稱
+  year      Int
+  doiUrl    String?       @map("doi_url")
+  highlight Boolean       @default(false) // 精選:前台加粗放大
+  status    ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("publications")
+}
+
+// G-3 現役成員(顯示用,與 auth Member 無關)
+model TeamMember {
+  id            String        @id @default(uuid())
+  name          String
+  tier          TeamTier
+  photoUrl      String?       @map("photo_url")
+  researchTopic String?       @map("research_topic")
+  sortOrder     Int           @default(0) @map("sort_order")
+  status        ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("team_members")
+}
+
+// G-4 校友去向
+model Alumnus {
+  id          String        @id @default(uuid())
+  name        String
+  gradYear    Int           @map("grad_year")
+  destination String
+  sortOrder   Int           @default(0) @map("sort_order")
+  status      ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("alumni")
+}
+
+// G-5 學術能階職缺表
+model JobOpening {
+  id            String        @id @default(uuid())
+  title         String
+  sortOrder     Int           @default(0) @map("sort_order") // 層級排序
+  recruitStatus RecruitStatus @default(OPEN) @map("recruit_status")
+  slots         Int? // 名額(選)
+  description   String
+  status        ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("job_openings")
+}
+
+// G-6 Science Blog(中英雙版;內文用 Tiptap JSON;階段六可 AI 填)
+model BlogPost {
+  id            String        @id @default(uuid())
+  titleZh       String        @map("title_zh")
+  titleEn       String        @map("title_en")
+  summary       String?
+  bodyZh        Json          @map("body_zh") // Tiptap JSON
+  bodyEn        Json          @map("body_en") // Tiptap JSON
+  coverUrl      String?       @map("cover_url")
+  publishedDate DateTime      @map("published_date")
+  status        ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("blog_posts")
+}
+
+// G-7 課程紀錄
+model Course {
+  id          String        @id @default(uuid())
+  name        String
+  outline     String
+  handoutUrl  String?       @map("handout_url")
+  sortOrder   Int           @default(0) @map("sort_order")
+  status      ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("courses")
+}
+
+// G-8 產學與專利
+model IndustryItem {
+  id          String           @id @default(uuid())
+  category    IndustryCategory
+  title       String
+  description String
+  sortOrder   Int              @default(0) @map("sort_order")
+  status      ContentStatus    @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("industry_items")
+}
+
+// G-9 給高中生的話(單篇長文;通常只有一筆有效)
+model HighSchoolMessage {
+  id      String        @id @default(uuid())
+  content String
+  status  ContentStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([status, deletedAt])
+  @@map("highschool_messages")
+}
+
+// 全站設定(單列):頁面顯示/隱藏開關 + 全站參數。
+// 以固定 id="singleton" 確保只有一列。
+model SiteSettings {
+  id String @id @default("singleton")
+
+  // 頁面顯示開關(前台與導覽)
+  showResearch    Boolean @default(true) @map("show_research")
+  showTeam        Boolean @default(true) @map("show_team")
+  showInstruments Boolean @default(false) @map("show_instruments") // 階段五前預設隱藏
+  showBlog        Boolean @default(true) @map("show_blog")
+  showContact     Boolean @default(true) @map("show_contact")
+  showIndustry    Boolean @default(true) @map("show_industry") // G-8 產學與專利
+  showHighschool  Boolean @default(true) @map("show_highschool") // G-9 給高中生的話
+
+  // 全站參數
+  instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 階段五:預約總時數上限
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  @@map("site_settings")
+}

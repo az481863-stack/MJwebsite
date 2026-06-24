@@ -47,14 +47,21 @@ export interface Dictionary {
     industryHeading: string;
     industryIntro: string;
     industryItems: { title: string; desc: string }[];
+    industryCatLabels: Record<"PATENT" | "LICENSABLE" | "COLLABORATION", string>;
+    emptyIndustry: string;
     pubHeading: string;
     pubIntro: string;
+    pubEmpty: string;
     pubItems: { authors: string; title: string; venue: string; year: string }[];
   };
   team: {
     heading: string;
     intro: string;
     membersHeading: string;
+    tierLabels: Record<"POSTDOC" | "PHD" | "MASTER" | "UNDERGRAD", string>;
+    emptyMembers: string;
+    emptyAlumni: string;
+    emptyJobs: string;
     members: { name: string; role: string; topic: string }[];
     alumniHeading: string;
     alumni: { name: string; year: string; destination: string }[];
@@ -88,6 +95,8 @@ export interface Dictionary {
     officeHoursLabel: string;
     formNote: string;
   };
+  courses: { heading: string; intro: string; empty: string; handout: string };
+  forStudents: { heading: string; intro: string; empty: string };
 }
 
 const zh: Dictionary = {
@@ -166,6 +175,12 @@ const zh: Dictionary = {
     ],
     industryHeading: "產學與專利",
     industryIntro: "我們將實驗室的核心技術與業界需求對接,促成技術移轉與合作開發。",
+    industryCatLabels: {
+      PATENT: "已獲證專利",
+      LICENSABLE: "可授權技術",
+      COLLABORATION: "企業合作/技轉實績",
+    },
+    emptyIndustry: "尚未新增產學與專利項目。",
     industryItems: [
       {
         title: "已獲證專利",
@@ -182,6 +197,7 @@ const zh: Dictionary = {
     ],
     pubHeading: "代表著作",
     pubIntro: "近期發表選錄(完整清單將於後續上線)。",
+    pubEmpty: "尚未新增著作。",
     pubItems: [
       {
         authors: "Wu M.-J., et al.",
@@ -201,6 +217,15 @@ const zh: Dictionary = {
     heading: "團隊與招募",
     intro: "我們是一群對光與物質充滿好奇的人。歡迎有熱情的你加入。",
     membersHeading: "現役成員",
+    tierLabels: {
+      POSTDOC: "博後",
+      PHD: "博士生",
+      MASTER: "碩士生",
+      UNDERGRAD: "專題生",
+    },
+    emptyMembers: "尚未新增成員。",
+    emptyAlumni: "尚未新增校友。",
+    emptyJobs: "目前沒有開放職缺。",
     members: [
       { name: "吳孟哲 教授", role: "主持人 (PI)", topic: "半導體光譜學、量子材料" },
       { name: "王同學", role: "博士生", topic: "二維材料激子動力學" },
@@ -282,6 +307,17 @@ Email:____`,
     officeHoursLabel: "聯絡時間",
     formNote: "線上聯絡表單將於後續階段開放,屆時可依主題自動分流至對應信箱。",
   },
+  courses: {
+    heading: "課程紀錄",
+    intro: "實驗室相關課程的大綱與講義。",
+    empty: "尚未新增課程。",
+    handout: "下載講義",
+  },
+  forStudents: {
+    heading: "給高中生的話",
+    intro: "寫給對光電物理好奇的你。",
+    empty: "內容準備中。",
+  },
 };
 
 const en: Dictionary = {
@@ -362,6 +398,12 @@ const en: Dictionary = {
     industryHeading: "Industry & Patents",
     industryIntro:
       "We connect our core technologies with industry needs, enabling technology transfer and joint development.",
+    industryCatLabels: {
+      PATENT: "Granted Patents",
+      LICENSABLE: "Licensable Technology",
+      COLLABORATION: "Industry Collaboration",
+    },
+    emptyIndustry: "No industry or patent items yet.",
     industryItems: [
       {
         title: "Granted Patents",
@@ -378,6 +420,7 @@ const en: Dictionary = {
     ],
     pubHeading: "Selected Publications",
     pubIntro: "A selection of recent work (full list coming later).",
+    pubEmpty: "No publications yet.",
     pubItems: [
       {
         authors: "Wu M.-J., et al.",
@@ -397,6 +440,15 @@ const en: Dictionary = {
     heading: "Lab Team",
     intro: "We are a group of people curious about light and matter. Passionate newcomers are always welcome.",
     membersHeading: "Current Members",
+    tierLabels: {
+      POSTDOC: "Postdoc",
+      PHD: "PhD Student",
+      MASTER: "Master's Student",
+      UNDERGRAD: "Undergraduate",
+    },
+    emptyMembers: "No members added yet.",
+    emptyAlumni: "No alumni added yet.",
+    emptyJobs: "No open positions at the moment.",
     members: [
       { name: "Prof. Meng-Jer Wu", role: "Principal Investigator", topic: "Semiconductor spectroscopy, quantum materials" },
       { name: "Wang", role: "PhD Student", topic: "Exciton dynamics in 2D materials" },
@@ -477,6 +529,17 @@ Email: ____`,
     phoneLabel: "Phone",
     officeHoursLabel: "Hours",
     formNote: "An online contact form will open in a later phase, routing messages to the right inbox by topic.",
+  },
+  courses: {
+    heading: "Courses",
+    intro: "Syllabi and handouts for lab-related courses.",
+    empty: "No courses added yet.",
+    handout: "Download handout",
+  },
+  forStudents: {
+    heading: "For High-School Students",
+    intro: "A note for those curious about optoelectronic physics.",
+    empty: "Content coming soon.",
   },
 };
 

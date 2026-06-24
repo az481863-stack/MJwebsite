@@ -7,9 +7,16 @@ import { NAV_ITEMS } from "@/lib/i18n/dictionary";
 import { useLanguage } from "@/lib/i18n/context";
 import { Container } from "./ui/Container";
 
-export function Footer() {
+export function Footer({
+  visible = {},
+  showHighschool = true,
+}: {
+  visible?: Partial<Record<string, boolean>>;
+  showHighschool?: boolean;
+}) {
   const { t } = useLanguage();
   const year = new Date().getFullYear();
+  const navItems = NAV_ITEMS.filter((item) => visible[item.key] !== false);
 
   return (
     <footer className="mt-auto border-t border-line py-12">
@@ -24,7 +31,7 @@ export function Footer() {
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -33,6 +40,20 @@ export function Footer() {
                 {t.nav[item.key]}
               </Link>
             ))}
+            <Link
+              href="/courses"
+              className="text-sm text-muted transition-colors hover:text-foreground"
+            >
+              {t.courses.heading}
+            </Link>
+            {showHighschool && (
+              <Link
+                href="/for-students"
+                className="text-sm text-muted transition-colors hover:text-foreground"
+              >
+                {t.forStudents.heading}
+              </Link>
+            )}
           </nav>
         </div>
         <p className="mt-10 text-xs text-muted">

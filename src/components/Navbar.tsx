@@ -14,12 +14,19 @@ import { useAuthState } from "@/lib/use-auth-state";
 import { Container } from "./ui/Container";
 import { LanguageToggle } from "./LanguageToggle";
 
-export function Navbar() {
+export function Navbar({
+  visible = {},
+}: {
+  visible?: Partial<Record<string, boolean>>;
+}) {
   const { t } = useLanguage();
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // 依設定隱藏導覽項(首頁恆顯示;未列於 visible 的項目視為顯示)。
+  const navItems = NAV_ITEMS.filter((item) => visible[item.key] !== false);
 
   const authHref = isAuthed ? "/account" : "/login";
   const authLabel = isAuthed ? t.auth.account : t.auth.login;
@@ -45,7 +52,7 @@ export function Navbar() {
 
           {/* 桌機導覽 */}
           <nav className="hidden items-center gap-7 md:flex">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -107,7 +114,7 @@ export function Navbar() {
         <nav className="border-t border-line md:hidden">
           <Container>
             <ul className="flex flex-col py-2">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

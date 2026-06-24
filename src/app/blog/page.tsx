@@ -1,34 +1,31 @@
-"use client";
+// 光電小講堂 Blog(server):列出已發布文章。
 
-// 光電小講堂 Blog(階段一):靜態文章佔位,階段三改後台(Tiptap)。
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getSettings } from "@/lib/settings";
+import { BlogListContent } from "./blog-list-content";
 
-import { useLanguage } from "@/lib/i18n/context";
-import { Section } from "@/components/ui/Section";
+export const dynamic = "force-dynamic";
 
-export default function BlogPage() {
-  const { t } = useLanguage();
-  const b = t.blog;
+export default async function BlogPage() {
+  const settings = await getSettings();
+  if (!settings.showBlog) notFound();
+
+  const posts = await prisma.blogPost.findMany({
+    where: { status: "PUBLISHED", deletedAt: null },
+    orderBy: { publishedDate: "desc" },
+  });
 
   return (
-    <Section heading={b.heading} intro={b.intro}>
-      <div className="space-y-px overflow-hidden border border-line bg-line">
-        {b.posts.map((post, i) => (
-          <article
-            key={i}
-            className="group flex cursor-pointer flex-col gap-2 bg-background p-8 transition-colors hover:bg-foreground/[0.02] sm:flex-row sm:items-baseline sm:gap-8"
-          >
-            <span className="shrink-0 font-mono text-sm text-muted sm:w-28">
-              {post.date}
-            </span>
-            <div>
-              <h3 className="text-lg font-semibold">{post.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {post.excerpt}
-              </p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </Section>
+    <BlogListContent
+      posts={posts.map((p) => ({
+        id: p.id,
+        titleZh: p.titleZh,
+        titleEn: p.titleEn,
+        summary: p.summary,
+        coverUrl: p.coverUrl,
+        date: p.publishedDate.toISOString().slice(0, 10).replace(/-/g, "."),
+      }))}
+    />
   );
 }
