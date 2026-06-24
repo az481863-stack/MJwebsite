@@ -205,14 +205,15 @@
 - 邀請→建未啟用會員→寄信→點連結設密碼→啟用→詢問綁 Google。
 - 登入(密碼 / Google)、會員 info 頁(改密碼、綁 Google、多筆常用 email)。
 - 角色權限控制、會員停用(軟刪除)。
+- **首位最高權限者建立**(B:不從邀請產生):提供 `/setup` 一次性網頁(需 `SETUP_SECRET` 密語,且系統尚無最高權限者時才作用,建立後自動失效)與 `npm run seed:superadmin` 終端機腳本兩種方式。
 
 **測試通過條件**
-- [ ] 邀請流程全程可走通;邀請連結過期/重用/重寄行為正確。
-- [ ] 最高權限者邀請可選角色;管理員邀請固定為學生。
-- [ ] 三層權限正確隔離(學生不能發布/管帳號;管理員不能管帳號)。
-- [ ] 「最後一位最高權限者」無法被刪除或降級。
-- [ ] 密碼加密儲存;Google 與同 email 密碼帳號辨識為同一人。
-- [ ] 停用會員無法登入但歷史資料保留。
+- [x] 邀請流程全程可走通;邀請連結過期/重用/重寄行為正確。
+- [x] 最高權限者邀請可選角色;管理員邀請固定為學生。
+- [x] 三層權限正確隔離(學生不能發布/管帳號;管理員不能管帳號)。
+- [x] 「最後一位最高權限者」無法被刪除或降級。
+- [x] 密碼加密儲存(交給 Supabase Auth)。〔Google 與同 email 辨識同一人:實作完成,待 Supabase 啟用 Google provider 後端到端驗證。〕
+- [x] 停用會員無法登入但歷史資料保留。
 
 ---
 
@@ -403,11 +404,29 @@
 - 給後續階段的提醒:
 
 ### 階段二:會員與權限系統
-- 完成日期:
+- 完成日期:2026-06-24
 - 實際與規格的偏差:
+  - **後台頁面(login / account / admin / setup)為中文單一語言**,不走前台 i18n 語系切換(內部成員使用)。前台公開頁仍維持 A-1 的雙語切換。
+  - **邀請採自建 token**(`Invitation.tokenHash`,SHA-256 僅存雜湊),而非 Supabase 內建 invite email;密碼與 Google 仍由 Supabase Auth 管。寄信走 **Resend**(`src/lib/email.ts` 獨立模組,未設 `RESEND_API_KEY` 時開發期把連結印至 console)。
+  - **首位最高權限者**:規格只說「不從邀請產生、由現任手動升級」,實作補上具體機制 → `/setup` 一次性網頁(`SETUP_SECRET` 密語 + 無超管才作用,建立後自動失效)與 `npm run seed:superadmin` 腳本。
+  - Next 16 將 `middleware` 慣例**更名為 `proxy`**;session 刷新放 `src/proxy.ts`,matcher 僅套用 `/account`、`/admin`、`/auth`。
+  - 導覽列登入狀態改用 **client 端 `useAuthState`**(瀏覽器查 session),讓公開頁維持靜態、不必每次打 DB。
 - 遇到的問題與解決方案:
+  1. **`/setup` 被當靜態頁凍結判斷**:該頁只用 Prisma、無 cookies,Next 預設靜態化 → 會在 build 期把「是否已有超管」凍結。解法:`export const dynamic = "force-dynamic"`。
+  2. **公開頁被迫動態**:server component 內用 Supabase server client(讀 cookies)會讓頁面轉動態。為保前台靜態,改在導覽列以 client 端判斷登入狀態(見上)。
+  3. **停用會員仍能登入**:只改 `Member.status=DISABLED` 不夠。解法:同時用 admin API `updateUserById(..., { ban_duration })` 封鎖 Supabase 登入,還原時解除 ban。
+  4. **React 19 + server actions**:每個表單用 `useActionState`,回傳統一 `ActionResult { ok, message }`;會員列表每列獨立成 `MemberRowItem` 以容納各自的 action 狀態(避免在迴圈中用 hooks)。
 - 衍生的新待辦/技術債:
+  - **Google 登入/綁定需 Supabase 後台設定**才能用:啟用 Google provider、開啟 Manual Linking、設定 redirect URL(`<site>/auth/callback`),且 `NEXT_PUBLIC_SITE_URL` 要正確。未完成前 Google 流程無法端到端驗證。
+  - **單一 Supabase 環境(無 staging)**:本機開發直接寫正式庫;測試資料需留意清理。
+  - 啟用時若該 email 已存在於 `auth.users`(罕見邊界)會失敗並提示聯絡管理員,未做自動合併。
+  - 正式寄信需設 `RESEND_API_KEY` + 驗證寄件網域(否則僅 console 備援)。
+  - **Vercel 環境變數**需含:`SUPABASE_SERVICE_ROLE_KEY`、`NEXT_PUBLIC_SITE_URL`(設為部署網址,非 localhost,否則邀請連結錯誤)、`SETUP_SECRET`、`RESEND_API_KEY`。
 - 給後續階段的提醒:
+  - 取目前會員/權限一律用 `src/lib/auth.ts` 的 `getCurrentMember` / `getMemberAtLeast` / `roleAtLeast`;新後台頁沿用「server component 守衛 → 不足則 `redirect('/login')`」模式。
+  - **後台 server action 必須自行檢查權限**(勿只靠 UI 隱藏);沿用回傳 `ActionResult` 給 `useActionState` 的慣例。
+  - 階段三內容表記得帶 D 共用欄位(`created_by` / `updated_by` / `deleted_by`),以 `getCurrentMember()` 填入;草稿/審核與軟刪除可沿用此處 RBAC。
+  - 階段三 Settings 的「頁面顯示/隱藏開關」需能控制導覽項;導覽目前寫死於 `src/lib/i18n/dictionary.ts` 的 `NAV_ITEMS`。
 
 ### 階段三:內容後台 CMS
 - 完成日期:
