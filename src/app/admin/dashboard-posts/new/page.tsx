@@ -1,0 +1,16 @@
+import { redirect } from "next/navigation";
+import { getCurrentMember, roleAtLeast } from "@/lib/auth";
+import { createDashboardPost } from "../actions";
+import { DashboardPostForm } from "../dashboard-post-form";
+
+export default async function NewDashboardPostPage() {
+  const me = await getCurrentMember();
+  if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">新增佈告</h1>
+      <DashboardPostForm action={createDashboardPost} />
+    </div>
+  );
+}

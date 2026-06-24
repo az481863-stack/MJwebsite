@@ -220,17 +220,17 @@
 ## 階段三:內容後台 CMS(動態區塊,表單手填)
 **範圍**:各「動態」區塊的後台 CRUD,純表單手填(**尚無 AI**),含草稿/審核流程與軟刪除。對應區塊欄位見 **附錄 G**。
 - 動態佈告欄、Publications、現役成員、校友、職缺管理、Blog、課程紀錄、**產學與專利**、**給高中生的話**。
-- Blog 與 Publications 內文編輯器採用 **Tiptap**(富文本編輯器)。
+- **Blog 內文**採用 **Tiptap**(富文本編輯器,中英雙版)。**Publications 為結構化欄位**(作者/標題/期刊/年份/DOI/精選),無內文 body,故不使用 Tiptap(原規格「Blog 與 Publications 採 Tiptap」已依實作修正:Publications 無 body 可富文本化)。
 - 學生建草稿 → 管理員以上審核發布。
 - **設定頁(Settings)**:管理頁面層級的雜項與**通用「顯示/隱藏」開關**——任一頁面(如產學與專利、給高中生的話,乃至未上線的儀器頁)皆可由開關控制是否於前台顯示。亦含**儀器預約總時數上限**(預設 24 小時,供階段五使用)等全站參數。
 
 **測試通過條件**
-- [ ] 每種內容皆可新增/編輯/軟刪除,前台正確呈現(含倒序排序、精選加粗)。
-- [ ] Blog/Publications 之 Tiptap 編輯器存取與渲染正確。
-- [ ] 草稿/審核流程正確:學生送草稿、管理員以上才能發布。
-- [ ] 權限正確:學生看不到他人草稿的發布權;軟刪除後前台即不顯示。
-- [ ] 職缺可新增/刪除整筆,狀態(開放/額滿)前台正確反映。
-- [ ] Settings 的頁面顯示/隱藏開關對前台生效。
+- [x] 每種內容皆可新增/編輯/軟刪除,前台正確呈現(含倒序排序、精選加粗)。
+- [x] Blog 之 Tiptap 編輯器存取與渲染正確(含圖片、表格、上下標、LaTeX 公式)。〔Publications 改為結構化欄位,見上方說明〕
+- [x] 草稿/審核流程正確:學生送草稿、管理員以上才能發布。
+- [x] 權限正確:學生看不到他人草稿(只見自己),無發布/刪除權;軟刪除後前台即不顯示。
+- [x] 職缺可新增/刪除整筆,狀態(開放/額滿)前台正確反映。
+- [x] Settings 的頁面顯示/隱藏開關對前台與導覽生效(隱藏頁直接造訪 404)。
 
 ---
 
@@ -429,11 +429,29 @@
   - 階段三 Settings 的「頁面顯示/隱藏開關」需能控制導覽項;導覽目前寫死於 `src/lib/i18n/dictionary.ts` 的 `NAV_ITEMS`。
 
 ### 階段三:內容後台 CMS
-- 完成日期:
+- 完成日期:2026-06-24(實作與 build/lint/typecheck 通過;端到端人工點測由開發者進行中)
 - 實際與規格的偏差:
+  - **Publications 不使用 Tiptap**:其欄位為結構化引用資料(無內文 body),故為純表單;僅 **Blog 內文**用 Tiptap(已同步修正規格 §階段三)。
+  - **後台中文單一語言**(延續階段二);內容資料多為單語(依附錄 G,僅 Blog 有中英雙版),前台切換 EN 時非 Blog 的內容顯示原輸入語言。
+  - 新增 **2 個前台獨立頁**:`/courses`(課程)、`/for-students`(給高中生的話),由頁尾連結進入(導覽列維持 A-2 的 6 項)。`/for-students` 受 Settings 的 `showHighschool` 控制。
+  - 前台內容頁改為 **force-dynamic**(請求時渲染),非靜態預渲染(原因見下「問題」)。
+  - 導覽列調整:語系切換改為**滑動 switch 樣式**(中/EN);**登入後**右上顯示「管理」(→`/admin`)+「會員」(→`/account`),未登入顯示「登入」;會員頁(`/account`)移除原本的「會員管理」連結(改由導覽列「管理」進入)。導覽登入狀態仍以 client 端 `useAuthState` 判斷。
 - 遇到的問題與解決方案:
+  1. **build 期連 DB 失敗(PrismaClientInitializationError)**:前台內容頁原為靜態,build 時 7 個 worker 並行查 Supabase,免費層連線數上限導致 prerender 失敗(Vercel 部署也會隨機壞)。解法:內容頁加 `export const dynamic = "force-dynamic"`,移除 build 期 DB 依賴;`getSettings()` 也加 try/catch 容錯回預設值。
+  2. **Tiptap v3 與 SSR**:(a) StarterKit v3 已內含 Link/Underline/Strike/Code/CodeBlock/HorizontalRule,勿重複加(會報重複擴充)。(b) 編輯器需 `immediatelyRender: false` 避免 Next SSR hydration 不一致。(c) 前台渲染用 `@tiptap/html/server` 的 `generateHTML`(非瀏覽器版),否則報 "can only be used in a browser"。
+  3. **數學公式 SSR**:`generateHTML` 對 math 只輸出 `data-latex` 空 span,KaTeX 需 client 端渲染。解法:`MathUpgrader` client 元件於掛載後用 KaTeX 補渲染;`katex.min.css` 於 layout 全域載入。
+  4. **prisma delegate 泛型操作**:通用發布/軟刪除 action 以模型名字串對應 `prisma[model]`,用白名單 + 單一 helper 收斂型別寬鬆處。
 - 衍生的新待辦/技術債:
+  - 內容頁 force-dynamic = 每次請求查 DB;規模小無妨,日後若要快取可改 ISR(`revalidateTag`)。
+  - 圖片無「替代文字(alt)」欄位;無障礙日後可補。
+  - Blog 內文搜尋、分頁未做(目前全列);量大再加。
+  - Tiptap 內容為信任的後台輸入,`generateHTML` 後以 `dangerouslySetInnerHTML` 注入;若日後開放較低信任來源需加 sanitize。
+  - `media` storage bucket 於首次上傳自動建立(public);交接時記得此 bucket 屬資料的一部分。
 - 給後續階段的提醒:
+  - 新增內容類型的範式:`prisma model` → `actions.ts`(create/update + 權限)→ 沿用通用 `content-actions`(發布/軟刪除)→ `form-kit` 表單 → `AdminListShell` 列表 → `registry.ts` 加側邊欄項 → 前台 server 頁(force-dynamic)抓 `status=PUBLISHED, deletedAt=null`。
+  - 學生可投稿的類型在 `registry.ts` 設 `minRole: "STUDENT"`,並於 list/new/edit 與 action 內做 owner/draft 限制。
+  - 階段五(儀器)可讀 `getSettings().instrumentMaxHours`(預設 24)作預約總時數上限;`showInstruments` 控制導覽入口。
+  - 階段六 AI 預填寫入 Blog 的 Tiptap JSON 格式(`bodyZh`/`bodyEn`),與此處編輯器一致。
 
 ### 階段四:聯絡表單與分類寄信
 - 完成日期:

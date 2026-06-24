@@ -14,15 +14,27 @@ import { useAuthState } from "@/lib/use-auth-state";
 import { Container } from "./ui/Container";
 import { LanguageToggle } from "./LanguageToggle";
 
-export function Navbar() {
+export function Navbar({
+  visible = {},
+}: {
+  visible?: Partial<Record<string, boolean>>;
+}) {
   const { t } = useLanguage();
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const authHref = isAuthed ? "/account" : "/login";
-  const authLabel = isAuthed ? t.auth.account : t.auth.login;
+  // 依設定隱藏導覽項(首頁恆顯示;未列於 visible 的項目視為顯示)。
+  const navItems = NAV_ITEMS.filter((item) => visible[item.key] !== false);
+
+  // 登入後顯示「管理」(/admin)與「會員」(/account);未登入顯示「登入」。
+  const authLinks = isAuthed
+    ? [
+        { href: "/admin", label: t.auth.admin },
+        { href: "/account", label: t.auth.account },
+      ]
+    : [{ href: "/login", label: t.auth.login }];
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -45,7 +57,7 @@ export function Navbar() {
 
           {/* 桌機導覽 */}
           <nav className="hidden items-center gap-7 md:flex">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -60,18 +72,21 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* 右側:會員入口 + 語系 + 手機漢堡 */}
+          {/* 右側:會員/管理入口 + 語系 + 手機漢堡 */}
           <div className="flex items-center gap-3">
-            <Link
-              href={authHref}
-              className={`hidden text-sm transition-colors hover:text-foreground md:inline ${
-                isActive(authHref)
-                  ? "font-semibold text-foreground"
-                  : "text-muted"
-              }`}
-            >
-              {authLabel}
-            </Link>
+            {authLinks.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`hidden text-sm transition-colors hover:text-foreground md:inline ${
+                  isActive(l.href)
+                    ? "font-semibold text-foreground"
+                    : "text-muted"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
             <LanguageToggle />
             <button
               type="button"
@@ -107,7 +122,7 @@ export function Navbar() {
         <nav className="border-t border-line md:hidden">
           <Container>
             <ul className="flex flex-col py-2">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -122,19 +137,21 @@ export function Navbar() {
                   </Link>
                 </li>
               ))}
-              <li className="border-t border-line">
-                <Link
-                  href={authHref}
-                  onClick={() => setMenuOpen(false)}
-                  className={`block py-3 text-base transition-colors ${
-                    isActive(authHref)
-                      ? "font-semibold text-foreground"
-                      : "text-muted"
-                  }`}
-                >
-                  {authLabel}
-                </Link>
-              </li>
+              {authLinks.map((l) => (
+                <li key={l.href} className="border-t border-line">
+                  <Link
+                    href={l.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`block py-3 text-base transition-colors ${
+                      isActive(l.href)
+                        ? "font-semibold text-foreground"
+                        : "text-muted"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </Container>
         </nav>

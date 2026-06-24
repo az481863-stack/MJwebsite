@@ -36,7 +36,6 @@ export default async function AccountPage({
       <AccountView
         loginEmail={member.loginEmail}
         roleLabel={ROLE_LABEL[member.role] ?? member.role}
-        isAdmin={member.role === "ADMIN" || member.role === "SUPERADMIN"}
         contactEmails={emails.map((e) => ({ id: e.id, email: e.email }))}
         hasGoogle={hasGoogle}
         welcome={sp?.welcome === "1"}

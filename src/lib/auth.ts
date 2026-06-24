@@ -4,17 +4,10 @@
 import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { roleAtLeast } from "@/lib/roles";
 
-// 角色高低(數字越大權限越高);用於「至少某層級」判斷。
-const ROLE_ORDER: Record<Role, number> = {
-  STUDENT: 1,
-  ADMIN: 2,
-  SUPERADMIN: 3,
-};
-
-export function roleAtLeast(role: Role, min: Role): boolean {
-  return ROLE_ORDER[role] >= ROLE_ORDER[min];
-}
+// 重新匯出,維持既有 import { roleAtLeast } from "@/lib/auth" 不變。
+export { roleAtLeast };
 
 // 取得目前登入的 Supabase auth 使用者(尚未對應到 Member)。
 export async function getAuthUser() {
