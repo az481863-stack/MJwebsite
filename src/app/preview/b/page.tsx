@@ -43,7 +43,7 @@ function gradOf(main: string) {
 export default function PreviewB() {
   const { t } = useLanguage();
   const h = t.home;
-  const [pal, setPal] = useState(PALETTES[0]);
+  const [pal, setPal] = useState<(typeof PALETTES)[number]>(PALETTES[0]);
 
   const rootStyle = {
     "--indigo": pal.main,

@@ -27,7 +27,7 @@ const PALETTES = [
 export default function PreviewA() {
   const { t } = useLanguage();
   const h = t.home;
-  const [pal, setPal] = useState(PALETTES[0]);
+  const [pal, setPal] = useState<(typeof PALETTES)[number]>(PALETTES[0]);
 
   const rootStyle = { "--cy": pal.main } as React.CSSProperties;
 
