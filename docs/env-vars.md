@@ -27,6 +27,33 @@
 - Vercel 環境變數**改成 All Environments**,避免 Preview/分支部署缺變數而 500。
 - GitHub Actions 保活排程另有一個 secret `SUPABASE_DB_URL`(用 `DIRECT_URL`),交接時一併移轉。
 
+## Resend(寄信)設定
+
+網站寄信(邀請信、聯絡表單通知)走 Resend,程式在 `src/lib/email.ts`。
+**未設 `RESEND_API_KEY` 時,信不會真的寄出,只印到伺服器 console**(開發備援)。
+
+### 取得 API Key(免費)
+
+1. 到 [resend.com](https://resend.com) 註冊登入(免費方案約每月 3,000 封、每天 100 封)。
+2. **API Keys → Create API Key** → 命名(如 `mjwebsite`)→ 複製那串 `re_...`(只顯示一次)。
+3. 填入本機 `.env` 與 Vercel 的 `RESEND_API_KEY`。
+
+### 寄件網域(重要)
+
+> **「寄件網域」與「網站網域」是兩回事**:Resend 驗證的是 email `From:` 用的網域,
+> 跟網站掛在 vercel.app 還是自有網域**無關**。`vercel.app` 無法驗證(DNS 不是你的)。
+
+| 階段 | `EMAIL_FROM` | 可寄給誰 | 要驗證嗎 |
+|---|---|---|---|
+| 還沒有自有網域(測試) | `onboarding@resend.dev`(預設) | **只能寄到你註冊 Resend 的那個 email** | 否 |
+| 已買自有網域(正式) | `noreply@<你的網域>` | 任何人,送達率較佳 | 是 |
+
+**買到自有網域後的驗證步驟**:Resend → **Domains → Add Domain** → 輸入網域 →
+依指示到網域 DNS 後台新增 SPF / DKIM(及 DMARC)記錄 → 等驗證通過 →
+把 `EMAIL_FROM` 改成該網域的寄件位址。完成後即可寄給任何收件人。
+
+> 交接重點:Resend 帳號與 API Key 最終應開/移轉至**教授名下**。
+
 ## 交接時要轉移/重設的東西
 
 - Vercel 上述全部環境變數。
