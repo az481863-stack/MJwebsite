@@ -14,12 +14,21 @@ import { useAuthState } from "@/lib/use-auth-state";
 import { Container } from "./ui/Container";
 import { LanguageToggle } from "./LanguageToggle";
 
+// 內頁 navbar 雷射光束:隨機端點(viewBox 1200×64),讓每次射入的角度不同。
+// 一律橫跨整條 bar(x 固定),改變左右兩端的 y 以變化傾角與穿越位置。
+function randomBeam() {
+  const rnd = () => Math.round(Math.random() * 150 - 45); // -45 ~ 105
+  return { y1: rnd(), y2: rnd() };
+}
+
 export function Navbar({
   visible = {},
 }: {
   visible?: Partial<Record<string, boolean>>;
 }) {
   const { t } = useLanguage();
+  // 光束端點:初始固定值(避免 SSR/hydration 不一致),之後每射一輪換隨機角度。
+  const [beam, setBeam] = useState({ y1: 50, y2: 14 });
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
@@ -69,11 +78,13 @@ export function Navbar({
           <line
             className="nav-beam-line"
             x1="-50"
-            y1="50"
+            y1={beam.y1}
             x2="1250"
-            y2="14"
+            y2={beam.y2}
             stroke="url(#nav-beam)"
             strokeWidth="1.5"
+            // 每輪動畫結束(發生在隱形空檔)換一個隨機角度,下一次射入即不同向
+            onAnimationIteration={() => setBeam(randomBeam())}
           />
         </svg>
       )}
