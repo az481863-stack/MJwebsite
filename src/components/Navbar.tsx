@@ -15,16 +15,46 @@ import { Container } from "./ui/Container";
 import { LanguageToggle } from "./LanguageToggle";
 
 // 內頁 navbar 雷射光束(viewBox 1200×64,x:0=左 1200=右,y:0=上 64=下)。
-// beam1:左邊 → 上面(起點 x=0、終點 y=0)。
-// beam2:上面 → 右邊(起點 y=0、終點 x=1200)。
-// 自由端隨機,讓每次傾角不同。
-const rnd = (min: number, max: number) =>
-  Math.round(min + Math.random() * (max - min));
-function randomBeam1() {
-  return { x1: 0, y1: rnd(16, 60), x2: rnd(150, 760), y2: 0 };
+// 起點固定在某條邊界上,以「射出角度」朝右投射,射線打到 navbar 邊界處為終點。
+// beam1:起點在「最左邊或最下面」,角度 0~90°(水平→朝上)。
+// beam2:起點在「最左邊或最上面」,角度 0~-90°(水平→朝下)。
+const W = 1200;
+const H = 64;
+const rndF = (min: number, max: number) => min + Math.random() * (max - min);
+
+// 由起點與角度(度,+為朝上;螢幕 y 向下故 dy=-sin)投射至 navbar 邊界。
+function castBeam(x1: number, y1: number, angleDeg: number) {
+  const r = (angleDeg * Math.PI) / 180;
+  const dx = Math.cos(r);
+  const dy = -Math.sin(r);
+  const ts: number[] = [];
+  if (dx > 1e-6) ts.push((W - x1) / dx);
+  else if (dx < -1e-6) ts.push(-x1 / dx);
+  if (dy > 1e-6) ts.push((H - y1) / dy);
+  else if (dy < -1e-6) ts.push(-y1 / dy);
+  const t = Math.min(...ts.filter((v) => v > 0.01));
+  return {
+    x1: Math.round(x1),
+    y1: Math.round(y1),
+    x2: Math.round(x1 + dx * t),
+    y2: Math.round(y1 + dy * t),
+  };
 }
+
+function randomBeam1() {
+  // 起點:最左邊(x=0)或最下面(y=H);角度 0~90°(略收邊避免貼著邊界)
+  const onLeft = Math.random() < 0.5;
+  const x1 = onLeft ? 0 : rndF(0, 900);
+  const y1 = onLeft ? rndF(0, H) : H;
+  return castBeam(x1, y1, rndF(8, 88));
+}
+
 function randomBeam2() {
-  return { x1: rnd(440, 1050), y1: 0, x2: 1200, y2: rnd(16, 60) };
+  // 起點:最左邊(x=0)或最上面(y=0);角度 0~-90°
+  const onLeft = Math.random() < 0.5;
+  const x1 = onLeft ? 0 : rndF(0, 900);
+  const y1 = onLeft ? rndF(0, H) : 0;
+  return castBeam(x1, y1, rndF(-88, -8));
 }
 
 export function Navbar({
@@ -34,9 +64,9 @@ export function Navbar({
 }) {
   const { t } = useLanguage();
   // 兩條光束端點:初始固定值(避免 SSR/hydration 不一致),之後每射一輪換隨機角度。
-  // beam1 左→上、beam2 上→右。
-  const [beam1, setBeam1] = useState({ x1: 0, y1: 46, x2: 430, y2: 0 });
-  const [beam2, setBeam2] = useState({ x1: 770, y1: 0, x2: 1200, y2: 46 });
+  // beam1 自左下角朝上射、beam2 自左上角朝下射(自左側展開)。
+  const [beam1, setBeam1] = useState({ x1: 0, y1: 64, x2: 700, y2: 0 });
+  const [beam2, setBeam2] = useState({ x1: 0, y1: 0, x2: 700, y2: 64 });
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
