@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   Dark Optics(暗色光學)
-   近黑底、大氣白字、大量留白、極細亮線分割、雷射光路幾何。
-   重點色(--accent)由後台 Settings 的 siteAccent 決定,於 layout 注入。
-   固定深色,不隨系統淺色。
+   Dark Optics(暗色光學學院風)
+   以淺色學院風為底(白底、大氣黑字、大量留白),搭配「近黑 + 雷射光束」的
+   戲劇性深色區塊(Hero、理念帶)與可由後台調整的重點色(--accent)。
+   非全站全黑;深色僅用於指定區塊(見 .band-dark 與首頁 Hero)。
    ────────────────────────────────────────────────────────────── */
 :root {
-  --background: #0a0b10;
-  --foreground: #f4f5f7;
-  --muted: #9aa1ac;
-  --line: rgba(255, 255, 255, 0.12);
-  --line-strong: rgba(255, 255, 255, 0.55);
+  --background: #ffffff;
+  --foreground: #111111;
+  --muted: #6b6b6b;
+  --line: #e5e5e5;
+  --line-strong: #111111;
   /* 預設重點色(青);layout 會以 inline style 用實際設定覆蓋 */
   --accent: #22d3ee;
+  /* 深色區塊用的近黑底 */
+  --ink: #0a0b10;
 }
 
 @theme inline {
@@ -95,9 +97,6 @@ html {
   color: #111;
   padding: 0 0.1em;
 }
-.rich-text a {
-  color: var(--accent);
-}
 .rich-text code {
   font-family: var(--font-mono), monospace;
   font-size: 0.9em;
@@ -146,6 +145,16 @@ html {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* 深色區塊(Hero、理念帶):近黑底白字,內部 token 反轉以維持對比 */
+.band-dark {
+  background: var(--ink);
+  color: #f4f5f7;
+  --foreground: #f4f5f7;
+  --muted: #9aa1ac;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.55);
 }
 
 /* ──────────────────────────────────────────────────────────────

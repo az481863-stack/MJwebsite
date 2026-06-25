@@ -62,9 +62,9 @@
 ## A. 全站規格(跨階段)
 
 ### A-1. 視覺與技術
-- 視覺風格:**Dark Optics(暗色光學學院風)**。近黑底(`--background: #0a0b10`)、大氣白字、大量留白,極細亮線與**雷射光路幾何**(動態光束)作分割。**重點色(`--accent`)由後台 Settings 的 `siteAccent` 決定**,套用於全站前台的 Hero 光束、按鈕、連結與重點;可選色票見 `src/lib/accent.ts`(預設「青」`#22d3ee`)。
-  - 〔原規格為「極簡學院風:純白底、大氣黑字」;吳教授檢視後認為過白單調,改為 Dark Optics 並保留調色盤於後台,規格已更新為現狀。沿革見開發日誌階段三後記。〕
-  - 技術實作:全站採語意化 CSS tokens(`--background`/`--foreground`/`--muted`/`--line`/`--accent`),於 `globals.css` 統一定義為深色;`--accent` 由 `layout.tsx` 依設定 server-side 注入(無閃爍)。後台(admin/login/account/setup)沿用同一套深色 token,呈現一致深色介面。
+- 視覺風格:**Dark Optics(暗色光學學院風)**。**以淺色學院風為底**(白底、大氣黑字、大量留白),搭配**戲劇性的近黑深色帶**(首頁 Hero、「主持人理念」帶)與**雷射光路幾何**(動態光束)。**非全站全黑**——深色僅用於指定區塊(`.band-dark` + Hero),其餘維持淺色。**重點色(`--accent`)由後台 Settings 的 `siteAccent` 決定**,用於 Hero 光束、重點數字/標籤、主要按鈕等;可選色票見 `src/lib/accent.ts`(預設「青」`#22d3ee`)。
+  - 〔原規格為「極簡學院風:純白底、大氣黑字」;吳教授檢視後認為過白單調,參考 awwwards 後拍板改為 Dark Optics(淺底 + 深色 Hero 帶 + 可調重點色),並保留調色盤於後台。規格已更新為現狀,沿革見開發日誌階段三後記。〕
+  - 技術實作:沿用語意化 CSS tokens(`--background`/`--foreground`/`--muted`/`--line`),`:root` 維持淺色;深色帶以 `.band-dark` class 局部反轉 token(近黑底白字)。`--accent` 由 `layout.tsx` 依設定 server-side 注入 `<html>`(無閃爍)。後台(admin/login/account/setup)維持原淺色介面。
 - 語言:全站右上角固定 [EN / 中文] 切換鈕。**全站(含首頁核心標題與教授簡介)顯示單一語言,隨切換鈕變換,不並列雙語。** 內頁以中文為主、同樣支援切換。
 - 後台:自建 CMS,前台內容由後台維護,無需改原始碼。**前台主題重點色亦於後台 Settings 調整(調色盤),不需改原始碼。**
 
@@ -456,7 +456,7 @@
   - 階段六 AI 預填寫入 Blog 的 Tiptap JSON 格式(`bodyZh`/`bodyEn`),與此處編輯器一致。
 
 - **後記(2026-06-25):Dark Optics 改版 + Vercel 部署修復**
-  - **視覺改版**:吳教授檢視階段一~三成品後,認為原「純白底」過白單調(參考 awwwards),拍板改為 **Dark Optics(暗色光學學院風)**並保留調色盤於後台。實作走「語意化 CSS token 翻深色」:因全站元件早已用 `bg-foreground`/`text-background`/`border-line` 等 token(幾乎無寫死 `bg-white`/`#000`),只要在 `globals.css` 把 `:root` token 改深色即整站連動,後台亦同步深色。重點色 `--accent` 由後台 `Settings.siteAccent`(色票 key,定義於 `src/lib/accent.ts`)決定,`layout.tsx` server-side 注入 `<html style="--accent:…">`(無閃爍)。Hero 雷射光束/捲動淡入為 `.beam`/`.reveal`(globals.css)+ `Reveal` 元件。規格已同步更新 §A-1。
+  - **視覺改版**:吳教授檢視階段一~三成品後,認為原「純白底」過白單調(參考 awwwards),拍板改為 **Dark Optics**:**淺色學院風為底 + 戲劇性近黑深色帶(Hero、理念帶)+ 可由後台調整的重點色**。⚠️ **踩坑記錄**:第一版誤把「暗色光學」理解成「全站全黑」,直接把 `globals.css` 的 `:root` token 翻深色 → 整站(含後台)變全黑,與教授核可的 preview/a(淺底 + 深色 Hero)不符,被退回重做。正解:`:root` 維持**淺色**,深色只用 `.band-dark` class 局部反轉 token,套在首頁 Hero 與理念帶。重點色 `--accent` 由後台 `Settings.siteAccent`(色票 key,定義於 `src/lib/accent.ts`)決定,`layout.tsx` server-side 注入 `<html style="--accent:…">`(無閃爍)。Hero 雷射光束/捲動淡入為 `.beam`/`.reveal`(globals.css)+ `Reveal` 元件。規格已同步更新 §A-1。
   - **踩坑(Prisma 在 Vercel runtime 找不到 query engine)**:部署後所有查 DB 的前台頁 500,錯誤為 `PrismaClientInitializationError: could not locate the Query Engine for runtime "rhel-openssl-3.0.x"`。根因:Prisma client 產在自訂路徑 `src/generated/prisma`,在 **Next 16(Turbopack)** 下,平台專屬的 Rust query engine(`.so.node`)不會被 file tracing 複製進 serverless function(`outputFileTracingIncludes` 在 Turbopack 下不可靠)。**解法**:改用 **client engine(Wasm query compiler)+ driver adapter** — schema generator 設 `engineType = "client"`(移除 binaryTargets),`src/lib/prisma.ts` 改用 `@prisma/adapter-pg`(`new PrismaPg({ connectionString: process.env.DATABASE_URL })`)。從此無原生二進位需打包,該類錯誤根除。新增 runtime 依賴 `@prisma/adapter-pg`、`pg`(務必在 `dependencies`)。本機已對 Supabase pooler 驗證可連、可查。
     - 排查心法:此症狀**與環境變數無關**(連線字串其實正確)。誤判點:(1) 舊 production 別名 `mjwebsite.vercel.app` 其實是 phase1/2 靜態首頁(`/research` 還 404),其「首頁正常」不代表 DB 可連;(2) `mjwebsite-beta` 是固定別名、不隨新 push 更新;真正的新建置在各自的 `mjwebsite-<hash>-…vercel.app`(且有 Deployment Protection,需登入才看得到)。診斷靠臨時 `/api/dbcheck` 端點回傳真實 Prisma 錯誤,查完已移除。
   - 給後續階段的提醒:新增前台頁沿用深色 token 即自動套主題;要用重點色用 `text-accent`/`bg-accent`/`border-accent` 或 `var(--accent)`。`prisma migrate dev` 因單一環境(無 staging)會直接改正式 Supabase DB,故新欄位部署前即已存在於正式庫;Vercel build 不跑 migrate。

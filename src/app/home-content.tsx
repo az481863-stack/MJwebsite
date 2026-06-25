@@ -1,7 +1,8 @@
 "use client";
 
-// 首頁內容(Dark Optics)。寫死區塊用 i18n 字典;動態佈告欄吃資料庫 posts。
-// 重點色取全站 --accent(由後台 Settings 決定);動態以 .beam / .reveal(globals.css)。
+// 首頁內容(Dark Optics)。淺色學院風為底,Hero 與「主持人理念」為近黑深色帶
+// (.band-dark)+ 雷射光束;研究領域、動態佈告欄維持淺色。重點色取全站 --accent
+// (由後台 Settings 決定)。動態以 .beam / .reveal(globals.css)。
 
 import Image from "next/image";
 import Link from "next/link";
@@ -44,8 +45,8 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
     <>
       <PageNav items={navItems} />
 
-      {/* Hero(暗色光學:雷射光束 + 光暈) */}
-      <section className="relative flex min-h-[88vh] items-center overflow-hidden border-b border-line">
+      {/* Hero(深色帶:雷射光束 + 光暈) */}
+      <section className="band-dark relative flex min-h-[88vh] items-center overflow-hidden">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full"
@@ -97,14 +98,14 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
         </Container>
       </section>
 
-      {/* 研究領域 */}
+      {/* 研究領域(淺色) */}
       <Section id="research" heading={h.researchHeading} intro={h.researchIntro}>
         <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
           {h.researchAreas.map((area, i) => (
             <Reveal
               key={i}
               delay={i * 90}
-              className="group bg-background p-8 transition-shadow hover:shadow-[inset_0_3px_0_var(--accent)]"
+              className="bg-background p-8 transition-shadow hover:shadow-[inset_0_3px_0_var(--accent)]"
             >
               <span className="font-mono text-sm text-accent">0{i + 1}</span>
               <h3 className="mt-4 text-lg font-semibold">{area.title}</h3>
@@ -116,24 +117,31 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
         </div>
       </Section>
 
-      {/* 主持人理念 */}
-      <Section id="philosophy" heading={h.philosophyHeading} bordered>
-        <div className="max-w-3xl space-y-6">
-          {h.philosophyBody.map((para, i) => (
-            <Reveal
-              key={i}
-              delay={i * 120}
-              as="p"
-              className="text-lg leading-relaxed text-foreground/80"
-            >
-              {para}
-            </Reveal>
-          ))}
-        </div>
-      </Section>
+      {/* 主持人理念(深色帶) */}
+      <section id="philosophy" className="band-dark scroll-mt-20 py-16 sm:py-24">
+        <Container>
+          <Reveal as="header" className="mb-10 sm:mb-14">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {h.philosophyHeading}
+            </h2>
+          </Reveal>
+          <div className="max-w-3xl space-y-6">
+            {h.philosophyBody.map((para, i) => (
+              <Reveal
+                key={i}
+                delay={i * 120}
+                as="p"
+                className="text-lg leading-relaxed text-foreground/80"
+              >
+                {para}
+              </Reveal>
+            ))}
+          </div>
+        </Container>
+      </section>
 
-      {/* 動態佈告欄(來自後台 CMS) */}
-      <Section id="dashboard" heading={h.dashboardHeading} intro={h.dashboardIntro} bordered>
+      {/* 動態佈告欄(淺色,來自後台 CMS) */}
+      <Section id="dashboard" heading={h.dashboardHeading} intro={h.dashboardIntro}>
         {posts.length === 0 ? (
           <p className="text-sm text-muted">目前沒有最新動態。</p>
         ) : (
