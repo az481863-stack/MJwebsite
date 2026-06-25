@@ -122,7 +122,7 @@ const zh: Dictionary = {
     home: "首頁",
     research: "研究與產學",
     team: "團隊與招募",
-    instruments: "儀器預約管理",
+    instruments: "儀器介紹",
     blog: "光電小講堂",
     contact: "聯絡教授",
   },

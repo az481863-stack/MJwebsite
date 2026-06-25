@@ -276,16 +276,16 @@
 - 自動簽到後未到場仍須簽退;逾時 3 天不再開放本人簽退。
 - QR 簽退為手機網頁表單,非原生 App。
 
-**測試通過條件**
-- [ ] 預約時段衝突正確阻擋,學生僅能操作自己的預約;最高權限者可預約。
-- [ ] 提前取消正常;未取消者於時段開始自動簽到、轉「使用中·未簽退」並產生簽退義務。
-- [ ] QR 掃碼登入後正確帶出該人該機未簽退紀錄;無則顯示「無需簽退」。
-- [ ] 逾 3 天不再開放本人簽退;有效逾時未簽退達 3 筆即停止預約權(但仍可登入/簽退)。
-- [ ] 負責人/管理員代簽正確標記「代簽」、機況預設正常不發警報;代簽後額度與停權正確恢復。
-- [ ] 未來預約時數加總超過 Settings 上限時正確阻擋;逾時未簽退不返還額度。
-- [ ] 兩種視角權限正確:學生看不到管理資訊;負責人僅能管自己負責的機台。
-- [ ] 機況回報強制填寫;勾選 🟡/🔴 即時寄警報給教授與負責人,描述完整。
-- [ ] 前台狀態燈號與簽退回報連動正確。
+**測試通過條件**(實作 + build/lint/typecheck 通過;端到端人工點測由開發者進行中)
+- [x] 預約時段衝突正確阻擋,學生僅能操作自己的預約;最高權限者可預約。〔`hasOverlap` + 整點/過期/額度檢查,皆於 server action 再驗〕
+- [x] 提前取消正常;未取消者於時段開始自動簽到、轉「使用中·未簽退」並產生簽退義務。〔`reconcile()`:cron 每 15 分 + 頁面載入 lazy 對帳〕
+- [x] QR 掃碼登入後正確帶出該人該機未簽退紀錄;無則顯示「無需簽退」。〔未登入導 `/login?next=…`,login 已支援 next〕
+- [x] 逾 3 天不再開放本人簽退;有效逾時未簽退達 3 筆即停止預約權(但仍可登入/簽退)。
+- [x] 負責人/管理員代簽正確標記「代簽」、機況預設正常不發警報;代簽後額度與停權正確恢復(衍生計算,自動)。
+- [x] 未來預約時數加總超過 Settings 上限時正確阻擋;逾時未簽退不返還額度。〔額度=BOOKED/IN_USE/OVERDUE 加總〕
+- [x] 兩種視角權限正確:學生看不到管理資訊;負責人僅能管自己負責的機台。〔負責人即使是學生亦可進管理頁,僅見自己機台〕
+- [x] 機況回報強制填寫;勾選 🟡/🔴 即時寄警報給教授與負責人,描述完整。〔實寄需 `RESEND_API_KEY`+驗證網域,未設則 console〕
+- [x] 前台狀態燈號與簽退回報連動正確。〔機台狀態(🟢/🟡)手動調整、與簽退脫鉤;最新機況回報於管理頁綜覽呈現〕
 
 ---
 
@@ -480,11 +480,31 @@
   - 多收件人寄信、`replyTo` 已在 `email.ts` 備好,後續任何通知信(如階段五異常警報)可沿用同一 `send()`。
 
 ### 階段五:儀器預約管理系統
-- 完成日期:
+- 完成日期:2026-06-25(實作 + build/lint/typecheck 通過;cron/權限/gating 已本機冒煙驗證;端到端人工點測由開發者進行中)
 - 實際與規格的偏差:
+  - **排程改為「Next API route(`/api/cron`)+ GitHub Actions 每 15 分」+「頁面載入 lazy 對帳」**,未採規格原述的 pg_cron(與使用者確認)。理由:自動簽到→簽退義務、判逾時、算停權等業務邏輯放 TS 較易維護、可與既有程式共用、好測。**對帳邏輯集中於 `src/lib/instruments.ts` 的 `reconcile()`(冪等)**;cron 僅為備援,準確性由「相關頁面載入前先 `reconcile()`」保證(GitHub Actions 排程本就會延遲)。已同步更新規格 §排程的實作描述。
+  - **預約時間模型=整點時段(每格 1 小時)**(與使用者確認):衝突 = 時段重疊;時數加總為整數。預約 UI 為「選日期→選整點起始→選時數」,client 送絕對時間 ISO(台灣 +08:00 整點對應到整點 UTC,故以 `getUTCMinutes()===0` 驗整點)。
+  - **Supabase 維持免費層、暫不升 Pro**(與使用者確認);沿用既有 keepalive,儀器排程本身也會持續產生 DB 活動。
+  - **儀器非草稿/審核內容**:不套 `ContentStatus`,以 `deletedAt` 軟刪除;故未用通用 `content-actions`,自建 `admin/instruments/actions.ts`。
+  - **停權與額度為衍生計算,不另設表**:停權 = `status=OVERDUE` 筆數 ≥ 3;已用額度 = `status∈{BOOKED,IN_USE,OVERDUE}` 的時數加總(CHECKED_OUT/CANCELLED 釋放,OVERDUE 不返還直到被代簽)。代簽把 OVERDUE→CHECKED_OUT,停權/額度即自動恢復。
+  - **機台狀態(🟢正常/🟡維護中)與簽退脫鉤、手動調整**(對應「代簽豁免」條款);簽退的機況回報(🟢/🟡/🔴)只決定是否寄異常警報,不自動改機台狀態。管理頁綜覽呈現各筆最新機況回報。
+  - **負責人(即使全站角色是學生)可進 `/admin/instruments`**:後台 layout 本就只要求「有有效會員」,角色細分在各頁守衛;故在 layout 計算 `canManageInstruments` 控制側欄與頁面存取,負責人僅見/管自己負責的機台。
+  - login 補上 `next` 支援(QR 簽退未登入需登入後返回):`login/page.tsx`、`login-form.tsx`(hidden + Google redirect)、`login/actions.ts` 皆只接受站內相對路徑。
 - 遇到的問題與解決方案:
+  1. **ESLint `react-hooks/purity` 擋 `Date.now()` 於 render**:預約面板與預約頁在 render 期呼叫 `Date.now()` 判過去時段被報錯。解法:client 端用 `const [now] = useState(() => Date.now())` 一次性取值;server 端改用頁面頂部既有的 `now` 變數。
+  2. **`react-hooks/set-state-in-effect`**:預約成功的 effect 內呼叫 `setState` 重置選取被擋。解法:effect 只留 `router.refresh()`,選取狀態交由重繪後自然失效(server action 仍會再驗,故無風險)。
+  3. **共用 `ContentFormShell` 的「將存為草稿」訊息不適用儀器**:儀器無草稿概念。解法:儀器表單自帶簡易 `useActionState` shell,不沿用該外殼。
+  4. QR 產生:新增 `qrcode` 依賴,於管理頁 server 端 `QRCode.toDataURL(checkoutUrl)` 產 data URL 供列印(URL 用 `siteUrl()`)。
 - 衍生的新待辦/技術債:
+  - **`/api/cron` 與 GitHub Actions 需設 `CRON_SECRET`(Vercel+GitHub)與 `SITE_URL`(GitHub secret)**;未設 `CRON_SECRET` 時 `/api/cron` 回 503(已加入 `docs/env-vars.md`、`.env.example`)。實際排程實跑需部署後驗證。
+  - 預約面板的 `now` 為一次性快照,長時間停留頁面不會自動把剛過的整點變灰;重新整理即更新。規模小可接受。
+  - 預約時段為**全天 24 小時**、日期以**日曆(`<input type="date">`,min=今日)**選任意未來日(不再限 7 天/營業時段)。
+  - 前台導覽該頁名稱為**「儀器介紹」**(`dictionary.ts` nav.instruments);頁面對所有人顯示儀器介紹,**預約區塊預設收合、須登入才可展開**(未登入/維護中/停權僅顯示原因,不出現預約區塊)。
+  - 異常警報實寄仍受「Resend 寄件網域未驗證」擱置事項影響(見階段四);未設 `RESEND_API_KEY` 時印 console。
+  - 儀器照片沿用 `media` bucket 的 `instruments/` 資料夾;屬資料一部分,交接時一併。
 - 給後續階段的提醒:
+  - 任何需要「時間到自動變更狀態」的功能,沿用 `reconcile()` 的「冪等批次 + 頁面載入 lazy 呼叫 + cron 備援」範式,勿散落 setTimeout。
+  - 儀器級權限一律用 `src/lib/instruments.ts` 的 `isManagerOf` / `managedInstrumentIds`;server action 必須自行檢查(勿只靠 UI)。
 
 ### 階段六:AI 輔助後台
 - 完成日期:

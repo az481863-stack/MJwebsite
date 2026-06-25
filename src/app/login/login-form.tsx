@@ -13,6 +13,8 @@ import { signInWithPassword, type LoginResult } from "./actions";
 function LoginInner() {
   const params = useSearchParams();
   const urlError = params.get("error");
+  const nextRaw = params.get("next") ?? "";
+  const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/account";
   const [state, formAction, pending] = useActionState<
     LoginResult | null,
     FormData
@@ -23,7 +25,7 @@ function LoginInner() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/account`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   };
@@ -43,6 +45,7 @@ function LoginInner() {
         )}
 
         <form action={formAction} className="mt-8 space-y-4">
+          <input type="hidden" name="next" value={next} />
           <div>
             <label className="block text-sm font-medium" htmlFor="email">
               Email

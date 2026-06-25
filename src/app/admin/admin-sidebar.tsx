@@ -10,7 +10,13 @@ import { Role } from "@/generated/prisma/client";
 import { roleAtLeast } from "@/lib/roles";
 import { CMS_TYPES } from "@/lib/cms/registry";
 
-export function AdminSidebar({ role }: { role: Role }) {
+export function AdminSidebar({
+  role,
+  canManageInstruments = false,
+}: {
+  role: Role;
+  canManageInstruments?: boolean;
+}) {
   const pathname = usePathname();
   const isAdmin = roleAtLeast(role, "ADMIN");
 
@@ -41,22 +47,33 @@ export function AdminSidebar({ role }: { role: Role }) {
           </ul>
         </div>
 
-        {isAdmin && (
+        {(isAdmin || canManageInstruments) && (
           <div>
             <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted">
               管理
             </p>
             <ul className="space-y-0.5">
-              <li>
-                <Link href="/admin/members" className={itemCls("/admin/members")}>
-                  會員管理
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/settings" className={itemCls("/admin/settings")}>
-                  網站設定
-                </Link>
-              </li>
+              {canManageInstruments && (
+                <li>
+                  <Link href="/admin/instruments" className={itemCls("/admin/instruments")}>
+                    儀器管理
+                  </Link>
+                </li>
+              )}
+              {isAdmin && (
+                <>
+                  <li>
+                    <Link href="/admin/members" className={itemCls("/admin/members")}>
+                      會員管理
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/admin/settings" className={itemCls("/admin/settings")}>
+                      網站設定
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         )}
