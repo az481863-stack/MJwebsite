@@ -273,39 +273,73 @@ html {
   }
 }
 
-/* 內頁 navbar 的雷射光束:射入 → 停留約 5 秒 → 射出消失 → 空檔 → 再射(7 秒一輪) */
+/* 內頁 navbar 的雷射光束:射入 → 停留 → 射出消失 → 空檔 → 再射(7 秒一輪)。
+   兩條共用 7 秒週期(避免相位漂移),差別在「射入/射出的速度」:
+   fast = 光束飛得快(約 0.2 秒掠過);slow = 光束飛得慢(約 1.1 秒)。 */
 .nav-beam-line {
   stroke-dasharray: 1400;
-  animation: nav-beam-shoot 7s linear infinite;
 }
-@keyframes nav-beam-shoot {
+.nav-beam-fast {
+  animation: nav-beam-fast 7s linear infinite;
+}
+.nav-beam-slow {
+  animation: nav-beam-slow 7s linear infinite;
+}
+@keyframes nav-beam-fast {
   0% {
     stroke-dashoffset: 1400;
     opacity: 0;
-  } /* 空(線在畫面外) */
-  2% {
+  }
+  1% {
     opacity: 1;
   }
-  8% {
+  3% {
     stroke-dashoffset: 0;
     opacity: 1;
-  } /* 射入完成(約 0.5s) */
-  79% {
+  } /* 快速射入(約 0.2s) */
+  82% {
     stroke-dashoffset: 0;
     opacity: 1;
-  } /* 停留約 5 秒 */
-  86% {
+  } /* 停留 */
+  85% {
     stroke-dashoffset: -1400;
     opacity: 1;
-  } /* 往另一端射出 */
-  88%,
+  } /* 快速射出 */
+  87%,
   100% {
     stroke-dashoffset: -1400;
     opacity: 0;
-  } /* 消失 + 空檔約 1 秒,然後重來 */
+  } /* 空檔 */
+}
+@keyframes nav-beam-slow {
+  0% {
+    stroke-dashoffset: 1400;
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  16% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  } /* 緩慢射入(約 1.1s) */
+  82% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  } /* 停留 */
+  93% {
+    stroke-dashoffset: -1400;
+    opacity: 1;
+  } /* 緩慢射出 */
+  95%,
+  100% {
+    stroke-dashoffset: -1400;
+    opacity: 0;
+  } /* 空檔 */
 }
 @media (prefers-reduced-motion: reduce) {
-  .nav-beam-line {
+  .nav-beam-fast,
+  .nav-beam-slow {
     animation: none;
     stroke-dashoffset: 0;
   }
