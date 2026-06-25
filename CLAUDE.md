@@ -455,6 +455,12 @@
   - 階段五(儀器)可讀 `getSettings().instrumentMaxHours`(預設 24)作預約總時數上限;`showInstruments` 控制導覽入口。
   - 階段六 AI 預填寫入 Blog 的 Tiptap JSON 格式(`bodyZh`/`bodyEn`),與此處編輯器一致。
 
+- **後記(2026-06-25):Dark Optics 改版 + Vercel 部署修復**
+  - **視覺改版**:吳教授檢視階段一~三成品後,認為原「純白底」過白單調(參考 awwwards),拍板改為 **Dark Optics(暗色光學學院風)**並保留調色盤於後台。實作走「語意化 CSS token 翻深色」:因全站元件早已用 `bg-foreground`/`text-background`/`border-line` 等 token(幾乎無寫死 `bg-white`/`#000`),只要在 `globals.css` 把 `:root` token 改深色即整站連動,後台亦同步深色。重點色 `--accent` 由後台 `Settings.siteAccent`(色票 key,定義於 `src/lib/accent.ts`)決定,`layout.tsx` server-side 注入 `<html style="--accent:…">`(無閃爍)。Hero 雷射光束/捲動淡入為 `.beam`/`.reveal`(globals.css)+ `Reveal` 元件。規格已同步更新 §A-1。
+  - **踩坑(Prisma 在 Vercel runtime 找不到 query engine)**:部署後所有查 DB 的前台頁 500,錯誤為 `PrismaClientInitializationError: could not locate the Query Engine for runtime "rhel-openssl-3.0.x"`。根因:Prisma client 產在自訂路徑 `src/generated/prisma`,在 **Next 16(Turbopack)** 下,平台專屬的 Rust query engine(`.so.node`)不會被 file tracing 複製進 serverless function(`outputFileTracingIncludes` 在 Turbopack 下不可靠)。**解法**:改用 **client engine(Wasm query compiler)+ driver adapter** — schema generator 設 `engineType = "client"`(移除 binaryTargets),`src/lib/prisma.ts` 改用 `@prisma/adapter-pg`(`new PrismaPg({ connectionString: process.env.DATABASE_URL })`)。從此無原生二進位需打包,該類錯誤根除。新增 runtime 依賴 `@prisma/adapter-pg`、`pg`(務必在 `dependencies`)。本機已對 Supabase pooler 驗證可連、可查。
+    - 排查心法:此症狀**與環境變數無關**(連線字串其實正確)。誤判點:(1) 舊 production 別名 `mjwebsite.vercel.app` 其實是 phase1/2 靜態首頁(`/research` 還 404),其「首頁正常」不代表 DB 可連;(2) `mjwebsite-beta` 是固定別名、不隨新 push 更新;真正的新建置在各自的 `mjwebsite-<hash>-…vercel.app`(且有 Deployment Protection,需登入才看得到)。診斷靠臨時 `/api/dbcheck` 端點回傳真實 Prisma 錯誤,查完已移除。
+  - 給後續階段的提醒:新增前台頁沿用深色 token 即自動套主題;要用重點色用 `text-accent`/`bg-accent`/`border-accent` 或 `var(--accent)`。`prisma migrate dev` 因單一環境(無 staging)會直接改正式 Supabase DB,故新欄位部署前即已存在於正式庫;Vercel build 不跑 migrate。
+
 ### 階段四:聯絡表單與分類寄信
 - 完成日期:
 - 實際與規格的偏差:
