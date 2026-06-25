@@ -14,18 +14,17 @@ import { useAuthState } from "@/lib/use-auth-state";
 import { Container } from "./ui/Container";
 import { LanguageToggle } from "./LanguageToggle";
 
-// 內頁 navbar 雷射光束:隨機端點(viewBox 1200×64),橫跨整條 bar(x 固定)。
-// 一條永遠往上斜(左低右高)、一條永遠往下斜(左高右低)→ 兩條恆相交、不平行。
-// 隨機化兩端 y 的大小,讓每次的傾角與交點位置不同。
+// 內頁 navbar 雷射光束(viewBox 1200×64,x:0=左 1200=右,y:0=上 64=下)。
+// beam1:左邊 → 上面(起點 x=0、終點 y=0)。
+// beam2:上面 → 右邊(起點 y=0、終點 x=1200)。
+// 自由端隨機,讓每次傾角不同。
 const rnd = (min: number, max: number) =>
   Math.round(min + Math.random() * (max - min));
-// 往上射:左端在下(y 大)、右端在上(y 小)
-function randomBeamUp() {
-  return { y1: rnd(40, 100), y2: rnd(-36, 24) };
+function randomBeam1() {
+  return { x1: 0, y1: rnd(16, 60), x2: rnd(150, 760), y2: 0 };
 }
-// 往下射:左端在上(y 小)、右端在下(y 大)
-function randomBeamDown() {
-  return { y1: rnd(-36, 24), y2: rnd(40, 100) };
+function randomBeam2() {
+  return { x1: rnd(440, 1050), y1: 0, x2: 1200, y2: rnd(16, 60) };
 }
 
 export function Navbar({
@@ -35,9 +34,9 @@ export function Navbar({
 }) {
   const { t } = useLanguage();
   // 兩條光束端點:初始固定值(避免 SSR/hydration 不一致),之後每射一輪換隨機角度。
-  // beam1 往上斜、beam2 往下斜;預設交點偏左(非正中央)。
-  const [beam1, setBeam1] = useState({ y1: 70, y2: 6 });
-  const [beam2, setBeam2] = useState({ y1: 20, y2: 90 });
+  // beam1 左→上、beam2 上→右。
+  const [beam1, setBeam1] = useState({ x1: 0, y1: 46, x2: 430, y2: 0 });
+  const [beam2, setBeam2] = useState({ x1: 770, y1: 0, x2: 1200, y2: 46 });
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
@@ -73,7 +72,7 @@ export function Navbar({
       {dark && (
         <svg
           aria-hidden
-          className="pointer-events-none absolute left-0 top-0 h-16 w-full"
+          className="pointer-events-none absolute left-0 top-0 z-0 h-16 w-full"
           viewBox="0 0 1200 64"
           preserveAspectRatio="none"
         >
@@ -86,26 +85,26 @@ export function Navbar({
           </defs>
           <line
             className="nav-beam-line nav-beam-fast"
-            x1="-50"
+            x1={beam1.x1}
             y1={beam1.y1}
-            x2="1250"
+            x2={beam1.x2}
             y2={beam1.y2}
             stroke="url(#nav-beam)"
             strokeWidth="1.5"
-            // 第一條:往上斜、光束飛得快;每輪結束於隱形空檔換隨機角度
-            onAnimationIteration={() => setBeam1(randomBeamUp())}
+            // 第一條:左→上、光束飛得快;每輪結束於隱形空檔換隨機角度
+            onAnimationIteration={() => setBeam1(randomBeam1())}
           />
           <line
             className="nav-beam-line nav-beam-slow"
-            x1="-50"
+            x1={beam2.x1}
             y1={beam2.y1}
-            x2="1250"
+            x2={beam2.x2}
             y2={beam2.y2}
             stroke="url(#nav-beam)"
             strokeWidth="1.5"
-            // 第二條:往下斜、光束飛得慢,延遲 1 秒射入,角度獨立隨機
+            // 第二條:上→右、光束飛得慢,延遲 1 秒射入,角度獨立隨機
             style={{ animationDelay: "1s" }}
-            onAnimationIteration={() => setBeam2(randomBeamDown())}
+            onAnimationIteration={() => setBeam2(randomBeam2())}
           />
         </svg>
       )}
