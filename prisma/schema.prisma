@@ -8,8 +8,11 @@
 // Member.authUserId 對應 Supabase auth.users.id。
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client"
+  output        = "../src/generated/prisma"
+  // Vercel serverless runtime 為 rhel-openssl-3.0.x;須一併產生其 query engine,
+  // 否則部署後 runtime 找不到引擎(PrismaClientInitializationError: engine not found)。
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
