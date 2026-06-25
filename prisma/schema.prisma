@@ -8,11 +8,14 @@
 // Member.authUserId 對應 Supabase auth.users.id。
 
 generator client {
-  provider      = "prisma-client"
-  output        = "../src/generated/prisma"
-  // Vercel serverless runtime 為 rhel-openssl-3.0.x;須一併產生其 query engine,
-  // 否則部署後 runtime 找不到引擎(PrismaClientInitializationError: engine not found)。
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  // 改用 client engine(Wasm query compiler)+ driver adapter,完全不依賴
+  // 平台專屬的 Rust query engine(.so.node)。這解決了自訂 output + Next 16
+  // (Turbopack)在 Vercel 上「engine not found for rhel-openssl-3.0.x」的問題:
+  // 沒有原生二進位檔需要被打包進 serverless function,自然不會找不到。
+  // 連線改由 @prisma/adapter-pg 經 node-postgres 建立(見 src/lib/prisma.ts)。
+  engineType = "client"
 }
 
 datasource db {
