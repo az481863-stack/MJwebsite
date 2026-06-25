@@ -147,10 +147,12 @@ html {
   pointer-events: none;
 }
 
-/* 深色區塊(Hero、理念帶):近黑底白字,內部 token 反轉以維持對比 */
+/* 深色區塊(Hero、理念帶、內頁 navbar):近黑底白字,內部 token 反轉以維持對比。
+   一併覆蓋 --background,讓 bg-background 等工具類也跟著變深。 */
 .band-dark {
   background: var(--ink);
   color: #f4f5f7;
+  --background: var(--ink);
   --foreground: #f4f5f7;
   --muted: #9aa1ac;
   --line: rgba(255, 255, 255, 0.12);

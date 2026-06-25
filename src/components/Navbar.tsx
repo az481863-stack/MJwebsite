@@ -39,14 +39,38 @@ export function Navbar({
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
+  // 深色 navbar:套用於「非首頁」的前台頁;首頁(疊在深色 Hero 上)與後台維持淺色。
+  const isBackOffice = /^\/(admin|login|account|setup|invite|auth)(\/|$)/.test(
+    pathname,
+  );
+  const dark = pathname !== "/" && !isBackOffice;
+
   return (
     <header
-      className={`sticky top-0 z-50 border-b border-line bg-background/90 backdrop-blur transition-transform duration-300 ${
-        hidden && !menuOpen ? "-translate-y-full" : "translate-y-0"
-      }`}
+      className={`sticky top-0 z-50 border-b border-line backdrop-blur transition-transform duration-300 ${
+        dark ? "band-dark bg-background/95" : "bg-background/90"
+      } ${hidden && !menuOpen ? "-translate-y-full" : "translate-y-0"}`}
     >
+      {/* 內頁深色 navbar 的雷射光束(靜態,低調) */}
+      {dark && (
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 h-16 w-full"
+          viewBox="0 0 1200 64"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="nav-beam" x1="0" y1="0" x2="1" y2="0">
+              <stop className="beam-stop-0" offset="0%" />
+              <stop className="beam-stop-1" offset="55%" />
+              <stop className="beam-stop-0" offset="100%" />
+            </linearGradient>
+          </defs>
+          <line x1="-50" y1="50" x2="1250" y2="14" stroke="url(#nav-beam)" strokeWidth="1" />
+        </svg>
+      )}
       <Container>
-        <div className="flex h-16 items-center justify-between">
+        <div className="relative z-10 flex h-16 items-center justify-between">
           {/* 品牌 */}
           <Link
             href="/"
@@ -63,7 +87,7 @@ export function Navbar({
                 href={item.href}
                 className={`text-sm transition-colors hover:text-foreground ${
                   isActive(item.href)
-                    ? "font-semibold text-foreground"
+                    ? (dark ? "font-semibold text-accent" : "font-semibold text-foreground")
                     : "text-muted"
                 }`}
               >
@@ -80,7 +104,7 @@ export function Navbar({
                 href={l.href}
                 className={`hidden text-sm transition-colors hover:text-foreground md:inline ${
                   isActive(l.href)
-                    ? "font-semibold text-foreground"
+                    ? (dark ? "font-semibold text-accent" : "font-semibold text-foreground")
                     : "text-muted"
                 }`}
               >
@@ -119,7 +143,7 @@ export function Navbar({
 
       {/* 手機選單 */}
       {menuOpen && (
-        <nav className="border-t border-line md:hidden">
+        <nav className="relative z-10 border-t border-line md:hidden">
           <Container>
             <ul className="flex flex-col py-2">
               {navItems.map((item) => (
@@ -129,7 +153,7 @@ export function Navbar({
                     onClick={() => setMenuOpen(false)}
                     className={`block py-3 text-base transition-colors ${
                       isActive(item.href)
-                        ? "font-semibold text-foreground"
+                        ? (dark ? "font-semibold text-accent" : "font-semibold text-foreground")
                         : "text-muted"
                     }`}
                   >
@@ -144,7 +168,7 @@ export function Navbar({
                     onClick={() => setMenuOpen(false)}
                     className={`block py-3 text-base transition-colors ${
                       isActive(l.href)
-                        ? "font-semibold text-foreground"
+                        ? (dark ? "font-semibold text-accent" : "font-semibold text-foreground")
                         : "text-muted"
                     }`}
                   >

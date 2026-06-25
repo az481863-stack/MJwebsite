@@ -70,7 +70,8 @@
 
 ### A-2. 導覽列
 首頁 Home｜研究與產學 Research & Industry｜團隊與招募 Lab Team｜儀器預約管理 Instruments｜光電小講堂 Blog｜聯絡教授 Contact
-- 極簡黑字置頂,滾動固定或隱藏。
+- 置頂,滾動固定或隱藏。**首頁的 navbar 為淺色**(疊在深色 Hero 上);**其餘前台內頁的 navbar 為深色帶雷射光束**(`.band-dark` + accent);後台(admin/login/account/setup/invite)維持淺色。判斷見 `src/components/Navbar.tsx` 的 `dark` 變數。
+- 每頁主色呈現:`Section` 標題上方的 accent 短條(`src/components/ui/Section.tsx`)+ 內頁深色 navbar 的雷射光束與 active 連結,使全站每頁皆可見當前重點色。
 - 「儀器預約管理」入口於儀器系統(階段五)上線前可先隱藏或導向「即將推出」。
 
 ---

@@ -24,6 +24,11 @@ export function Section({
       <Container>
         {heading && (
           <header className="mb-10 sm:mb-14">
+            {/* 重點色標記:全站主色(--accent)在每頁標題的視覺呈現 */}
+            <span
+              aria-hidden
+              className="mb-4 block h-1 w-8 rounded-full bg-accent"
+            />
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
               {heading}
             </h2>
