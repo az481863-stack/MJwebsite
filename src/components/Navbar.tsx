@@ -28,8 +28,9 @@ export function Navbar({
 }) {
   const { t } = useLanguage();
   // 兩條光束端點:初始固定值(避免 SSR/hydration 不一致),之後每射一輪換隨機角度。
-  const [beam1, setBeam1] = useState({ y1: 50, y2: 14 });
-  const [beam2, setBeam2] = useState({ y1: 12, y2: 58 });
+  // 預設兩條平行且上下錯開,避免一開始在正中央交匯。
+  const [beam1, setBeam1] = useState({ y1: 12, y2: 28 });
+  const [beam2, setBeam2] = useState({ y1: 36, y2: 52 });
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
@@ -84,7 +85,8 @@ export function Navbar({
             y2={beam1.y2}
             stroke="url(#nav-beam)"
             strokeWidth="1.5"
-            // 每輪動畫結束(發生在隱形空檔)換一個隨機角度,下一次射入即不同向
+            // 第一條:較快(週期 6 秒);每輪結束於隱形空檔換隨機角度
+            style={{ animationDuration: "6s" }}
             onAnimationIteration={() => setBeam1(randomBeam())}
           />
           <line
@@ -95,8 +97,8 @@ export function Navbar({
             y2={beam2.y2}
             stroke="url(#nav-beam)"
             strokeWidth="1.5"
-            // 第二條延遲 0.5 秒射入,角度獨立隨機
-            style={{ animationDelay: "0.5s" }}
+            // 第二條:延遲 1 秒射入、較慢(週期 8 秒),角度獨立隨機
+            style={{ animationDelay: "1s", animationDuration: "8s" }}
             onAnimationIteration={() => setBeam2(randomBeam())}
           />
         </svg>
