@@ -243,9 +243,9 @@
 - 提交後依分類自動寄通知至教授信箱(或對應信箱)。
 
 **測試通過條件**
-- [ ] 表單驗證正確(必填、email 格式)。
-- [ ] 三種分類皆能正確觸發對應寄信,內容完整。
-- [ ] 防濫用機制(基本防灌:如驗證碼或速率限制)生效。
+- [x] 表單驗證正確(必填、email 格式)。〔client `required` + server 端再驗證〕
+- [x] 三種分類皆能正確觸發對應寄信,內容完整。〔收件信箱由 `CONTACT_RECIPIENTS`(可多個)決定;實寄需 `RESEND_API_KEY`,未設定時開發期印至 console〕
+- [x] 防濫用機制(基本防灌)生效。〔蜜罐隱藏欄位 + 每 IP 記憶體速率限制(10 分鐘最多 3 次)〕
 
 ---
 
@@ -463,11 +463,21 @@
   - 給後續階段的提醒:新增前台頁沿用深色 token 即自動套主題;要用重點色用 `text-accent`/`bg-accent`/`border-accent` 或 `var(--accent)`。`prisma migrate dev` 因單一環境(無 staging)會直接改正式 Supabase DB,故新欄位部署前即已存在於正式庫;Vercel build 不跑 migrate。
 
 ### 階段四:聯絡表單與分類寄信
-- 完成日期:
+- 完成日期:2026-06-25(實作 + build/lint/typecheck 通過;前台表單渲染已驗證,實寄需設 RESEND_API_KEY)
 - 實際與規格的偏差:
+  - **收件信箱改用環境變數 `CONTACT_RECIPIENTS`(可多個,逗號分隔)**,三種分類都寄到同一組信箱(教授決定);非各分類分流到不同信箱。日後若要分流,改成「分類→信箱」對應即可。
+  - **防濫用採「蜜罐欄位 + 每 IP 記憶體速率限制」**(非驗證碼),零外部依賴。蜜罐為隱藏 `company` 欄位(機器人填了即佯裝成功、不寄信);速率限制為 10 分鐘內每 IP 最多 3 次。
+  - 寄信沿用階段二的 `src/lib/email.ts`(Resend);新增 `sendContactEmail`,並讓底層 `send()` 支援多收件人(`to: string|string[]`)與 `replyTo`(設為填表人 email,教授可直接回覆)。
 - 遇到的問題與解決方案:
+  - server action 取得用戶 IP:用 `next/headers` 的 `headers().get("x-forwarded-for")` 取第一段;Vercel 會帶此標頭。
+  - i18n:server action 回傳「字典 key」(success / errRequired / errEmail / errCategory / errRate / errGeneric),前台依當前語系對應顯示,避免在 server 端寫死語言。
 - 衍生的新待辦/技術債:
+  - **記憶體速率限制在 serverless 多實例/冷啟動下非全域共享**,屬「基本防灌」;若日後濫用嚴重,改用 DB 計數或 Upstash/Redis、或加 Cloudflare Turnstile。
+  - **聯絡訊息未存 DB**(僅寄信);若教授希望站內留存紀錄,需新增 `ContactMessage` 表(可順便做更可靠的速率限制)。
+  - **Vercel 環境變數需新增 `CONTACT_RECIPIENTS`**(及確認 `RESEND_API_KEY`、已驗證寄件網域),否則正式站只會 console 印、不會真的寄。
+  - **⏸️ 寄件端設定擱置(2026-06-25,待與吳教授討論)**:Resend 測試位址 `onboarding@resend.dev` 只能寄到 Resend 註冊信箱,無法寄給任意收件人(聯絡表單兩個 gmail、邀請新會員都會被擋)。解法:買自有網域 → Resend 驗證寄件網域(使用者傾向此),或改 Gmail SMTP / Brevo·SendGrid 單一寄件人驗證。**程式皆已就緒,只差寄件端設定。** 細節見 `docs/env-vars.md`。
 - 給後續階段的提醒:
+  - 多收件人寄信、`replyTo` 已在 `email.ts` 備好,後續任何通知信(如階段五異常警報)可沿用同一 `send()`。
 
 ### 階段五:儀器預約管理系統
 - 完成日期:
