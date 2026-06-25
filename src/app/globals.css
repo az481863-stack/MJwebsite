@@ -1,15 +1,19 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   極簡學院風(Academic Minimalist)
-   純白底、大氣黑字、大量留白、極細黑線分割。固定淺色,不隨系統深色。
+   Dark Optics(暗色光學)
+   近黑底、大氣白字、大量留白、極細亮線分割、雷射光路幾何。
+   重點色(--accent)由後台 Settings 的 siteAccent 決定,於 layout 注入。
+   固定深色,不隨系統淺色。
    ────────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #111111;
-  --muted: #6b6b6b;
-  --line: #e5e5e5;
-  --line-strong: #111111;
+  --background: #0a0b10;
+  --foreground: #f4f5f7;
+  --muted: #9aa1ac;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.55);
+  /* 預設重點色(青);layout 會以 inline style 用實際設定覆蓋 */
+  --accent: #22d3ee;
 }
 
 @theme inline {
@@ -18,6 +22,7 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -87,7 +92,11 @@ html {
 }
 .rich-text mark {
   background: #fff3a3;
+  color: #111;
   padding: 0 0.1em;
+}
+.rich-text a {
+  color: var(--accent);
 }
 .rich-text code {
   font-family: var(--font-mono), monospace;
@@ -137,4 +146,93 @@ html {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Dark Optics 共用動態(捲動淡入 + 雷射光束)
+   供首頁 Hero 與各前台區塊使用。reveal 由 IntersectionObserver 切 data-shown。
+   ────────────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* 雷射光束(SVG line):描繪 + 脈動。stroke 由 .beam-stop 的 stop-color 取 --accent */
+.beam {
+  stroke-width: 1.5;
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation:
+    beam-draw 2.6s ease forwards,
+    beam-pulse 6s ease-in-out infinite 2.6s;
+}
+.beam-2 {
+  animation-delay: 0.5s, 3.1s;
+}
+.beam-3 {
+  animation-delay: 1s, 3.6s;
+  stroke-width: 1;
+}
+.beam-stop-0 {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+.beam-stop-1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.9;
+}
+@keyframes beam-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes beam-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beam {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  }
+}
+
+/* hero 光暈 */
+.hero-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 20%, transparent),
+    transparent 60%
+  );
+  filter: blur(20px);
+  animation: hero-float 9s ease-in-out infinite;
+}
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }

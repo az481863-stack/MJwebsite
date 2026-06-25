@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { SiteSettingsData } from "@/lib/settings";
+import { ACCENTS } from "@/lib/accent";
 import { saveSettings, type ActionResult } from "./actions";
 
 const PAGE_TOGGLES: { key: keyof SiteSettingsData; label: string }[] = [
@@ -19,6 +20,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
     ActionResult | null,
     FormData
   >(saveSettings, null);
+  const [accent, setAccent] = useState(initial.siteAccent);
 
   return (
     <form action={formAction} className="max-w-xl space-y-8">
@@ -56,6 +58,45 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
           defaultValue={initial.instrumentMaxHours}
           className="mt-1.5 w-32 border border-line px-3 py-2.5 text-sm outline-none focus:border-line-strong"
         />
+      </section>
+
+      <section className="border-t border-line pt-6">
+        <h2 className="text-lg font-semibold">前台主題重點色</h2>
+        <p className="mt-1 text-sm text-muted">
+          套用於全站前台(Dark Optics)的重點色:Hero 雷射光束、按鈕、連結與重點。點選即預覽。
+        </p>
+        <input type="hidden" name="siteAccent" value={accent} />
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {ACCENTS.map((a) => {
+            const active = accent === a.key;
+            return (
+              <button
+                key={a.key}
+                type="button"
+                onClick={() => setAccent(a.key)}
+                aria-pressed={active}
+                title={a.name}
+                className={`flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:scale-110 ${
+                  active ? "ring-2 ring-offset-2 ring-offset-background" : ""
+                }`}
+                style={{
+                  background: a.hex,
+                  ...(active ? ({ "--tw-ring-color": a.hex } as React.CSSProperties) : {}),
+                }}
+              >
+                {active && (
+                  <span className="text-xs font-bold text-[#06121a]">✓</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-sm text-muted">
+          目前選擇:
+          <span className="font-medium text-foreground">
+            {ACCENTS.find((a) => a.key === accent)?.name ?? accent}
+          </span>
+        </p>
       </section>
 
       {state && (

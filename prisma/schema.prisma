@@ -351,6 +351,9 @@ model SiteSettings {
   // 全站參數
   instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 階段五:預約總時數上限
 
+  // 前台 Dark Optics 主題的重點色(存色票 key,見 src/lib/accent.ts)
+  siteAccent String @default("cyan") @map("site_accent")
+
   updatedAt DateTime @updatedAt @map("updated_at")
   updatedBy String?  @map("updated_by")
 

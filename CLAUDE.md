@@ -62,9 +62,11 @@
 ## A. 全站規格(跨階段)
 
 ### A-1. 視覺與技術
-- 視覺風格:極簡學院風(Academic Minimalist)。純白底、大氣黑字、大量留白,極細黑線或雷射光路幾何作分割。
+- 視覺風格:**Dark Optics(暗色光學學院風)**。近黑底(`--background: #0a0b10`)、大氣白字、大量留白,極細亮線與**雷射光路幾何**(動態光束)作分割。**重點色(`--accent`)由後台 Settings 的 `siteAccent` 決定**,套用於全站前台的 Hero 光束、按鈕、連結與重點;可選色票見 `src/lib/accent.ts`(預設「青」`#22d3ee`)。
+  - 〔原規格為「極簡學院風:純白底、大氣黑字」;吳教授檢視後認為過白單調,改為 Dark Optics 並保留調色盤於後台,規格已更新為現狀。沿革見開發日誌階段三後記。〕
+  - 技術實作:全站採語意化 CSS tokens(`--background`/`--foreground`/`--muted`/`--line`/`--accent`),於 `globals.css` 統一定義為深色;`--accent` 由 `layout.tsx` 依設定 server-side 注入(無閃爍)。後台(admin/login/account/setup)沿用同一套深色 token,呈現一致深色介面。
 - 語言:全站右上角固定 [EN / 中文] 切換鈕。**全站(含首頁核心標題與教授簡介)顯示單一語言,隨切換鈕變換,不並列雙語。** 內頁以中文為主、同樣支援切換。
-- 後台:自建 CMS,前台內容由後台維護,無需改原始碼。
+- 後台:自建 CMS,前台內容由後台維護,無需改原始碼。**前台主題重點色亦於後台 Settings 調整(調色盤),不需改原始碼。**
 
 ### A-2. 導覽列
 首頁 Home｜研究與產學 Research & Industry｜團隊與招募 Lab Team｜儀器預約管理 Instruments｜光電小講堂 Blog｜聯絡教授 Contact

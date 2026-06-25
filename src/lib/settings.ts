@@ -2,6 +2,7 @@
 // 容錯:讀取失敗或尚無資料時回傳預設值,避免 build/執行期因 DB 問題崩潰。
 
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_ACCENT } from "@/lib/accent";
 
 export interface SiteSettingsData {
   showResearch: boolean;
@@ -12,6 +13,7 @@ export interface SiteSettingsData {
   showIndustry: boolean;
   showHighschool: boolean;
   instrumentMaxHours: number;
+  siteAccent: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -23,6 +25,7 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   showIndustry: true,
   showHighschool: true,
   instrumentMaxHours: 24,
+  siteAccent: DEFAULT_ACCENT,
 };
 
 export async function getSettings(): Promise<SiteSettingsData> {
@@ -40,6 +43,7 @@ export async function getSettings(): Promise<SiteSettingsData> {
       showIndustry: s.showIndustry,
       showHighschool: s.showHighschool,
       instrumentMaxHours: s.instrumentMaxHours,
+      siteAccent: s.siteAccent,
     };
   } catch {
     return DEFAULT_SETTINGS;
