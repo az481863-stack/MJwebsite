@@ -228,6 +228,51 @@ html {
   }
 }
 
+/* 換頁載入用的雷射掃描光束(呼應 Hero 光路) */
+.laser-loader {
+  position: relative;
+  width: 240px;
+  max-width: 60vw;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  overflow: hidden;
+}
+.laser-loader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 10px 1px var(--accent);
+  animation: laser-scan 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes laser-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(238%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .laser-loader::before {
+    animation: laser-pulse 1.2s ease-in-out infinite;
+    transform: none;
+    width: 100%;
+  }
+}
+@keyframes laser-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* hero 光暈 */
 .hero-glow {
   background: radial-gradient(

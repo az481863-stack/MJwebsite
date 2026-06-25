@@ -10,11 +10,8 @@ export default function Loading() {
       aria-live="polite"
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-background/70 backdrop-blur-sm"
     >
-      <span
-        aria-hidden
-        className="h-10 w-10 animate-spin rounded-full border-2 border-line border-t-accent"
-      />
-      <span className="text-sm font-medium tracking-wide text-muted">
+      <span aria-hidden className="laser-loader" />
+      <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted">
         載入中…
       </span>
     </div>
