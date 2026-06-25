@@ -475,6 +475,7 @@
   - **記憶體速率限制在 serverless 多實例/冷啟動下非全域共享**,屬「基本防灌」;若日後濫用嚴重,改用 DB 計數或 Upstash/Redis、或加 Cloudflare Turnstile。
   - **聯絡訊息未存 DB**(僅寄信);若教授希望站內留存紀錄,需新增 `ContactMessage` 表(可順便做更可靠的速率限制)。
   - **Vercel 環境變數需新增 `CONTACT_RECIPIENTS`**(及確認 `RESEND_API_KEY`、已驗證寄件網域),否則正式站只會 console 印、不會真的寄。
+  - **⏸️ 寄件端設定擱置(2026-06-25,待與吳教授討論)**:Resend 測試位址 `onboarding@resend.dev` 只能寄到 Resend 註冊信箱,無法寄給任意收件人(聯絡表單兩個 gmail、邀請新會員都會被擋)。解法:買自有網域 → Resend 驗證寄件網域(使用者傾向此),或改 Gmail SMTP / Brevo·SendGrid 單一寄件人驗證。**程式皆已就緒,只差寄件端設定。** 細節見 `docs/env-vars.md`。
 - 給後續階段的提醒:
   - 多收件人寄信、`replyTo` 已在 `email.ts` 備好,後續任何通知信(如階段五異常警報)可沿用同一 `send()`。
 
