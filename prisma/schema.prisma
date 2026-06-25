@@ -58,6 +58,10 @@ model Member {
   // C-1 邀請:一位會員可由一筆邀請產生(最高權限者由手動升級,可無邀請)
   invitations Invitation[]
 
+  // 階段五:儀器級負責人(B-2)與預約紀錄
+  managedInstruments InstrumentManager[] @relation("MemberManagedInstruments")
+  reservations       Reservation[]       @relation("MemberReservations")
+
   // ── D. 共用系統欄位 ──
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -358,4 +362,116 @@ model SiteSettings {
   updatedBy String?  @map("updated_by")
 
   @@map("site_settings")
+}
+
+// ════════════════════════════════════════════════════════════════
+// 階段五:儀器預約管理系統(附錄 H)
+// 同一份儀器資料、兩種視角(管理頁 / 預約頁)。
+// 停權與額度為衍生計算(見 src/lib/instruments.ts),不另設表。
+// ════════════════════════════════════════════════════════════════
+
+// 附錄 H 機台目前狀態(負責人/管理員手動調整,與簽退脫鉤)
+enum InstrumentStatus {
+  NORMAL // 🟢 正常運行
+  MAINTENANCE // 🟡 維護中
+}
+
+// 預約紀錄狀態(附錄 H:已預約/已取消/使用中·未簽退/已簽退/逾時)
+enum ReservationStatus {
+  BOOKED // 已預約
+  CANCELLED // 已取消(時段開始前提前取消)
+  IN_USE // 使用中·未簽退(時段一到自動簽到,產生簽退義務)
+  CHECKED_OUT // 已簽退
+  OVERDUE // 逾時未簽退(逾使用結束 3 天;本人不再開放簽退)
+}
+
+// 簽退機況回報(🟢正常 / 🟡異音不穩 / 🔴故障)
+enum ConditionReport {
+  NORMAL // 🟢 正常
+  UNSTABLE // 🟡 異音不穩
+  BROKEN // 🔴 故障
+}
+
+// 儀器(附錄 H)
+model Instrument {
+  id        String           @id @default(uuid())
+  name      String
+  purpose   String // 用途說明(長文)
+  photoUrl  String?          @map("photo_url")
+  status    InstrumentStatus @default(NORMAL) // 目前狀態(手動調整)
+  sortOrder Int              @default(0) @map("sort_order")
+
+  managers     InstrumentManager[]
+  reservations Reservation[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([deletedAt])
+  @@map("instruments")
+}
+
+// B-2 儀器層級負責人(會員 ─ 負責 ─ 儀器,多對多)
+model InstrumentManager {
+  id           String     @id @default(uuid())
+  instrumentId String     @map("instrument_id")
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  memberId     String     @map("member_id")
+  member       Member     @relation("MemberManagedInstruments", fields: [memberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by")
+
+  @@unique([instrumentId, memberId])
+  @@index([memberId])
+  @@map("instrument_managers")
+}
+
+// 預約紀錄
+model Reservation {
+  id           String     @id @default(uuid())
+  instrumentId String     @map("instrument_id")
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  memberId     String     @map("member_id")
+  member       Member     @relation("MemberReservations", fields: [memberId], references: [id], onDelete: Cascade)
+
+  startAt     DateTime          @map("start_at") // 整點
+  endAt       DateTime          @map("end_at") // 整點
+  status      ReservationStatus @default(BOOKED)
+  cancelledAt DateTime?         @map("cancelled_at")
+  checkedInAt DateTime?         @map("checked_in_at") // 自動簽到時間
+
+  checkout Checkout?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([instrumentId, startAt])
+  @@index([status])
+  @@index([memberId, status])
+  @@map("reservations")
+}
+
+// 簽退/異常紀錄
+model Checkout {
+  id            String          @id @default(uuid())
+  reservationId String          @unique @map("reservation_id")
+  reservation   Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  hours         Int // 確認時數
+  condition     ConditionReport // 機況回報(強制)
+  anomalyNote   String?         @map("anomaly_note") // 異常描述(選)
+  byMemberId    String          @map("by_member_id") // 簽退執行者
+  isProxy       Boolean         @default(false) @map("is_proxy") // 代簽
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("checkouts")
 }

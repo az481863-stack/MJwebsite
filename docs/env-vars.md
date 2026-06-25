@@ -19,6 +19,7 @@
 | `EMAIL_FROM` | 寄件位址;正式須為 Resend 已驗證網域 | 自填(未設用 `onboarding@resend.dev` 測試) | ➖ | 建議 |
 | `CONTACT_RECIPIENTS` | 聯絡表單收件信箱(階段四);**可多個,逗號分隔** | 自填(教授/助教信箱) | ➖ | ✅(要收聯絡信) |
 | `SETUP_SECRET` | `/setup` 建立首位最高權限者的密語;建立後該頁自動失效 | 自填一組夠長的隨機字串 | ✅ | 建議 |
+| `CRON_SECRET` | 階段五:保護 `/api/cron`(儀器自動簽到/逾時對帳)的 Bearer 密語 | 自填一組夠長的隨機字串 | ✅ | ✅(儀器系統) |
 
 ## 重要提醒(踩過的坑)
 
@@ -54,8 +55,19 @@
 
 > 交接重點:Resend 帳號與 API Key 最終應開/移轉至**教授名下**。
 
+## 階段五:儀器對帳排程(GitHub Actions)
+
+儀器「時段一到自動簽到」「逾 3 天標記逾時」由 `.github/workflows/instruments-cron.yml`
+每 15 分鐘呼叫一次 `/api/cron`(頁面載入時也會 lazy 對帳,此為備援保證)。
+需在 repo → Settings → Secrets and variables → Actions 新增兩個 secret:
+
+- `CRON_SECRET`:與 Vercel 的 `CRON_SECRET` 相同(`/api/cron` 以此驗證 Bearer)。
+- `SITE_URL`:部署網址(如 `https://your-site.vercel.app`,結尾不要斜線)。
+
+> GitHub Actions 排程可能延遲數分鐘屬正常;準確性由頁面 lazy 對帳保證。
+
 ## 交接時要轉移/重設的東西
 
-- Vercel 上述全部環境變數。
-- GitHub Actions secret:`SUPABASE_DB_URL`。
+- Vercel 上述全部環境變數(含 `CRON_SECRET`)。
+- GitHub Actions secret:`SUPABASE_DB_URL`、`CRON_SECRET`、`SITE_URL`。
 - 交接前建議在 Supabase 重設一次資料庫密碼與 service role key(若曾外流),並同步更新本機 `.env` 與 Vercel。

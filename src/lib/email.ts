@@ -105,3 +105,44 @@ export async function sendInvitationEmail(opts: {
   }
   return send(opts.to, subject, html);
 }
+
+// 階段五:儀器異常警報(特急)。簽退勾選 🟡/🔴 時立即寄給教授與該台負責人。
+const CONDITION_LABEL: Record<string, string> = {
+  UNSTABLE: "🟡 異音不穩",
+  BROKEN: "🔴 故障",
+};
+
+export async function sendAnomalyAlert(opts: {
+  recipients: string[];
+  instrumentName: string;
+  reporterName: string;
+  condition: string;
+  note?: string;
+  at?: Date;
+}): Promise<SendResult> {
+  const condLabel = CONDITION_LABEL[opts.condition] ?? opts.condition;
+  const when = (opts.at ?? new Date()).toLocaleString("zh-TW", {
+    timeZone: "Asia/Taipei",
+  });
+  const subject = `[特急·儀器異常] ${opts.instrumentName}(${condLabel})`;
+  const html = `
+    <div style="font-family: -apple-system, 'Noto Sans TC', Arial, sans-serif; line-height:1.7; color:#111; max-width:560px;">
+      <h2 style="font-weight:600; color:#b91c1c;">儀器異常警報</h2>
+      <table style="border-collapse:collapse; font-size:15px;">
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">儀器</td><td><strong>${escapeHtml(opts.instrumentName)}</strong></td></tr>
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">機況</td><td><strong>${escapeHtml(condLabel)}</strong></td></tr>
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">回報人</td><td>${escapeHtml(opts.reporterName)}</td></tr>
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">時間</td><td>${escapeHtml(when)}</td></tr>
+      </table>
+      ${
+        opts.note
+          ? `<p style="margin-top:18px; color:#6b6b6b;">異常描述:</p>
+      <p style="white-space:pre-wrap; border-left:2px solid #b91c1c; padding-left:14px;">${escapeHtml(opts.note)}</p>`
+          : `<p style="margin-top:18px; color:#6b6b6b;">(無附加描述)</p>`
+      }
+      <p style="color:#6b6b6b;font-size:13px;margin-top:24px;">請儘速至儀器管理頁確認並調整機況狀態。</p>
+    </div>
+  `;
+  if (opts.recipients.length === 0) return { delivered: false };
+  return send(opts.recipients, subject, html);
+}

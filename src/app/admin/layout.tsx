@@ -2,7 +2,8 @@
 // 後台一律中文(內部使用者),不走前台語系切換。
 
 import { redirect } from "next/navigation";
-import { getCurrentMember } from "@/lib/auth";
+import { getCurrentMember, roleAtLeast } from "@/lib/auth";
+import { managedInstrumentIds } from "@/lib/instruments";
 import { Container } from "@/components/ui/Container";
 import { AdminSidebar } from "./admin-sidebar";
 
@@ -16,10 +17,14 @@ export default async function AdminLayout({
   const me = await getCurrentMember();
   if (!me) redirect("/login");
 
+  // 負責人(即使是學生)可進入儀器管理頁(B-2)。
+  const canManageInstruments =
+    roleAtLeast(me.role, "ADMIN") || (await managedInstrumentIds(me.id)).length > 0;
+
   return (
     <Container className="py-10">
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-        <AdminSidebar role={me.role} />
+        <AdminSidebar role={me.role} canManageInstruments={canManageInstruments} />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </Container>

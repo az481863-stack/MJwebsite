@@ -1,0 +1,28 @@
+# 階段五:儀器預約對帳排程(自動簽到 + 標記逾時)。
+# 每 15 分鐘呼叫一次受保護的 /api/cron;頁面載入也會 lazy 對帳,此為備援保證。
+# 設定:repo → Settings → Secrets and variables → Actions 新增
+#   - secret  CRON_SECRET:與 Vercel 環境變數 CRON_SECRET 相同
+#   - secret  SITE_URL   :部署網址(如 https://your-site.vercel.app,無結尾斜線)
+# 註:GitHub Actions 排程可能延遲數分鐘,屬正常;準確性由頁面 lazy 對帳保證。
+name: instruments-cron
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {} # 允許手動觸發測試
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call reconcile endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$SITE_URL" ]; then
+            echo "::error::CRON_SECRET 或 SITE_URL secret 未設定,跳過對帳。"
+            exit 1
+          fi
+          curl -fsS -X GET "$SITE_URL/api/cron" \
+            -H "Authorization: Bearer $CRON_SECRET"

@@ -19,6 +19,9 @@ export async function signInWithPassword(
     .trim()
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
+  // 僅允許站內相對路徑,避免開放轉址。
+  const nextRaw = String(formData.get("next") ?? "");
+  const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/account";
 
   if (!email || !password) {
     return { ok: false, message: "請輸入 email 與密碼。" };
@@ -42,7 +45,7 @@ export async function signInWithPassword(
     return { ok: false, message: "此帳號未啟用或已停用。" };
   }
 
-  redirect("/account");
+  redirect(next);
 }
 
 export async function signOut() {
