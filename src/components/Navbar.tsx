@@ -66,7 +66,15 @@ export function Navbar({
               <stop className="beam-stop-0" offset="100%" />
             </linearGradient>
           </defs>
-          <line x1="-50" y1="50" x2="1250" y2="14" stroke="url(#nav-beam)" strokeWidth="1" />
+          <line
+            className="nav-beam-line"
+            x1="-50"
+            y1="50"
+            x2="1250"
+            y2="14"
+            stroke="url(#nav-beam)"
+            strokeWidth="1"
+          />
         </svg>
       )}
       <Container>
