@@ -94,6 +94,24 @@ export interface Dictionary {
     phoneLabel: string;
     officeHoursLabel: string;
     formNote: string;
+    form: {
+      heading: string;
+      intro: string;
+      name: string;
+      email: string;
+      category: string;
+      categoryPlaceholder: string;
+      categories: { industry: string; academic: string; recruit: string };
+      message: string;
+      submit: string;
+      sending: string;
+      success: string;
+      errRequired: string;
+      errEmail: string;
+      errCategory: string;
+      errRate: string;
+      errGeneric: string;
+    };
   };
   courses: { heading: string; intro: string; empty: string; handout: string };
   forStudents: { heading: string; intro: string; empty: string };
@@ -305,7 +323,29 @@ Email:____`,
     emailLabel: "電子郵件",
     phoneLabel: "電話",
     officeHoursLabel: "聯絡時間",
-    formNote: "線上聯絡表單將於後續階段開放,屆時可依主題自動分流至對應信箱。",
+    formNote: "亦可直接以上方 email、電話與我們聯繫。",
+    form: {
+      heading: "線上聯絡表單",
+      intro: "請選擇主題並留下您的訊息,我們會儘速回覆。",
+      name: "您的姓名",
+      email: "您的 Email",
+      category: "聯絡主題",
+      categoryPlaceholder: "請選擇主題…",
+      categories: {
+        industry: "產學合作洽詢",
+        academic: "學術同行交流",
+        recruit: "學生·博士後應徵面談",
+      },
+      message: "訊息內容",
+      submit: "送出",
+      sending: "送出中…",
+      success: "已送出,感謝您的來信,我們會儘速回覆。",
+      errRequired: "請填寫所有必填欄位。",
+      errEmail: "請輸入有效的 Email。",
+      errCategory: "請選擇聯絡主題。",
+      errRate: "送出過於頻繁,請稍後再試。",
+      errGeneric: "送出失敗,請稍後再試,或直接以 email 與我們聯繫。",
+    },
   },
   courses: {
     heading: "課程紀錄",
@@ -528,7 +568,29 @@ Email: ____`,
     emailLabel: "Email",
     phoneLabel: "Phone",
     officeHoursLabel: "Hours",
-    formNote: "An online contact form will open in a later phase, routing messages to the right inbox by topic.",
+    formNote: "You may also reach us directly via the email or phone above.",
+    form: {
+      heading: "Contact form",
+      intro: "Pick a topic and leave your message; we'll get back to you soon.",
+      name: "Your name",
+      email: "Your email",
+      category: "Topic",
+      categoryPlaceholder: "Select a topic…",
+      categories: {
+        industry: "Industry collaboration",
+        academic: "Academic exchange",
+        recruit: "Student / postdoc application",
+      },
+      message: "Message",
+      submit: "Send",
+      sending: "Sending…",
+      success: "Sent — thank you for reaching out. We'll reply soon.",
+      errRequired: "Please fill in all required fields.",
+      errEmail: "Please enter a valid email.",
+      errCategory: "Please select a topic.",
+      errRate: "Too many submissions, please try again later.",
+      errGeneric: "Could not send. Please try again later or email us directly.",
+    },
   },
   courses: {
     heading: "Courses",
