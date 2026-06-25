@@ -5,6 +5,7 @@ import "katex/dist/katex.min.css";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { ScrollHideProvider } from "@/lib/scroll-hide";
 import { getSettings } from "@/lib/settings";
+import { accentHex } from "@/lib/accent";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
@@ -38,10 +39,14 @@ export default async function RootLayout({
     contact: settings.showContact,
   };
 
+  // Dark Optics 重點色:由後台 Settings 決定,server-side 注入 CSS 變數(無閃爍)。
+  const accent = accentHex(settings.siteAccent);
+
   return (
     <html
       lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ "--accent": accent } as React.CSSProperties}
     >
       <body className="flex min-h-full flex-col">
         <LanguageProvider>

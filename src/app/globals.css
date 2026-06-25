@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   極簡學院風(Academic Minimalist)
-   純白底、大氣黑字、大量留白、極細黑線分割。固定淺色,不隨系統深色。
+   Dark Optics(暗色光學學院風)
+   以淺色學院風為底(白底、大氣黑字、大量留白),搭配「近黑 + 雷射光束」的
+   戲劇性深色區塊(Hero、理念帶)與可由後台調整的重點色(--accent)。
+   非全站全黑;深色僅用於指定區塊(見 .band-dark 與首頁 Hero)。
    ────────────────────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
@@ -10,6 +12,10 @@
   --muted: #6b6b6b;
   --line: #e5e5e5;
   --line-strong: #111111;
+  /* 預設重點色(青);layout 會以 inline style 用實際設定覆蓋 */
+  --accent: #22d3ee;
+  /* 深色區塊用的近黑底 */
+  --ink: #0a0b10;
 }
 
 @theme inline {
@@ -18,6 +24,7 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -87,6 +94,7 @@ html {
 }
 .rich-text mark {
   background: #fff3a3;
+  color: #111;
   padding: 0 0.1em;
 }
 .rich-text code {
@@ -137,4 +145,222 @@ html {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* 深色區塊(Hero、理念帶、內頁 navbar):近黑底白字,內部 token 反轉以維持對比。
+   一併覆蓋 --background,讓 bg-background 等工具類也跟著變深。 */
+.band-dark {
+  background: var(--ink);
+  color: #f4f5f7;
+  --background: var(--ink);
+  --foreground: #f4f5f7;
+  --muted: #9aa1ac;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.55);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Dark Optics 共用動態(捲動淡入 + 雷射光束)
+   供首頁 Hero 與各前台區塊使用。reveal 由 IntersectionObserver 切 data-shown。
+   ────────────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* 雷射光束(SVG line):描繪 + 脈動。stroke 由 .beam-stop 的 stop-color 取 --accent */
+.beam {
+  stroke-width: 1.5;
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation:
+    beam-draw 2.6s ease forwards,
+    beam-pulse 6s ease-in-out infinite 2.6s;
+}
+.beam-2 {
+  animation-delay: 0.5s, 3.1s;
+}
+.beam-3 {
+  animation-delay: 1s, 3.6s;
+  stroke-width: 1;
+}
+.beam-stop-0 {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+.beam-stop-1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.9;
+}
+@keyframes beam-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes beam-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beam {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  }
+}
+
+/* 換頁載入用的雷射掃描光束(呼應 Hero 光路) */
+.laser-loader {
+  position: relative;
+  width: 240px;
+  max-width: 60vw;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  overflow: hidden;
+}
+.laser-loader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 10px 1px var(--accent);
+  animation: laser-scan 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes laser-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(238%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .laser-loader::before {
+    animation: laser-pulse 1.2s ease-in-out infinite;
+    transform: none;
+    width: 100%;
+  }
+}
+@keyframes laser-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 內頁 navbar 的雷射光束:射入 → 停留 → 射出消失 → 空檔 → 再射(7 秒一輪)。
+   兩條共用 7 秒週期(避免相位漂移),差別在「射入/射出的速度」:
+   fast = 光束飛得快(約 0.2 秒掠過);slow = 光束飛得慢(約 1.1 秒)。 */
+.nav-beam-line {
+  stroke-dasharray: 1400;
+}
+.nav-beam-fast {
+  animation: nav-beam-fast 7s linear infinite;
+}
+.nav-beam-slow {
+  animation: nav-beam-slow 7s linear infinite;
+}
+@keyframes nav-beam-fast {
+  0% {
+    stroke-dashoffset: 1400;
+    opacity: 0;
+  }
+  1% {
+    opacity: 0.7;
+  }
+  3% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  } /* 快速射入(約 0.2s) */
+  82% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  } /* 停留 */
+  85% {
+    stroke-dashoffset: -1400;
+    opacity: 0.7;
+  } /* 快速射出 */
+  87%,
+  100% {
+    stroke-dashoffset: -1400;
+    opacity: 0;
+  } /* 空檔 */
+}
+@keyframes nav-beam-slow {
+  0% {
+    stroke-dashoffset: 1400;
+    opacity: 0;
+  }
+  2% {
+    opacity: 0.7;
+  }
+  16% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  } /* 緩慢射入(約 1.1s) */
+  82% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  } /* 停留 */
+  93% {
+    stroke-dashoffset: -1400;
+    opacity: 0.7;
+  } /* 緩慢射出 */
+  95%,
+  100% {
+    stroke-dashoffset: -1400;
+    opacity: 0;
+  } /* 空檔 */
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-beam-fast,
+  .nav-beam-slow {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* hero 光暈 */
+.hero-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 20%, transparent),
+    transparent 60%
+  );
+  filter: blur(20px);
+  animation: hero-float 9s ease-in-out infinite;
+}
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }

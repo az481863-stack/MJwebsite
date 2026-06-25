@@ -1,8 +1,7 @@
 "use client";
 
-// 樣板專用:捲動進場淡入(awwwards 常見手法)。
-// 以 IntersectionObserver 在元素進入視窗時加上 data-shown,交給 CSS 過場。
-// 僅用於 /preview 樣板,不影響正式頁面。
+// 捲動進場淡入(Dark Optics)。元素進入視窗時加 data-shown="true",交給 .reveal CSS。
+// 樣式定義於 globals.css 的 .reveal。
 
 import { useEffect, useRef, useState } from "react";
 

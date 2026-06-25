@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_ACCENT, isAccentKey } from "@/lib/accent";
 
 export interface ActionResult {
   ok: boolean;
@@ -24,6 +25,9 @@ export async function saveSettings(
   const hours = parseInt(String(formData.get("instrumentMaxHours") ?? "24"), 10);
   const instrumentMaxHours = Number.isFinite(hours) && hours > 0 ? hours : 24;
 
+  const accentRaw = String(formData.get("siteAccent") ?? "");
+  const siteAccent = isAccentKey(accentRaw) ? accentRaw : DEFAULT_ACCENT;
+
   const data = {
     showResearch: bool("showResearch"),
     showTeam: bool("showTeam"),
@@ -33,6 +37,7 @@ export async function saveSettings(
     showIndustry: bool("showIndustry"),
     showHighschool: bool("showHighschool"),
     instrumentMaxHours,
+    siteAccent,
     updatedBy: me.id,
   };
 

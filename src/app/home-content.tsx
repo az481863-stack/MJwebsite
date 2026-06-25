@@ -1,7 +1,8 @@
 "use client";
 
-// 首頁內容(client:用 i18n 字典渲染寫死區塊)。
-// 動態佈告欄改吃資料庫傳入的 posts(階段三);其餘區塊仍為寫死文案。
+// 首頁內容(Dark Optics)。淺色學院風為底,Hero 與「主持人理念」為近黑深色帶
+// (.band-dark)+ 雷射光束;研究領域、動態佈告欄維持淺色。重點色取全站 --accent
+// (由後台 Settings 決定)。動態以 .beam / .reveal(globals.css)。
 
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +11,7 @@ import { useLanguage } from "@/lib/i18n/context";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { PageNav } from "@/components/PageNav";
+import { Reveal } from "@/components/Reveal";
 
 export interface DashboardItem {
   id: string;
@@ -43,19 +45,33 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
     <>
       <PageNav items={navItems} />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-line">
+      {/* Hero(深色帶:雷射光束 + 光暈) */}
+      <section className="band-dark relative flex min-h-[88vh] items-center overflow-hidden">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 1200 600"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="home-beam" x1="0" y1="0" x2="1" y2="1">
+              <stop className="beam-stop-0" offset="0%" />
+              <stop className="beam-stop-1" offset="50%" />
+              <stop className="beam-stop-0" offset="100%" />
+            </linearGradient>
+          </defs>
+          <line className="beam" x1="-100" y1="120" x2="1300" y2="360" stroke="url(#home-beam)" />
+          <line className="beam beam-2" x1="-100" y1="500" x2="1300" y2="180" stroke="url(#home-beam)" />
+          <line className="beam beam-3" x1="200" y1="-50" x2="900" y2="650" stroke="url(#home-beam)" />
+        </svg>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(115deg, #111 0, #111 1px, transparent 1px, transparent 64px)",
-          }}
+          className="hero-glow pointer-events-none absolute right-[-10%] top-[10%] h-[50vw] w-[50vw]"
         />
+
         <Container className="relative">
           <div className="flex max-w-3xl flex-col py-28 sm:py-36">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">
               {h.heroEyebrow}
             </p>
             <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
@@ -67,7 +83,7 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/research"
-                className="inline-flex items-center justify-center bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-85"
+                className="inline-flex items-center justify-center bg-accent px-6 py-3 text-sm font-semibold text-[#06121a] transition-transform hover:-translate-y-0.5"
               >
                 {h.ctaPrimary}
               </Link>
@@ -82,34 +98,50 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
         </Container>
       </section>
 
-      {/* 研究領域 */}
+      {/* 研究領域(淺色) */}
       <Section id="research" heading={h.researchHeading} intro={h.researchIntro}>
         <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
           {h.researchAreas.map((area, i) => (
-            <div key={i} className="bg-background p-8">
-              <span className="text-sm font-mono text-muted">0{i + 1}</span>
+            <Reveal
+              key={i}
+              delay={i * 90}
+              className="bg-background p-8 transition-shadow hover:shadow-[inset_0_3px_0_var(--accent)]"
+            >
+              <span className="font-mono text-sm text-accent">0{i + 1}</span>
               <h3 className="mt-4 text-lg font-semibold">{area.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted">
                 {area.desc}
               </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </Section>
 
-      {/* 主持人理念 */}
-      <Section id="philosophy" heading={h.philosophyHeading} bordered>
-        <div className="max-w-3xl space-y-6">
-          {h.philosophyBody.map((para, i) => (
-            <p key={i} className="text-lg leading-relaxed text-foreground/80">
-              {para}
-            </p>
-          ))}
-        </div>
-      </Section>
+      {/* 主持人理念(深色帶) */}
+      <section id="philosophy" className="band-dark scroll-mt-20 py-16 sm:py-24">
+        <Container>
+          <Reveal as="header" className="mb-10 sm:mb-14">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {h.philosophyHeading}
+            </h2>
+          </Reveal>
+          <div className="max-w-3xl space-y-6">
+            {h.philosophyBody.map((para, i) => (
+              <Reveal
+                key={i}
+                delay={i * 120}
+                as="p"
+                className="text-lg leading-relaxed text-foreground/80"
+              >
+                {para}
+              </Reveal>
+            ))}
+          </div>
+        </Container>
+      </section>
 
-      {/* 動態佈告欄(來自後台 CMS) */}
-      <Section id="dashboard" heading={h.dashboardHeading} intro={h.dashboardIntro} bordered>
+      {/* 動態佈告欄(淺色,來自後台 CMS) */}
+      <Section id="dashboard" heading={h.dashboardHeading} intro={h.dashboardIntro}>
         {posts.length === 0 ? (
           <p className="text-sm text-muted">目前沒有最新動態。</p>
         ) : (
@@ -122,9 +154,9 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
                     type="button"
                     onClick={() => setOpenId(open ? null : item.id)}
                     aria-expanded={open}
-                    className="flex w-full items-center gap-4 py-5 text-left sm:gap-6"
+                    className="flex w-full items-center gap-4 py-5 text-left transition-[padding,background] hover:bg-accent/[0.06] hover:pl-3 sm:gap-6"
                   >
-                    <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wider text-muted">
+                    <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wider text-accent">
                       {CATEGORY_LABEL[item.category] ?? item.category}
                     </span>
                     <span className="flex-1 text-base">{item.title}</span>
