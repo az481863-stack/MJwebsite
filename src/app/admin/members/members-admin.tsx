@@ -2,7 +2,8 @@
 
 // 會員管理互動區:邀請表單 + 會員列表(每列為獨立 MemberRow,各自管理 action 狀態)。
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   changeRole,
   disableMember,
@@ -151,6 +152,7 @@ function MemberRowItem({
   canManageRoles: boolean;
   isLastSuperadmin: boolean;
 }) {
+  const router = useRouter();
   const [roleState, roleAction] = useActionState<ActionResult | null, FormData>(
     changeRole,
     null,
@@ -167,6 +169,27 @@ function MemberRowItem({
     ActionResult | null,
     FormData
   >(resendInvite, null);
+
+  // 角色下拉:受控,避免 React 19 在 action 完成後把表單重設回舊的 defaultValue。
+  const [role, setRole] = useState<MemberRow["role"]>(member.role);
+  // server 端資料刷新後同步顯示值(render 期間調整,避免 set-state-in-effect)。
+  const [seenRole, setSeenRole] = useState<MemberRow["role"]>(member.role);
+  if (seenRole !== member.role) {
+    setSeenRole(member.role);
+    setRole(member.role);
+  }
+
+  // 任一操作成功後強制刷新 server components,讓列表角色/狀態/可用按鈕即時更新。
+  useEffect(() => {
+    if (
+      roleState?.ok ||
+      statusState?.ok ||
+      restoreState?.ok ||
+      resendState?.ok
+    ) {
+      router.refresh();
+    }
+  }, [roleState, statusState, restoreState, resendState, router]);
 
   return (
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -191,7 +214,8 @@ function MemberRowItem({
             <input type="hidden" name="memberId" value={member.id} />
             <select
               name="role"
-              defaultValue={member.role}
+              value={role}
+              onChange={(e) => setRole(e.target.value as MemberRow["role"])}
               disabled={isLastSuperadmin}
               className="border border-line px-2 py-1.5 text-xs outline-none focus:border-line-strong disabled:opacity-50"
             >
