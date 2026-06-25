@@ -27,8 +27,9 @@ export function Navbar({
   visible?: Partial<Record<string, boolean>>;
 }) {
   const { t } = useLanguage();
-  // 光束端點:初始固定值(避免 SSR/hydration 不一致),之後每射一輪換隨機角度。
-  const [beam, setBeam] = useState({ y1: 50, y2: 14 });
+  // 兩條光束端點:初始固定值(避免 SSR/hydration 不一致),之後每射一輪換隨機角度。
+  const [beam1, setBeam1] = useState({ y1: 50, y2: 14 });
+  const [beam2, setBeam2] = useState({ y1: 12, y2: 58 });
   const pathname = usePathname();
   const hidden = useScrollHidden();
   const isAuthed = useAuthState();
@@ -60,7 +61,7 @@ export function Navbar({
         dark ? "band-dark bg-background/95" : "bg-background/90"
       } ${hidden && !menuOpen ? "-translate-y-full" : "translate-y-0"}`}
     >
-      {/* 內頁深色 navbar 的雷射光束(靜態,低調) */}
+      {/* 內頁深色 navbar 的雷射光束:兩條,相隔 0.5 秒射入,各自隨機角度 */}
       {dark && (
         <svg
           aria-hidden
@@ -78,13 +79,25 @@ export function Navbar({
           <line
             className="nav-beam-line"
             x1="-50"
-            y1={beam.y1}
+            y1={beam1.y1}
             x2="1250"
-            y2={beam.y2}
+            y2={beam1.y2}
             stroke="url(#nav-beam)"
             strokeWidth="1.5"
             // 每輪動畫結束(發生在隱形空檔)換一個隨機角度,下一次射入即不同向
-            onAnimationIteration={() => setBeam(randomBeam())}
+            onAnimationIteration={() => setBeam1(randomBeam())}
+          />
+          <line
+            className="nav-beam-line"
+            x1="-50"
+            y1={beam2.y1}
+            x2="1250"
+            y2={beam2.y2}
+            stroke="url(#nav-beam)"
+            strokeWidth="1.5"
+            // 第二條延遲 0.5 秒射入,角度獨立隨機
+            style={{ animationDelay: "0.5s" }}
+            onAnimationIteration={() => setBeam2(randomBeam())}
           />
         </svg>
       )}
