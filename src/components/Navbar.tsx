@@ -73,7 +73,7 @@ export function Navbar({
             x2="1250"
             y2="14"
             stroke="url(#nav-beam)"
-            strokeWidth="1"
+            strokeWidth="1.5"
           />
         </svg>
       )}

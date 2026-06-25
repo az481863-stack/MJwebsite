@@ -273,26 +273,36 @@ html {
   }
 }
 
-/* 內頁 navbar 的雷射光束:每 5 秒重新「射入」一次(快速描繪後停留,週期結束再射) */
+/* 內頁 navbar 的雷射光束:射入 → 停留約 5 秒 → 射出消失 → 空檔 → 再射(7 秒一輪) */
 .nav-beam-line {
   stroke-dasharray: 1400;
-  animation: nav-beam-shoot 5s ease-out infinite;
+  animation: nav-beam-shoot 7s linear infinite;
 }
 @keyframes nav-beam-shoot {
   0% {
     stroke-dashoffset: 1400;
     opacity: 0;
-  }
-  4% {
+  } /* 空(線在畫面外) */
+  2% {
     opacity: 1;
   }
-  16% {
+  8% {
     stroke-dashoffset: 0;
-  }
+    opacity: 1;
+  } /* 射入完成(約 0.5s) */
+  79% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  } /* 停留約 5 秒 */
+  86% {
+    stroke-dashoffset: -1400;
+    opacity: 1;
+  } /* 往另一端射出 */
+  88%,
   100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
+    stroke-dashoffset: -1400;
+    opacity: 0;
+  } /* 消失 + 空檔約 1 秒,然後重來 */
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-beam-line {
