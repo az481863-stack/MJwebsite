@@ -16,7 +16,7 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | **僅伺服器端**:邀請建帳號、停用封鎖等 admin 操作 | Supabase → Settings → API | ✅ | ✅ |
 | `NEXT_PUBLIC_SITE_URL` | 組邀請連結 / OAuth redirect 的站台網址 | 自填:正式填部署網址(**勿用 localhost**) | ➖ | ✅ |
 | `RESEND_API_KEY` | 寄信(邀請信、聯絡表單通知);未設定則開發期只印 console、不實寄 | resend.com → API Keys | ✅ | ✅(要寄信) |
-| `EMAIL_FROM` | 寄件位址;正式須為 Resend 已驗證網域 | 自填(未設用 `onboarding@resend.dev` 測試) | ➖ | 建議 |
+| `EMAIL_FROM` | 寄件位址;已採用自有網域 → `光電物理實驗室 <noreply@mail.mjw-opto.com>` | 已驗證網域 `mail.mjw-opto.com` | ➖ | ✅ |
 | `CONTACT_RECIPIENTS` | 聯絡表單收件信箱(階段四);**可多個,逗號分隔** | 自填(教授/助教信箱) | ➖ | ✅(要收聯絡信) |
 | `SETUP_SECRET` | `/setup` 建立首位最高權限者的密語;建立後該頁自動失效 | 自填一組夠長的隨機字串 | ✅ | 建議 |
 | `CRON_SECRET` | 階段五:保護 `/api/cron`(儀器自動簽到/逾時對帳)的 Bearer 密語 | 自填一組夠長的隨機字串 | ✅ | ✅(儀器系統) |
@@ -39,21 +39,23 @@
 2. **API Keys → Create API Key** → 命名(如 `mjwebsite`)→ 複製那串 `re_...`(只顯示一次)。
 3. 填入本機 `.env` 與 Vercel 的 `RESEND_API_KEY`。
 
-### 寄件網域(重要)
+### 寄件網域(已完成 ✅)
 
 > **「寄件網域」與「網站網域」是兩回事**:Resend 驗證的是 email `From:` 用的網域,
 > 跟網站掛在 vercel.app 還是自有網域**無關**。`vercel.app` 無法驗證(DNS 不是你的)。
 
-| 階段 | `EMAIL_FROM` | 可寄給誰 | 要驗證嗎 |
-|---|---|---|---|
-| 還沒有自有網域(測試) | `onboarding@resend.dev`(預設) | **只能寄到你註冊 Resend 的那個 email** | 否 |
-| 已買自有網域(正式) | `noreply@<你的網域>` | 任何人,送達率較佳 | 是 |
+**現況(2026-06-26)**:已購入自有網域 `mjw-opto.com`,並於 Resend 驗證寄件子網域
+**`mail.mjw-opto.com`**(DNS 由 Vercel 代管,region Tokyo `ap-northeast-1`;
+DKIM / SPF / DMARC 皆通過,狀態 Verified)。正式寄件位址:
 
-**買到自有網域後的驗證步驟**:Resend → **Domains → Add Domain** → 輸入網域 →
-依指示到網域 DNS 後台新增 SPF / DKIM(及 DMARC)記錄 → 等驗證通過 →
-把 `EMAIL_FROM` 改成該網域的寄件位址。完成後即可寄給任何收件人。
+```
+EMAIL_FROM="光電物理實驗室 <noreply@mail.mjw-opto.com>"
+```
 
-> 交接重點:Resend 帳號與 API Key 最終應開/移轉至**教授名下**。
+即可寄給**任何收件人**(不再受 `onboarding@resend.dev` 只能寄給自己的限制)。
+
+> 交接重點:**Resend 帳號 + `mjw-opto.com` 網域 + Vercel DNS** 最終皆應移轉至教授名下。
+> 若日後更換寄件網域,於 Resend → Domains 重新 Add Domain 驗證後改 `EMAIL_FROM` 即可。
 
 ## 階段五:儀器對帳排程(GitHub Actions)
 
