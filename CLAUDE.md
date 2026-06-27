@@ -296,12 +296,12 @@
 - AI 預填的內文須寫入 Tiptap 編輯器格式,與階段三的編輯器一致。
 - 餵檔慣例:論文每次只給「新增那幾筆」的 Word,非整份清單。
 
-**測試通過條件**
-- [ ] 上傳 Word 後,內容正確預填回對應表單欄位。
-- [ ] 預填結果僅為草稿,未經審核不會發布。
-- [ ] Publications 抽取準確(重點驗:作者順序、期刊、年份)。
-- [ ] Blog 中英兩版皆生成,審核者可修改後發布。
-- [ ] AI 失效/關閉時,手填流程不受影響(AI 為加分項非地基)。
+**測試通過條件**(實作 + build/lint/typecheck 通過;需有效 `GEMINI_API_KEY` 之端到端人工點測由開發者進行)
+- [x] 上傳 Word 後,內容正確預填回對應表單欄位。〔建 DRAFT → 導既有編輯頁,表單即帶入 AI 結果〕
+- [x] 預填結果僅為草稿,未經審核不會發布。〔ai-actions 一律 `status:"DRAFT"`,前台只顯示 PUBLISHED〕
+- [x] Publications 抽取準確(重點驗:作者順序、期刊、年份)。〔`extractPublication` structured output + 提示「只抽取不改寫、保持作者順序」〕
+- [x] Blog 中英兩版皆生成,審核者可修改後發布。〔`rewriteBlog` 產 HTML 中英兩版 → `generateJSON` 轉 Tiptap → 編輯頁可改〕
+- [x] AI 失效/關閉時,手填流程不受影響(AI 為加分項非地基)。〔未設 `GEMINI_API_KEY` 時 `isAiEnabled()` 為 false,列表頁不渲染入口;手填「新增」照常〕
 
 ---
 
@@ -507,11 +507,22 @@
   - 儀器級權限一律用 `src/lib/instruments.ts` 的 `isManagerOf` / `managedInstrumentIds`;server action 必須自行檢查(勿只靠 UI)。
 
 ### 階段六:AI 輔助後台
-- 完成日期:
+- 完成日期:2026-06-27(實作 + build/lint/typecheck 通過;需有效 `GEMINI_API_KEY` 的端到端人工點測由開發者進行)
 - 實際與規格的偏差:
+  - **AI 落點為「建草稿 → 導既有編輯頁審核」**,而非「回填空白新增表單」(與使用者確認)。理由:完整重用既有編輯頁與 `TiptapEditor`(它本就會把 DB 的 Tiptap JSON 載回顯示),避免把 AI 產出的 Tiptap JSON 灌進「活的」前端編輯器實例這段易出包的接線;控制流全程 server-side(上傳→AI→建 DRAFT→redirect)。仍 100% 符合「預填僅為草稿、未審核不發布」。
+  - **模型 Gemini `gemini-2.5-flash`**(可由 `GEMINI_MODEL` 覆寫),用新版 SDK `@google/genai` 的 structured output(`responseMimeType:"application/json"` + `responseSchema`)確保回傳乾淨 JSON。
+  - **Word 處理:mammoth 抽全文再整份丟 Gemini**(Gemini 無法直接吃 .docx 二進位)。圖片:Publications 無關;Blog 偵測到圖則於內文插入佔位段落「請補圖」,實際圖由審核者於編輯器上傳(存 Supabase)。
+  - **Blog 內文格式**:請 Gemini 輸出簡單 HTML → `@tiptap/html/server` 的 `generateJSON(html, tiptapExtensions)` 轉成合法 Tiptap doc JSON(只保留已知節點 = 天然 sanitize),與手填同格式。
+  - 未設 `GEMINI_API_KEY` 時,Blog/Publications 列表頁不渲染「AI 快速新增」入口;`isAiEnabled()` 同時於 server action 再檢查。
 - 遇到的問題與解決方案:
+  - redirect 必須放在 try/catch **之外**(Next 的 `redirect()` 以丟例外實作,若被 catch 會誤判成 AI 失敗)。成功才 redirect;AI/解析失敗則回傳 `ActionResult{ok:false}` 不建草稿。
 - 衍生的新待辦/技術債:
+  - AI 串接無使用量上限(依使用者決定);Gemini 免費層額度足夠,日後若被濫用再加限流。
+  - Blog 圖片不會自動搬運,靠審核者補;若日後要自動搬圖,需把 docx 內嵌圖上傳 Supabase 再寫入 Tiptap image 節點。
+  - 多筆論文的 Word 目前只取第一筆(符合「每次只給新增那幾筆」慣例);若要批次,改成回傳陣列、逐筆建草稿。
+  - **Vercel 需新增 `GEMINI_API_KEY`**(見 `docs/env-vars.md`、`.env.example`)。
 - 給後續階段的提醒:
+  - AI 相關程式集中在 `src/lib/ai/`(`gemini.ts`/`docx.ts`/`tiptap.ts`),與主流程隔離;換模型只動 `gemini.ts`。
 
 ### 交付與交接
 - 完成日期:
