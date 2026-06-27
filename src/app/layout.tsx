@@ -8,6 +8,7 @@ import { getSettings } from "@/lib/settings";
 import { accentHex } from "@/lib/accent";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { RouteMask } from "@/components/RouteMask";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col">
         <LanguageProvider>
           <ScrollHideProvider>
+            <RouteMask />
             <Navbar visible={navVisible} />
             <main className="flex-1">{children}</main>
             <Footer
