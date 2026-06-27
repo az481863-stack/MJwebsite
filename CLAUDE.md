@@ -475,7 +475,7 @@
   - **記憶體速率限制在 serverless 多實例/冷啟動下非全域共享**,屬「基本防灌」;若日後濫用嚴重,改用 DB 計數或 Upstash/Redis、或加 Cloudflare Turnstile。
   - **聯絡訊息未存 DB**(僅寄信);若教授希望站內留存紀錄,需新增 `ContactMessage` 表(可順便做更可靠的速率限制)。
   - **Vercel 環境變數需新增 `CONTACT_RECIPIENTS`**(及確認 `RESEND_API_KEY`、已驗證寄件網域),否則正式站只會 console 印、不會真的寄。
-  - **⏸️ 寄件端設定擱置(2026-06-25,待與吳教授討論)**:Resend 測試位址 `onboarding@resend.dev` 只能寄到 Resend 註冊信箱,無法寄給任意收件人(聯絡表單兩個 gmail、邀請新會員都會被擋)。解法:買自有網域 → Resend 驗證寄件網域(使用者傾向此),或改 Gmail SMTP / Brevo·SendGrid 單一寄件人驗證。**程式皆已就緒,只差寄件端設定。** 細節見 `docs/env-vars.md`。
+  - **✅ 寄件端設定已完成(2026-06-26)**:原擱置的「Resend 測試位址只能寄給自己」問題已解決。已購入自有網域 `mjw-opto.com`,並於 Resend 驗證寄件子網域 **`mail.mjw-opto.com`**(DNS 由 Vercel 代管,region Tokyo `ap-northeast-1`;DKIM/SPF/DMARC 皆過,狀態 Verified)。正式寄件位址 `EMAIL_FROM="光電物理實驗室 <noreply@mail.mjw-opto.com>"`,可寄給任意收件人。**交接時 Resend 帳號 + 此網域應一併歸屬教授名下。** 細節見 `docs/env-vars.md`。
 - 給後續階段的提醒:
   - 多收件人寄信、`replyTo` 已在 `email.ts` 備好,後續任何通知信(如階段五異常警報)可沿用同一 `send()`。
 
@@ -500,7 +500,7 @@
   - 預約面板的 `now` 為一次性快照,長時間停留頁面不會自動把剛過的整點變灰;重新整理即更新。規模小可接受。
   - 預約時段為**全天 24 小時**、日期以**日曆(`<input type="date">`,min=今日)**選任意未來日(不再限 7 天/營業時段)。
   - 前台導覽該頁名稱為**「儀器介紹」**(`dictionary.ts` nav.instruments);頁面對所有人顯示儀器介紹,**預約區塊預設收合、須登入才可展開**(未登入/維護中/停權僅顯示原因,不出現預約區塊)。
-  - 異常警報實寄仍受「Resend 寄件網域未驗證」擱置事項影響(見階段四);未設 `RESEND_API_KEY` 時印 console。
+  - 異常警報實寄走 Resend(寄件網域 `mail.mjw-opto.com` 已驗證,見階段四後記);未設 `RESEND_API_KEY` 時印 console。
   - 儀器照片沿用 `media` bucket 的 `instruments/` 資料夾;屬資料一部分,交接時一併。
 - 給後續階段的提醒:
   - 任何需要「時間到自動變更狀態」的功能,沿用 `reconcile()` 的「冪等批次 + 頁面載入 lazy 呼叫 + cron 備援」範式,勿散落 setTimeout。
