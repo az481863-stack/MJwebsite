@@ -182,6 +182,7 @@ model Publication {
   venue     String // 期刊名稱
   year      Int
   doiUrl    String?       @map("doi_url")
+  abstract  String?       // 摘要(選填;供聊天機器人回答論文主旨,階段六 AI 可抽)
   highlight Boolean       @default(false) // 精選:前台加粗放大
   status    ContentStatus @default(DRAFT)
 
@@ -357,6 +358,11 @@ model SiteSettings {
 
   // 前台 Dark Optics 主題的重點色(存色票 key,見 src/lib/accent.ts)
   siteAccent String @default("cyan") @map("site_accent")
+
+  // 階段七:AI 聊天機器人
+  showChatbot        Boolean @default(false) @map("show_chatbot") // 前台聊天入口顯示開關(預設關)
+  chatbotKnowledgeZh String  @default("") @map("chatbot_knowledge_zh") // 中文知識庫(主來源)
+  chatbotKnowledgeEn String  @default("") @map("chatbot_knowledge_en") // 英文知識庫(維護時譯好存檔)
 
   updatedAt DateTime @updatedAt @map("updated_at")
   updatedBy String?  @map("updated_by")

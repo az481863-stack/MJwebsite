@@ -1,0 +1,131 @@
+// 階段七:聊天機器人對話(Gemini streaming + function calling + 組 system prompt)。
+// 定位為導覽/客服:只依知識庫回答與本實驗室/網站相關問題,不查即時狀態、不代操作。
+// 方案 A:Blog 內文「問到才查」——提供 getBlogContent 工具,模型需要時才撈該篇全文。
+//   (Blog 為已發布的靜態內容,問到才檢索合理;即時狀態如儀器可約與否仍一律導向頁面。)
+// 僅供 server 端使用(/api/chat route)。
+
+import { GoogleGenAI, Type, type FunctionCall } from "@google/genai";
+import { getBlogContentByQuery } from "./knowledge";
+
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+export type ChatRole = "user" | "model";
+export interface ChatMessage {
+  role: ChatRole;
+  text: string;
+}
+
+function getClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY 未設定");
+  return new GoogleGenAI({ apiKey });
+}
+
+// Blog 內文檢索工具宣告(function calling)。
+const blogTool = {
+  functionDeclarations: [
+    {
+      name: "getBlogContent",
+      description:
+        "查詢「光電小講堂 Blog」某篇文章的完整內文。當使用者問到某篇科普文章/部落格主題的細節," +
+        "而知識庫只有標題與摘要時,用本工具取得該篇全文再回答。query 傳文章標題或主題關鍵字。",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          query: { type: Type.STRING, description: "文章標題或主題關鍵字" },
+        },
+        required: ["query"],
+      },
+    },
+  ],
+};
+
+// 組 system prompt:護欄 + 知識庫。語言依使用者提問語言。
+function buildSystemPrompt(lang: "zh" | "en", knowledge: string): string {
+  const kb = knowledge.trim() || (lang === "en" ? "(empty)" : "(尚無內容)");
+  if (lang === "en") {
+    return [
+      "You are the helpful assistant for the Optoelectronic Physics Lab website (a navigation/FAQ assistant).",
+      "Rules:",
+      "- Answer ONLY questions about this lab and this website, using the knowledge base below.",
+      "- For details of a specific blog post, call the getBlogContent tool to fetch its full text, then answer from it.",
+      "- If neither the knowledge base nor a fetched blog post contains the answer, say you are not sure and guide the user to the Contact page. Never invent names, publications, numbers or facts.",
+      "- For real-time data (e.g. whether a specific instrument is available right now), do not guess — direct the user to the relevant page (e.g. the Instruments page).",
+      "- For unrelated questions, politely decline and steer back to lab/website topics.",
+      "- When directing the user to a page, ALWAYS give a clickable Markdown link, e.g. [Contact](/contact). Use these paths: Home /, Research & Industry /research, Lab Team /team, Instruments /instruments, Blog /blog, Contact /contact, Courses /courses, For High-School Students /for-students.",
+      "- Reply in English. Keep answers concise and friendly.",
+      "",
+      "=== KNOWLEDGE BASE ===",
+      kb,
+    ].join("\n");
+  }
+  return [
+    "你是「光電物理實驗室」網站的客服助理(導覽/FAQ 助理)。",
+    "規則:",
+    "- 只回答與本實驗室、本網站相關的問題,依據下方「知識庫」內容回答。",
+    "- 若使用者問到某篇部落格文章的細節,請呼叫 getBlogContent 工具取得該篇全文後再回答。",
+    "- 知識庫與所取得的文章都沒有答案時,坦白說不確定並引導到「聯絡教授」頁;絕不杜撰人名、論文、數據或任何事實。",
+    "- 涉及即時資料(例如某台儀器現在是否可預約)不要臆測,改引導使用者到對應頁面(如儀器頁)。",
+    "- 與實驗室/網站無關的問題,禮貌婉拒並把話題引回。",
+    "- 需要引導使用者到某頁面時,務必用 Markdown 連結格式給可點擊連結,例如 [聯絡教授](/contact)。頁面路徑:首頁 /、研究與產學 /research、團隊與招募 /team、儀器介紹 /instruments、光電小講堂 /blog、聯絡教授 /contact、課程紀錄 /courses、給高中生的話 /for-students。",
+    "- 以繁體中文回答,簡潔友善。",
+    "",
+    "=== 知識庫 ===",
+    kb,
+  ].join("\n");
+}
+
+// 執行模型要求的工具呼叫。
+async function runTool(call: FunctionCall, lang: "zh" | "en"): Promise<string> {
+  if (call.name === "getBlogContent") {
+    const query = String((call.args as { query?: unknown })?.query ?? "");
+    return getBlogContentByQuery(query, lang);
+  }
+  return lang === "en" ? "(unknown tool)" : "(未知工具)";
+}
+
+// 串流回應:回傳逐段吐出文字的 async generator。
+// 內含 function-calling 迴圈:模型先(可能)呼叫工具取 Blog 內文,再串流最終答案。
+export async function* streamChat(
+  messages: ChatMessage[],
+  lang: "zh" | "en",
+  knowledge: string,
+): AsyncGenerator<string> {
+  const ai = getClient();
+  const systemInstruction = buildSystemPrompt(lang, knowledge);
+  // 用可變陣列累積對話(含工具往返)。
+  const contents: unknown[] = messages.map((m) => ({
+    role: m.role,
+    parts: [{ text: m.text }],
+  }));
+
+  // 最多 3 輪:容納「模型呼叫工具 → 我們回傳結果 → 模型再答」。
+  for (let round = 0; round < 3; round++) {
+    const stream = await ai.models.generateContentStream({
+      model: MODEL,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      contents: contents as any,
+      config: { systemInstruction, tools: [blogTool], temperature: 0.4 },
+    });
+
+    const calls: FunctionCall[] = [];
+    for await (const chunk of stream) {
+      if (chunk.functionCalls?.length) calls.push(...chunk.functionCalls);
+      const t = chunk.text;
+      if (t) yield t;
+    }
+
+    if (calls.length === 0) return; // 沒有工具呼叫 = 已是最終答案。
+
+    // 把模型的工具呼叫與我們的回應接回對話,進入下一輪取最終答案。
+    contents.push({ role: "model", parts: calls.map((c) => ({ functionCall: c })) });
+    const responseParts = [];
+    for (const call of calls) {
+      const result = await runTool(call, lang);
+      responseParts.push({
+        functionResponse: { name: call.name, response: { result } },
+      });
+    }
+    contents.push({ role: "user", parts: responseParts });
+  }
+}

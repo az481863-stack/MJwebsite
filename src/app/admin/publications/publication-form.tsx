@@ -14,6 +14,7 @@ export interface PublicationInitial {
   venue: string;
   year: number;
   doiUrl: string | null;
+  abstract: string | null;
   highlight: boolean;
 }
 
@@ -56,6 +57,15 @@ export function PublicationForm({
       </Labeled>
       <Labeled label="DOI 連結(選填)" htmlFor="doiUrl">
         <input id="doiUrl" name="doiUrl" defaultValue={initial?.doiUrl ?? ""} className={fieldCls} />
+      </Labeled>
+      <Labeled label="摘要(選填,供聊天機器人回答論文主旨)" htmlFor="abstract">
+        <textarea
+          id="abstract"
+          name="abstract"
+          rows={5}
+          defaultValue={initial?.abstract ?? ""}
+          className={fieldCls}
+        />
       </Labeled>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="highlight" defaultChecked={initial?.highlight} />

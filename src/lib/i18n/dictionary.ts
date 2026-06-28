@@ -115,6 +115,16 @@ export interface Dictionary {
   };
   courses: { heading: string; intro: string; empty: string; handout: string };
   forStudents: { heading: string; intro: string; empty: string };
+  chat: {
+    title: string;
+    open: string;
+    close: string;
+    placeholder: string;
+    send: string;
+    greeting: string;
+    error: string;
+    rateLimited: string;
+  };
 }
 
 const zh: Dictionary = {
@@ -357,6 +367,16 @@ Email:____`,
     heading: "給高中生的話",
     intro: "寫給對光電物理好奇的你。",
     empty: "內容準備中。",
+  },
+  chat: {
+    title: "實驗室小幫手",
+    open: "開啟聊天",
+    close: "關閉",
+    placeholder: "詢問關於研究、應徵、儀器預約…",
+    send: "送出",
+    greeting: "你好!我是實驗室客服小幫手,可以回答研究方向、如何應徵、儀器預約規則、聯絡方式等問題。",
+    error: "抱歉,暫時無法回應,請稍後再試。",
+    rateLimited: "詢問太頻繁了,請稍後再試。",
   },
 };
 
@@ -602,6 +622,16 @@ Email: ____`,
     heading: "For High-School Students",
     intro: "A note for those curious about optoelectronic physics.",
     empty: "Content coming soon.",
+  },
+  chat: {
+    title: "Lab Assistant",
+    open: "Open chat",
+    close: "Close",
+    placeholder: "Ask about research, applying, instrument booking…",
+    send: "Send",
+    greeting: "Hi! I'm the lab's assistant. I can answer questions about our research, how to apply, instrument booking rules, contact info, and more.",
+    error: "Sorry, I can't respond right now. Please try again later.",
+    rateLimited: "Too many messages — please try again later.",
   },
 };
 

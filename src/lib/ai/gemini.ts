@@ -39,12 +39,29 @@ async function callGeminiJson<T>(
   return JSON.parse(text) as T;
 }
 
+// 共用呼叫:純文字輸出(供階段七知識庫濃縮/翻譯)。
+export async function callGeminiText(
+  systemInstruction: string,
+  userText: string,
+): Promise<string> {
+  const ai = getClient();
+  const res = await ai.models.generateContent({
+    model: MODEL,
+    contents: userText,
+    config: { systemInstruction, temperature: 0.3 },
+  });
+  const text = res.text;
+  if (!text) throw new Error("AI 無回應");
+  return text.trim();
+}
+
 export interface PublicationExtract {
   authors: string;
   title: string;
   venue: string;
   year: number;
   doiUrl: string;
+  abstract: string;
 }
 
 // Publications:只「抽取」不可改寫。重點正確抓作者順序、期刊、年份、DOI。
@@ -57,13 +74,15 @@ export async function extractPublication(docText: string): Promise<PublicationEx
       venue: { type: Type.STRING, description: "期刊或會議名稱" },
       year: { type: Type.INTEGER, description: "發表年份(西元)" },
       doiUrl: { type: Type.STRING, description: "DOI 連結;無則空字串" },
+      abstract: { type: Type.STRING, description: "論文摘要(abstract)原文;無則空字串" },
     },
-    required: ["authors", "title", "venue", "year", "doiUrl"],
-    propertyOrdering: ["authors", "title", "venue", "year", "doiUrl"],
+    required: ["authors", "title", "venue", "year", "doiUrl", "abstract"],
+    propertyOrdering: ["authors", "title", "venue", "year", "doiUrl", "abstract"],
   };
   const system =
     "你是學術論文書目資料抽取助手。只從提供的文件忠實『抽取』欄位,務必保持作者原始順序," +
-    "不可改寫、翻譯或杜撰任何內容。找不到的欄位給空字串(年份找不到給 0)。若文件含多筆論文,只取第一筆。";
+    "不可改寫、翻譯或杜撰任何內容。摘要(abstract)若文件中有則原文抽取,沒有則給空字串。" +
+    "找不到的欄位給空字串(年份找不到給 0)。若文件含多筆論文,只取第一筆。";
   return callGeminiJson<PublicationExtract>(system, docText, schema);
 }
 
