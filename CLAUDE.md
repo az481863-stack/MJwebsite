@@ -29,6 +29,7 @@
 - 程式碼置於 **GitHub** → **Vercel** 連動自動部署 Next.js(Next.js 原廠平台,零摩擦)。
 - Supabase 為獨立託管服務,Next.js 後端透過連線存取(資料層 + Auth + Storage)。
 - **需管理的帳號**:Vercel、Supabase(GitHub 為程式碼托管)。詳見下方「帳號歸屬與交接」。
+- **Vercel 函式區域須與 Supabase DB 同區**:目前兩者皆在**新加坡**(Vercel `sin1` / Supabase `ap-southeast-1`)。前台多為 `force-dynamic`(每次請求多筆 DB 查詢),函式與 DB 同區可把最貴的「函式↔DB」往返壓到最低。區域寫在根目錄 `vercel.json` 的 `regions`(以檔案為準、交接時跟著走)。**日後若搬 DB 區域,務必同步改 `vercel.json` 的函式區域**(沿革見開發日誌「部署效能後記」)。
 
 ### 排程(時間驅動任務)
 - 需求:儀器「時段一到自動簽到」「逾 3 天關閉簽退」等任務需定時執行。
@@ -523,6 +524,12 @@
   - **Vercel 需新增 `GEMINI_API_KEY`**(見 `docs/env-vars.md`、`.env.example`)。
 - 給後續階段的提醒:
   - AI 相關程式集中在 `src/lib/ai/`(`gemini.ts`/`docx.ts`/`tiptap.ts`),與主流程隔離;換模型只動 `gemini.ts`。
+
+### 部署效能後記(2026-06-28):Vercel 函式區域
+- 問題:吳教授反映載入偏慢。診斷:回應標頭 `x-vercel-id` 為 `hkg1::iad1::…`,代表**函式實際跑在美東 `iad1`**,但 Supabase DB 在新加坡 → 每次請求「函式↔DB」跨太平洋來回,前台 `force-dynamic` 一頁多筆查詢,延遲被放大(遠大於「新加坡 vs 東京」的差距)。
+- 解法:**函式與 DB 同區**。維持 DB 在新加坡,於根目錄新增 `vercel.json` 設 `{"regions":["sin1"]}`,並在 Vercel Settings → Functions 取消美東、只留 Singapore。驗證:`curl -sD - -o /dev/null https://mjw-opto.com/ | grep x-vercel-id` 應出現 `::sin1::`。
+- 原則(已寫入規格 §部署):**函式區域永遠跟著 DB 區域**。若日後把 Supabase 搬到東京,`vercel.json` 同步改 `hnd1`。
+- 排查心法:用 `x-vercel-id` 的 `<邊緣>::<函式區>::<id>` 格式判斷函式實際執行區;靜態檔走全球 CDN 不受此影響,只有動態 SSR 函式位置要顧。
 
 ### 交付與交接
 - 完成日期:
