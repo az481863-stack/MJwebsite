@@ -20,8 +20,8 @@
 | `CONTACT_RECIPIENTS` | 聯絡表單收件信箱(階段四);**可多個,逗號分隔** | 自填(教授/助教信箱) | ➖ | ✅(要收聯絡信) |
 | `SETUP_SECRET` | `/setup` 建立首位最高權限者的密語;建立後該頁自動失效 | 自填一組夠長的隨機字串 | ✅ | 建議 |
 | `CRON_SECRET` | 階段五:保護 `/api/cron`(儀器自動簽到/逾時對帳)的 Bearer 密語 | 自填一組夠長的隨機字串 | ✅ | ✅(儀器系統) |
-| `GEMINI_API_KEY` | 階段六:Blog/Publications「AI 快速新增」(Word→草稿);未設則該功能隱藏 | Google AI Studio → Get API key | ✅ | 建議(要 AI) |
-| `GEMINI_MODEL` | (選填)覆寫 Gemini 模型,預設 `gemini-2.5-flash` | 自填 | ➖ | ➖ |
+| `GEMINI_API_KEY` | 階段六/七:Blog/Publications「AI 快速新增」+ 聊天機器人(知識庫彙整/翻譯、前台聊天);未設則兩者功能皆隱藏 | Google AI Studio → Get API key | ✅ | 建議(要 AI) |
+| `GEMINI_MODEL` | (選填)覆寫 Gemini 模型,預設 `gemini-2.5-flash`;階段六/七共用 | 自填 | ➖ | ➖ |
 
 ## 重要提醒(踩過的坑)
 

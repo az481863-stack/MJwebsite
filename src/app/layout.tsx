@@ -6,9 +6,11 @@ import { LanguageProvider } from "@/lib/i18n/context";
 import { ScrollHideProvider } from "@/lib/scroll-hide";
 import { getSettings } from "@/lib/settings";
 import { accentHex } from "@/lib/accent";
+import { isAiEnabled } from "@/lib/ai/gemini";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { RouteMask } from "@/components/RouteMask";
+import { ChatWidget } from "@/components/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +45,9 @@ export default async function RootLayout({
   // Dark Optics 重點色:由後台 Settings 決定,server-side 注入 CSS 變數(無閃爍)。
   const accent = accentHex(settings.siteAccent);
 
+  // 階段七:聊天入口僅在「後台開關開啟」且「已設 GEMINI_API_KEY」時掛載。
+  const chatbotEnabled = settings.showChatbot && isAiEnabled();
+
   return (
     <html
       lang="zh-Hant"
@@ -59,6 +64,7 @@ export default async function RootLayout({
               visible={navVisible}
               showHighschool={settings.showHighschool}
             />
+            {chatbotEnabled && <ChatWidget />}
           </ScrollHideProvider>
         </LanguageProvider>
       </body>

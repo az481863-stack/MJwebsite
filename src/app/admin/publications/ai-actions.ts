@@ -42,6 +42,7 @@ export async function quickAddPublicationFromWord(
         venue: ai.venue || "(待補)",
         year: ai.year && ai.year > 0 ? ai.year : new Date().getFullYear(),
         doiUrl: ai.doiUrl || null,
+        abstract: ai.abstract || null,
         highlight: false,
         status: "DRAFT",
         createdBy: me.id,

@@ -20,6 +20,7 @@ function parse(formData: FormData) {
     venue: String(formData.get("venue") ?? "").trim(),
     year: parseInt(String(formData.get("year") ?? ""), 10),
     doiUrl: String(formData.get("doiUrl") ?? "").trim() || null,
+    abstract: String(formData.get("abstract") ?? "").trim() || null,
     highlight: formData.get("highlight") === "on",
   };
 }
@@ -42,6 +43,7 @@ export async function createPublication(
       venue: f.venue,
       year: f.year,
       doiUrl: f.doiUrl,
+      abstract: f.abstract,
       highlight: f.highlight,
       // 學生一律草稿;管理員可選擇立即發布。
       status: isAdmin && formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
@@ -84,6 +86,7 @@ export async function updatePublication(
       venue: f.venue,
       year: f.year,
       doiUrl: f.doiUrl,
+      abstract: f.abstract,
       highlight: f.highlight,
       updatedBy: me.id,
     },

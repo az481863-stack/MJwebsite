@@ -36,6 +36,7 @@ export async function saveSettings(
     showContact: bool("showContact"),
     showIndustry: bool("showIndustry"),
     showHighschool: bool("showHighschool"),
+    showChatbot: bool("showChatbot"),
     instrumentMaxHours,
     siteAccent,
     updatedBy: me.id,

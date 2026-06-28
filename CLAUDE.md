@@ -168,7 +168,7 @@
 
 > 規則:每階段須通過「測試通過條件」方可進入下一階段。
 > 順序:階段零(地基)→ 一~六(功能)→ 交付與交接(結案)。
-> 依賴關係:所有功能階段依賴階段零;三 依賴 二;五 依賴 二;六 依賴 三。
+> 依賴關係:所有功能階段依賴階段零;三 依賴 二;五 依賴 二;六 依賴 三;七 依賴 三(Settings 知識庫)並與六共用 Gemini。
 
 ---
 
@@ -306,6 +306,46 @@
 
 ---
 
+## 階段七:AI 聊天機器人(FAQ / 網站導覽)
+**範圍**:於前台加一個浮動聊天視窗,由 Gemini 回答「關於本實驗室與本網站」的問題(研究方向、如何應徵、儀器預約如何運作、聯絡方式、某頁面在哪等)。**定位為導覽/客服:不查即時 DB、不代操作、不寫入任何資料。** 沿用階段六既有的 Gemini 串接與「AI 為加分項非地基」原則。
+
+### 知識庫(後台維護 + 一鍵彙整 + 一鍵翻譯)
+- **中英兩份知識庫**,存於 Settings 的兩個長文欄位 `chatbotKnowledgeZh`(中文,主來源)與 `chatbotKnowledgeEn`(英文),後台皆可手動編輯。**英文版於維護時一次譯好並存檔**,聊天時依使用者語言直接取用對應欄位 —— **不在每次提問時即時翻譯**(把翻譯成本挪到維護時的單次操作,省 token、回應更快)。
+- **「更新知識庫」按鈕**(後台知識庫頁):點擊 → server action **彙整全站內容**(直接讀 DB 已發布內容:成員、校友、論文、Blog、職缺、課程、產學專利、佈告欄等 + 階段一寫死區塊:研究領域、PI 理念、應徵範本、聯絡資訊)→ 丟 **Gemini 濃縮整理**成精簡、條理化、長度可控的客服知識庫 → **回填中文編輯欄位(尚未存檔)**。使用者檢視/微調後按「儲存」才寫入。
+  - ⚠️ **「彙整」是直接讀資料來源(DB + 寫死區塊),非 HTTP 爬蟲**。理由:本就是同一個全端 App,直讀來源比抓渲染後 HTML 更準、更穩、自動排除草稿/隱藏頁。對使用者體驗仍是「按一下、內容自動跑出來」。
+- **「翻譯」按鈕**(後台知識庫頁):點擊 → server action 取**目前中文編輯欄位的內容**丟 Gemini 翻成英文 → **回填英文編輯欄位(尚未存檔)**。使用者檢視/微調後按「儲存」才寫入。維護流程即:更新知識庫(產中文)→ 微調中文 → 翻譯(產英文)→ 微調英文 → 儲存。
+  - **更新/翻譯皆 = 整份覆蓋對應編輯欄位**(不做合併):重產內容取代該欄位現值。覆蓋僅發生在編輯欄位,**按「儲存」前不影響線上聊天使用的知識庫**。
+- 草稿/隱藏(`deletedAt` 非空或非 `PUBLISHED`)內容**不納入**彙整。
+- **Blog 內文不入知識庫,改「問到才查」(function calling,方案 A)**:知識庫只放 Blog 的標題+摘要當索引;使用者問到某篇細節時,Gemini 自行呼叫 `getBlogContent` 工具 → server 端依 query 比對已發布文章、把該篇 Tiptap 內文抽成純文字回傳 → 模型據此作答。理由:Blog 全文若全塞知識庫太長、耗 token;讓模型自己決定何時撈、撈哪篇,天然解決中文斷詞且省 token。Blog 為已發布靜態內容,「問到才查」不違反「不查即時狀態」護欄(即時狀態如儀器可約與否仍一律導向頁面)。
+- **Publications 含摘要(abstract)**:論文書目(作者/年份/標題/期刊)+ 摘要直接放入知識庫(資料量小,不需 function calling)。可答「論文主旨」;論文全文層級的細節不在系統內,一律引導 DOI/聯絡頁,不杜撰。
+
+### 對話與護欄
+- **多輪對話 + 串流**:支援連續追問(前端保留當輪歷史送回);回應逐字 streaming 顯示。對話歷史**僅存瀏覽器當次工作階段,不存 DB**(比照階段四聯絡訊息取捨)。
+- **護欄**:system prompt 限定「只依知識庫回答與本實驗室/網站相關問題;知識庫沒有的就說不知道並引導至聯絡頁,不得杜撰人名/論文/數據;涉及即時資料(如某儀器現在是否可約)一律引導至對應頁面,不臆測」。
+- **語系**:回答語言跟隨使用者提問語言(中文知識庫 → 英文問則翻譯作答);介面文案跟隨前台 [EN/中文] 切換。
+- **開關**:`isAiEnabled()`(未設 `GEMINI_API_KEY` 即不渲染聊天入口)+ Settings 的 `showChatbot` 顯示/隱藏開關(沿用階段三「頁面顯示/隱藏」範式)。
+- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):每 IP 速率限制 + 單則訊息長度上限 + 單輪對話則數上限(沿用階段四「記憶體 IP 限流」思路,並承認 serverless 多實例下非全域共享的限制)。
+
+### 模組與檔案
+- AI 程式集中 `src/lib/ai/chat.ts`(Gemini streaming + function calling + 組 system prompt)與 `src/lib/ai/knowledge.ts`(彙整全站內容 + 呼叫 Gemini 濃縮 + `getBlogContentByQuery` 供工具呼叫);與階段六 `gemini.ts` 同風格,換模型只動 AI 模組。
+- API 端點 `src/app/api/chat/route.ts`(streaming/SSE + IP 限流)。
+- 前台浮動視窗 `src/components/ChatWidget.tsx`(client),於 `layout.tsx` 依 `showChatbot` + `isAiEnabled()` 掛載;套 Dark Optics token 與重點色 `--accent`。
+- Settings 加 `chatbotKnowledge`、`showChatbot` 欄位與後台知識庫頁。
+- 聊天沿用既有 `GEMINI_API_KEY`(可選 `GEMINI_MODEL`),**無新金鑰**;更新 `docs/env-vars.md`、`.env.example` 說明即可。
+
+**測試通過條件**(實作 + build/lint/typecheck 通過;需有效 `GEMINI_API_KEY` 之端到端人工點測由開發者進行)
+- [x] 開啟聊天視窗,能就「研究方向 / 如何應徵 / 儀器預約規則 / 聯絡方式 / 某頁面在哪」得到符合網站內容的正確回答。〔`ChatWidget` + `/api/chat` + 知識庫含頁面導覽/儀器規則摘要〕
+- [x] 串流逐字顯示正常;多輪追問能保留前文脈絡。〔`generateContentStream` → `ReadableStream`;前端保留 messages 歷史送回〕
+- [x] 中文提問取中文知識庫、英文提問取已存的英文知識庫作答(非每次即時翻譯);介面文案隨前台語系切換。〔route 依 `lang` 取 `chatbotKnowledgeZh/En`〕
+- [x] 護欄生效:無關問題婉拒並引導;即時資料問題導向對應頁面;知識庫沒有的事實回答「不確定」並引導聯絡頁,不杜撰。〔system prompt 護欄,見 `chat.ts`〕
+- [x] 「更新知識庫」能彙整全站**已發布**內容(草稿/隱藏不納入)、經 Gemini 整理後回填中文編輯欄位;結果僅為待確認內容,未按儲存不影響線上聊天。〔`aggregateSiteContent` 只取 `status=PUBLISHED, deletedAt=null` → `condenseKnowledge`〕
+- [x] 「翻譯」能將目前中文編輯欄位內容譯為英文回填英文編輯欄位;結果僅為待確認內容,未按儲存不影響線上聊天。〔`translateToEnglish` 回傳文字、前端填入 state,未存檔〕
+- [x] 「更新」與「翻譯」皆為整份覆蓋對應編輯欄位(非合併);儲存後聊天即採用新知識庫。〔回傳整份取代 textarea state;`saveKnowledge` upsert〕
+- [x] `showChatbot` 關閉或未設 `GEMINI_API_KEY` 時前台完全不出現聊天入口;Gemini 失效時「更新知識庫」報錯,但手動編輯/既有知識庫/網站其他功能不受影響。〔layout `showChatbot && isAiEnabled()` 才掛載;action try/catch〕
+- [x] 防濫用生效:超過 IP 速率限制 / 訊息過長 / 單輪則數過多時正確擋下並提示。〔route:每 IP 10 分鐘 30 次、單則 ≤1000 字、歷史 ≤20 則〕
+
+---
+
 ## 交付與交接(結案)
 **範圍**:正式把專案擁有權與營運責任移交實驗室,開發者退場。對應「帳號歸屬與交接」。
 - 三服務(GitHub、Vercel、Supabase)擁有權轉移至吳教授/實驗室:教授帳號設為 owner、開發者降級或退出。
@@ -327,7 +367,7 @@
 分類(學術快報/實驗室日常/榮譽榜)、標題、內文、圖片(選)、連結網址(選)、連結文字(選)、發布日期。
 
 ### G-2. Publications〔階段六可 AI 填〕
-作者、論文標題、期刊名稱、發表年份、DOI 連結(選)、精選 Highlight(是/否)。前台依年份倒序、精選加粗放大。
+作者、論文標題、期刊名稱、發表年份、DOI 連結(選)、**摘要 abstract(選)**、精選 Highlight(是/否)。前台依年份倒序、精選加粗放大。〔摘要為階段七新增:供聊天機器人回答論文主旨;階段六 AI 抽取時一併抓取(有則原文抽取、無則留空,不杜撰)。前台顯示維持書目欄位,不顯示摘要。〕
 
 ### G-3. 現役成員
 姓名、身份階層(博後/博士生/碩士生/專題生)、照片(選)、研究題目、排序。
@@ -530,6 +570,29 @@
 - 解法:**函式與 DB 同區**。維持 DB 在新加坡,於根目錄新增 `vercel.json` 設 `{"regions":["sin1"]}`,並在 Vercel Settings → Functions 取消美東、只留 Singapore。驗證:`curl -sD - -o /dev/null https://mjw-opto.com/ | grep x-vercel-id` 應出現 `::sin1::`。
 - 原則(已寫入規格 §部署):**函式區域永遠跟著 DB 區域**。若日後把 Supabase 搬到東京,`vercel.json` 同步改 `hnd1`。
 - 排查心法:用 `x-vercel-id` 的 `<邊緣>::<函式區>::<id>` 格式判斷函式實際執行區;靜態檔走全球 CDN 不受此影響,只有動態 SSR 函式位置要顧。
+
+### 階段七:AI 聊天機器人(FAQ / 網站導覽)
+- 完成日期:2026-06-28(實作 + build/lint/typecheck 通過;需有效 `GEMINI_API_KEY` 的端到端人工點測由開發者進行)
+- 實際與規格的偏差:
+  - **知識庫由「單一中文」改為「中英雙欄 + 翻譯按鈕」**(與使用者確認,過程見規格沿革):一度規劃只存中文、英文提問即時翻譯;後考量「每次提問都翻譯較耗 token、較慢」,改為**維護時用「翻譯」按鈕一次譯好英文並存檔**,聊天時依語言直接取對應欄位。Settings 因此新增 `chatbotKnowledgeZh` / `chatbotKnowledgeEn` 兩欄 + `showChatbot` 開關。
+  - **「彙整」直讀 DB + 寫死區塊,非 HTTP 爬蟲**:`aggregateSiteContent()`(`src/lib/ai/knowledge.ts`)直接查 `status=PUBLISHED, deletedAt=null` 的各內容表,並從 `dictionaries.zh` 取寫死區塊(Hero/研究領域/PI 理念/應徵範本/聯絡資訊),另手寫「網站頁面導覽」「儀器預約規則摘要」兩段供導覽問答。再丟 `condenseKnowledge()` 給 Gemini 濃縮成中文知識庫。
+  - **更新/翻譯為「回傳文字、前端填入 textarea」而非直接寫庫**:server action 回傳結果,前端 `useState` 整份覆蓋欄位;按「儲存」(`saveKnowledge`)才 upsert。故「未存檔不影響線上聊天」由設計保證。
+  - **Blog 內文(Tiptap JSON)未做全文抽取**:彙整時只取 `titleZh + summary`,避免在 server 端反序列化 Tiptap doc;對 FAQ/導覽足夠。日後若要全文檢索再補。
+  - **串流用純文字而非 SSE 事件框架**:`/api/chat` 回 `text/plain` 串流,前端以 `response.body.getReader()` 逐塊 append,最簡且夠用。
+- 遇到的問題與解決方案:
+  - `callGeminiText`(純文字輸出)補進既有 `gemini.ts`,與階段六的 `callGeminiJson` 並存;聊天串流另寫在 `chat.ts`(`generateContentStream`)。換模型仍只動 `src/lib/ai/`。
+- 衍生的新待辦/技術債:
+  - **防濫用為記憶體限流**(每 IP 10 分鐘 30 次、單則 ≤1000 字、歷史 ≤20 則),serverless 多實例下非全域共享,屬「基本防灌」(同階段四取捨);若被濫用再上 Upstash/Redis 或 Turnstile。
+  - **對話不存 DB**(僅當次工作階段);若日後想分析訪客問題需新增 `ChatLog` 表。
+  - 知識庫**需手動先按「更新知識庫」+「翻譯」+「儲存」**才有內容;空知識庫時機器人會大多回「不確定」。交接說明應含此維護步驟。
+  - **無新環境變數**:沿用 `GEMINI_API_KEY`(可選 `GEMINI_MODEL`)。前台聊天入口需「`showChatbot` 開 + 有金鑰」雙條件。
+- 給後續階段的提醒:
+  - 新增「需彙整全站內容」的 AI 功能,沿用 `aggregateSiteContent()` 的「直讀 DB 來源 + 過濾 PUBLISHED/deletedAt」範式,勿走 HTTP 爬蟲。
+  - 知識庫維護流程(後台「聊天機器人知識庫」頁):更新知識庫(產中文)→ 微調 → 翻譯(產英文)→ 微調 → 儲存。
+- **後記(2026-06-28):Blog 內文檢索(方案 A)+ Publications 摘要**
+  - **Blog 改「問到才查」**:原知識庫只放 Blog 標題+摘要(全文太長、耗 token)。改在 `chat.ts` 加 Gemini **function calling** 工具 `getBlogContent`,模型需要時才呼叫 → `getBlogContentByQuery()`(`knowledge.ts`)依 query 比對已發布文章、把該篇 Tiptap JSON 以自寫的 `tiptapToPlainText()` 抽成純文字回傳 → 模型續答。串流實作為「function-calling 迴圈」:每輪 `generateContentStream`,若該輪出現 `functionCalls` 則執行工具、把 `functionCall`/`functionResponse` 接回 `contents` 進下一輪取最終答案(最多 3 輪)。選 function calling 而非關鍵字檢索,是因中文無空格、斷詞難,讓模型自己挑文章天然解決且省 token。
+  - **Publications 加 `abstract` 摘要欄位**(schema 選填;migration `20260628034933_add_publication_abstract`):後台表單可手填,階段六 AI 抽取(`extractPublication`)一併抓(有則原文、無則空)。摘要量小,直接併入知識庫彙整(不走 function calling);讓機器人能答「論文主旨」,但論文全文細節仍引導 DOI/聯絡頁、不杜撰。前台 Publications 顯示維持書目欄位,不顯示摘要。
+  - 護欄措辭更新:Blog 內文(已發布靜態內容)「問到才查」不違反「不查即時狀態」原則;真正禁止臆測的是即時狀態(儀器可約與否等),仍一律導向頁面。
 
 ### 交付與交接
 - 完成日期:

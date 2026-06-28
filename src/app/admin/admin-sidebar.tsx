@@ -68,6 +68,11 @@ export function AdminSidebar({
                     </Link>
                   </li>
                   <li>
+                    <Link href="/admin/chatbot" className={itemCls("/admin/chatbot")}>
+                      聊天機器人知識庫
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/admin/settings" className={itemCls("/admin/settings")}>
                       網站設定
                     </Link>

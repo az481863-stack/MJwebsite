@@ -13,6 +13,7 @@ const PAGE_TOGGLES: { key: keyof SiteSettingsData; label: string }[] = [
   { key: "showInstruments", label: "儀器預約管理(導覽入口)" },
   { key: "showIndustry", label: "產學與專利區塊(研究頁內)" },
   { key: "showHighschool", label: "給高中生的話(/for-students)" },
+  { key: "showChatbot", label: "AI 聊天機器人(前台浮動視窗)" },
 ];
 
 export function SettingsForm({ initial }: { initial: SiteSettingsData }) {

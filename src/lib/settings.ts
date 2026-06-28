@@ -14,6 +14,9 @@ export interface SiteSettingsData {
   showHighschool: boolean;
   instrumentMaxHours: number;
   siteAccent: string;
+  showChatbot: boolean;
+  chatbotKnowledgeZh: string;
+  chatbotKnowledgeEn: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -26,6 +29,9 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   showHighschool: true,
   instrumentMaxHours: 24,
   siteAccent: DEFAULT_ACCENT,
+  showChatbot: false,
+  chatbotKnowledgeZh: "",
+  chatbotKnowledgeEn: "",
 };
 
 export async function getSettings(): Promise<SiteSettingsData> {
@@ -44,6 +50,9 @@ export async function getSettings(): Promise<SiteSettingsData> {
       showHighschool: s.showHighschool,
       instrumentMaxHours: s.instrumentMaxHours,
       siteAccent: s.siteAccent,
+      showChatbot: s.showChatbot,
+      chatbotKnowledgeZh: s.chatbotKnowledgeZh,
+      chatbotKnowledgeEn: s.chatbotKnowledgeEn,
     };
   } catch {
     return DEFAULT_SETTINGS;
