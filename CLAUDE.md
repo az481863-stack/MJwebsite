@@ -67,6 +67,7 @@
   - 〔原規格為「極簡學院風:純白底、大氣黑字」;吳教授檢視後認為過白單調,參考 awwwards 後拍板改為 Dark Optics(淺底 + 深色 Hero 帶 + 可調重點色),並保留調色盤於後台。規格已更新為現狀,沿革見開發日誌階段三後記。〕
   - 技術實作:沿用語意化 CSS tokens(`--background`/`--foreground`/`--muted`/`--line`),`:root` 維持淺色;深色帶以 `.band-dark` class 局部反轉 token(近黑底白字)。`--accent` 由 `layout.tsx` 依設定 server-side 注入 `<html>`(無閃爍)。後台(admin/login/account/setup)維持原淺色介面。
 - 語言:全站右上角固定 [EN / 中文] 切換鈕。**全站(含首頁核心標題與教授簡介)顯示單一語言,隨切換鈕變換,不並列雙語。** 內頁以中文為主、同樣支援切換。
+  - **動態內容雙語機制(adjustment 輪)**:各後台內容類型(動態佈告欄、儀器說明、職缺、Blog 等)除中文外另存**英文欄位**,維護時於編輯頁按「**一鍵翻譯成英文**」(Gemini)產生、可手改後存檔;前台切 EN 取英文欄,**英文留空則 fallback 顯示中文**(部分翻譯不開天窗)。採「維護時翻好存 DB」而非前台即時翻譯(省 token、可校稿、AI 掛了英文站照常),與階段七知識庫同原則。共用程式:`src/lib/ai/gemini.ts` 的 `translateFieldsToEnglish`、`src/app/admin/translate-action.ts`、`src/components/admin/TranslateButton.tsx`。沿革見開發日誌。
 - 後台:自建 CMS,前台內容由後台維護,無需改原始碼。**前台主題重點色亦於後台 Settings 調整(調色盤),不需改原始碼。**
 
 ### A-2. 導覽列
@@ -227,6 +228,7 @@
 - **Blog 內文**採用 **Tiptap**(富文本編輯器,中英雙版)。**Publications 為結構化欄位**(作者/標題/期刊/年份/DOI/精選),無內文 body,故不使用 Tiptap(原規格「Blog 與 Publications 採 Tiptap」已依實作修正:Publications 無 body 可富文本化)。
 - 學生建草稿 → 管理員以上審核發布。
 - **設定頁(Settings)**:管理頁面層級的雜項與**通用「顯示/隱藏」開關**——任一頁面(如產學與專利、給高中生的話,乃至未上線的儀器頁)皆可由開關控制是否於前台顯示。亦含**儀器預約總時數上限**(預設 24 小時,供階段五使用)等全站參數。
+  - 〔adjustment 輪追加:Settings 另含**首頁文字**(Hero 標題/副標、PI 理念、研究領域標題/引言/卡片)與**聯絡資訊**(名稱/地址/Email/電話/辦公時間)的可編輯欄位,中英分填、留空 fallback 字典。沿革見開發日誌。〕
 
 **測試通過條件**
 - [x] 每種內容皆可新增/編輯/軟刪除,前台正確呈現(含倒序排序、精選加粗)。
@@ -370,10 +372,13 @@
 作者、論文標題、期刊名稱、發表年份、DOI 連結(選)、**摘要 abstract(選)**、精選 Highlight(是/否)。前台依年份倒序、精選加粗放大。〔摘要為階段七新增:供聊天機器人回答論文主旨;階段六 AI 抽取時一併抓取(有則原文抽取、無則留空,不杜撰)。前台顯示維持書目欄位,不顯示摘要。〕
 
 ### G-3. 現役成員
-姓名、身份階層(博後/博士生/碩士生/專題生)、照片(選)、研究題目、排序。
+姓名、身份階層、照片(選)、研究題目、排序。
+- **身份階層(`TeamTier`,12 種)**:教授、特聘教授、名譽教授、副教授、助理教授、客座教授、兼任教授、博後、專任助理(非學生非教職的一般員工)、博士生、碩士生、專題生。〔原規格僅 4 種(博後/博士生/碩士生/專題生);吳教授要求補上教職與一般員工層級,於 adjustment 輪擴充,沿革見開發日誌。〕
+- **排序**:後台列表以**拖曳**調整(`sortOrder`),不再手填數字;且後台與前台皆**依層級分組**顯示,層級內順序由拖曳決定、跨層級順序固定(見 `team-content.tsx` 的 `TIER_ORDER`)。拖曳僅限**同層級內**(層級是身份,改層級須進編輯頁)。
 
-### G-4. 校友去向
-姓名、畢業年份、去向。
+### G-4. 歷屆成員去向〔原「校友去向」〕
+姓名、畢業年份、去向、**照片(選)**、排序。
+- 〔吳教授要求:標題由「校友去向」改為「歷屆成員去向」(英文維持 Alumni);去向加照片(前台列表 + 小圓頭像,可點擊放大);後台列表改**拖曳**排序(`sortOrder` 優先,取代原 `gradYear` 主排序)。沿革見開發日誌。〕
 
 ### G-5. 學術能階職缺表(職缺管理)
 職位名稱、層級排序、招募狀態(開放/額滿)、名額(選)、職位說明。可新增/刪除整筆。
@@ -408,8 +413,9 @@
 ---
 
 # 附錄 I:寫死區塊(不進後台,供對照)
-首頁 Hero、研究領域、PI 理念、應徵範本內容、聯絡基本資訊、導覽列、頁尾、語系切換。
-(產學與專利、給高中生的話已改為後台管理,見 G-8、G-9。)
+應徵範本內容、導覽列、頁尾、語系切換。
+- (產學與專利、給高中生的話已改為後台管理,見 G-8、G-9。)
+- 〔adjustment 輪起,**首頁 Hero(標題/副標)、PI 理念、研究領域、聯絡基本資訊(實驗室名稱/地址/Email/電話/辦公時間)已改為後台 Settings 可編輯**(留空則 fallback 字典預設值);故不再純屬寫死區塊。維護位置:後台 → 設定 →「首頁文字」「聯絡資訊」。沿革見開發日誌。〕
 
 ---
 
@@ -439,6 +445,7 @@
   - **連線字串密碼一律 URL 編碼**,日後換密碼/重設時務必照做,否則重蹈問題 1。
   - **migration 走 DIRECT_URL(5432)、執行期走 DATABASE_URL(6543)** 的雙線設計要維持;新增 `env()` 依賴時記得 Vercel 也要同步補環境變數,否則 build 會掛(問題 3)。
   - GitHub Actions 保活已驗證可手動 `workflow_dispatch` 觸發;`SUPABASE_DB_URL` 用的是 DIRECT_URL。
+  - **改 schema 並 `prisma migrate/generate` 後,正在跑的 `npm run dev`(Turbopack)務必重啟**:Turbopack 不會在 generate 後熱重載產生的 Prisma client,會繼續用舊版,導致儲存時報 `PrismaClientValidationError: Unknown argument <新欄位>`(錯誤裡「可用欄位」清單會停在加新欄位之前)。程式本身沒問題,重啟 dev server 即解。〔2026-06-30 加首頁可編輯欄位時踩到〕
 
 ### 階段一:靜態內容網站
 - 完成日期:
@@ -593,6 +600,20 @@
   - **Blog 改「問到才查」**:原知識庫只放 Blog 標題+摘要(全文太長、耗 token)。改在 `chat.ts` 加 Gemini **function calling** 工具 `getBlogContent`,模型需要時才呼叫 → `getBlogContentByQuery()`(`knowledge.ts`)依 query 比對已發布文章、把該篇 Tiptap JSON 以自寫的 `tiptapToPlainText()` 抽成純文字回傳 → 模型續答。串流實作為「function-calling 迴圈」:每輪 `generateContentStream`,若該輪出現 `functionCalls` 則執行工具、把 `functionCall`/`functionResponse` 接回 `contents` 進下一輪取最終答案(最多 3 輪)。選 function calling 而非關鍵字檢索,是因中文無空格、斷詞難,讓模型自己挑文章天然解決且省 token。
   - **Publications 加 `abstract` 摘要欄位**(schema 選填;migration `20260628034933_add_publication_abstract`):後台表單可手填,階段六 AI 抽取(`extractPublication`)一併抓(有則原文、無則空)。摘要量小,直接併入知識庫彙整(不走 function calling);讓機器人能答「論文主旨」,但論文全文細節仍引導 DOI/聯絡頁、不杜撰。前台 Publications 顯示維持書目欄位,不顯示摘要。
   - 護欄措辭更新:Blog 內文(已發布靜態內容)「問到才查」不違反「不查即時狀態」原則;真正禁止臆測的是即時狀態(儀器可約與否等),仍一律導向頁面。
+
+### adjustment 輪:吳教授使用回饋修正(2026-06-30)
+> 教授實際使用後提出的一批修正,完整逐項追蹤見 `docs/professor-feedback.md`。以下記重點偏差/決策/踩坑。
+
+- **首頁與聯絡資訊改後台可編輯**:Hero 標題/副標、PI 理念、研究領域(標題/引言/卡片)、聯絡基本資訊(名稱/地址/Email/電話/辦公時間)原為寫死區塊,改為 `SiteSettings` 欄位 +「設定」頁編輯;留空 fallback 字典預設(以 placeholder 顯示)。規格已更新 §A-1、§階段三 Settings、§附錄 I。研究領域卡片格式為「一行一領域,`標題 | 說明`」;理念以空行分段。
+- **中英翻譯走「存 DB + 一鍵翻譯」(路線 A)**:佈告欄/儀器/職缺加英文欄,Blog 補 `summaryEn`;編輯頁「一鍵翻譯成英文」(Gemini)產英文、可手改;前台依語系取、空值 fallback 中文。理由與階段七知識庫一致(維護時翻好、省 token、AI 為加分項非地基)。共用:`translateFieldsToEnglish`/`translate-action.ts`/`TranslateButton.tsx`。Blog 內文是 Tiptap JSON,故 `translateBlog(id)` 採「寫庫後 `window.location.reload()`」帶出英文編輯器(需先存草稿),避免注入活的編輯器。
+- **成員層級擴充 + 分組**:`TeamTier` 由 4 種擴為 12 種(加 7 種教職 + 專任助理);前台與後台列表皆依層級分組,拖曳限同層級內。
+- **全站排序一律拖曳**:所有有 `sortOrder` 的後台列表(現役成員、歷屆成員、儀器、課程、職缺、產學)改 dnd-kit 拖曳,**移除各表單手填「排序數字」欄位**,且 create/update 不再寫 `sortOrder`(只由拖曳的 `reorderXxx`/`reorderContent` 設定;新項目以預設 0 進場,編輯不再重置順序)。儀器拖曳限 ADMIN(負責人只見子集)。新增依賴 `@dnd-kit/{core,sortable,utilities}`。Publications(年份排)、Blog/佈告欄(日期排)無手動排序,不適用。
+  - 踩坑:`AdminListShell` 是 server component 且 `renderRow` 函式無法跨 server→client 邊界。team(分層)/alumni/instrument(分層+權限)有特殊需求,各做專屬 client 列表;courses/jobs/industry 則用**通用 `src/app/admin/sortable-admin-list.tsx`**(以可序列化的 `primary/secondary/group` 描述列、`reorderContent(model,ids)` 通用 action、可選分組),避免再複製。
+- **校友→歷屆成員去向**:改名(英文維持 Alumni)+ 加照片 + 拖曳(排序基準改 `sortOrder` 優先)。
+- **排版「疊在一起」**:職缺、產學內文 `<p>` 漏 `whitespace-pre-wrap`,換行被摺疊;補上即解。與使用者確認不引入 Markdown/編輯器(僅需分段)。
+- **共用元件**:圖片點擊放大抽成 `src/components/ZoomableImage.tsx`(儀器、團隊成員、歷屆成員共用)。
+- 共新增 migration:home_editable_text、home_research_editable、alumnus_photo、dashboard_en、instrument_job_blog_en、team_tiers、contact_settings。
+- 提醒:本輪大量改 schema,**每次 migrate/generate 後務必重啟 dev server**(Turbopack 不熱重載 Prisma client,否則儲存報 Unknown argument,見階段零提醒)。
 
 ### 交付與交接
 - 完成日期:

@@ -13,7 +13,20 @@ export interface ActionResult {
   message: string;
 }
 
-const TIERS = ["POSTDOC", "PHD", "MASTER", "UNDERGRAD"];
+const TIERS = [
+  "PROFESSOR",
+  "DISTINGUISHED_PROFESSOR",
+  "EMERITUS_PROFESSOR",
+  "ASSOC_PROFESSOR",
+  "ASST_PROFESSOR",
+  "VISITING_PROFESSOR",
+  "ADJUNCT_PROFESSOR",
+  "POSTDOC",
+  "STAFF",
+  "PHD",
+  "MASTER",
+  "UNDERGRAD",
+];
 
 function parse(formData: FormData) {
   return {
@@ -42,7 +55,6 @@ export async function createTeamMember(
       tier: f.tier as TeamTier,
       photoUrl: f.photoUrl,
       researchTopic: f.researchTopic,
-      sortOrder: f.sortOrder,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -51,6 +63,27 @@ export async function createTeamMember(
   revalidatePath("/admin/team");
   revalidatePath("/", "layout");
   redirect("/admin/team");
+}
+
+// 2.3:拖曳排序——依傳入的順序把每位成員的 sortOrder 設為其索引。需 ADMIN 以上。
+export async function reorderTeam(orderedIds: string[]): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
+  const ids = orderedIds.filter((id) => typeof id === "string" && id);
+  if (ids.length === 0) return { ok: false, message: "順序資料無效。" };
+
+  await prisma.$transaction(
+    ids.map((id, i) =>
+      prisma.teamMember.update({
+        where: { id },
+        data: { sortOrder: i, updatedBy: me.id },
+      }),
+    ),
+  );
+  revalidatePath("/admin/team");
+  revalidatePath("/", "layout");
+  return { ok: true, message: "順序已更新。" };
 }
 
 export async function updateTeamMember(
@@ -72,7 +105,6 @@ export async function updateTeamMember(
       tier: f.tier as TeamTier,
       photoUrl: f.photoUrl,
       researchTopic: f.researchTopic,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });

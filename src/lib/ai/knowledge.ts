@@ -60,7 +60,7 @@ export async function aggregateSiteContent(): Promise<string> {
       [
         "首頁 /:實驗室簡介與主持人理念。",
         "研究與產學 /research:研究領域、代表著作、產學與專利。",
-        "團隊與招募 /team:現役成員、校友去向、開放職缺、應徵範本。",
+        "團隊與招募 /team:現役成員、歷屆成員去向、開放職缺、應徵範本。",
         "儀器介紹 /instruments:儀器介紹;登入會員後可線上預約。",
         "光電小講堂 /blog:科普文章。",
         "聯絡教授 /contact:線上聯絡表單。",
@@ -105,13 +105,16 @@ export async function aggregateSiteContent(): Promise<string> {
     parts.push(
       `# 現役成員\n` +
         teamMembers
-          .map((m) => `- ${m.name}(${m.tier})${m.researchTopic ? `:${m.researchTopic}` : ""}`)
+          .map(
+            (m) =>
+              `- ${m.name}(${dictionaries.zh.team.tierLabels[m.tier] ?? m.tier})${m.researchTopic ? `:${m.researchTopic}` : ""}`,
+          )
           .join("\n"),
     );
   }
   if (alumni.length) {
     parts.push(
-      `# 校友去向\n` +
+      `# 歷屆成員去向\n` +
         alumni.map((a) => `- ${a.name}(${a.gradYear}):${a.destination}`).join("\n"),
     );
   }

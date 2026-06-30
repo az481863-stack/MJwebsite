@@ -1,13 +1,19 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { AdminListShell } from "../content-list-shell";
+import { SortableAdminList } from "../sortable-admin-list";
 
 const CAT_LABEL: Record<string, string> = {
   PATENT: "已獲證專利",
   LICENSABLE: "可授權技術",
   COLLABORATION: "企業合作",
 };
+// 與前台 research-content 的 CAT_ORDER 一致。
+const CAT_GROUPS = [
+  { key: "PATENT", label: "已獲證專利" },
+  { key: "LICENSABLE", label: "可授權技術" },
+  { key: "COLLABORATION", label: "企業合作" },
+];
 
 export default async function IndustryAdminPage() {
   const me = await getCurrentMember();
@@ -25,19 +31,23 @@ export default async function IndustryAdminPage() {
   ]);
 
   return (
-    <AdminListShell
+    <SortableAdminList
+      key={items.map((it) => `${it.id}:${it.status}`).join(",")}
       title="產學與專利"
       basePath="/admin/industry"
       model="industryItem"
-      items={items}
-      deleted={deleted}
-      renderRow={(it) => (
-        <p className="text-sm">
-          <span className="text-muted">[{CAT_LABEL[it.category]}] </span>
-          <span className="font-medium">{it.title}</span>
-        </p>
-      )}
-      renderDeleted={(it) => it.title}
+      groups={CAT_GROUPS}
+      items={items.map((it) => ({
+        id: it.id,
+        status: it.status,
+        primary: it.title,
+        group: it.category,
+      }))}
+      deleted={deleted.map((it) => ({
+        id: it.id,
+        status: it.status,
+        label: `[${CAT_LABEL[it.category] ?? it.category}] ${it.title}`,
+      }))}
     />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   ContentFormShell,
   Labeled,
@@ -12,6 +13,7 @@ export interface AlumnusInitial {
   name: string;
   gradYear: number;
   destination: string;
+  photoUrl: string | null;
   sortOrder: number;
 }
 
@@ -46,15 +48,8 @@ export function AlumnusForm({
           className={fieldCls}
         />
       </Labeled>
-      <Labeled label="排序(數字越小越前面)" htmlFor="sortOrder">
-        <input
-          id="sortOrder"
-          name="sortOrder"
-          type="number"
-          defaultValue={initial?.sortOrder ?? 0}
-          className={fieldCls}
-        />
-      </Labeled>
+      <ImageUpload name="photoUrl" folder="alumni" defaultUrl={initial?.photoUrl} label="照片" />
+      <p className="text-xs text-muted">顯示順序請於列表頁拖曳調整。</p>
     </ContentFormShell>
   );
 }

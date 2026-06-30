@@ -17,11 +17,30 @@ export interface DashboardItem {
   id: string;
   category: string;
   title: string;
+  titleEn: string | null;
   body: string;
+  bodyEn: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
   linkText: string | null;
+  linkTextEn: string | null;
   date: string; // YYYY.MM.DD
+}
+
+// 首頁可由後台 Settings 覆寫的文字(留空則沿用 i18n 字典預設)。
+export interface HomeOverrides {
+  heroTitleZh: string;
+  heroTitleEn: string;
+  heroSubtitleZh: string;
+  heroSubtitleEn: string;
+  philosophyBodyZh: string;
+  philosophyBodyEn: string;
+  researchHeadingZh: string;
+  researchHeadingEn: string;
+  researchIntroZh: string;
+  researchIntroEn: string;
+  researchAreasZh: string;
+  researchAreasEn: string;
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -30,15 +49,59 @@ const CATEGORY_LABEL: Record<string, string> = {
   HONOR: "榮譽榜",
 };
 
-export function HomeContent({ posts }: { posts: DashboardItem[] }) {
-  const { t } = useLanguage();
+const CATEGORY_LABEL_EN: Record<string, string> = {
+  ACADEMIC: "Academic News",
+  LAB_LIFE: "Lab Life",
+  HONOR: "Honors",
+};
+
+export function HomeContent({
+  posts,
+  overrides,
+}: {
+  posts: DashboardItem[];
+  overrides: HomeOverrides;
+}) {
+  const { t, lang } = useLanguage();
   const h = t.home;
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // 後台覆寫優先,留空則沿用字典預設(依當前語系挑中/英文)。
+  const heroTitle =
+    (lang === "zh" ? overrides.heroTitleZh : overrides.heroTitleEn) ||
+    h.heroTitle;
+  const heroSubtitle =
+    (lang === "zh" ? overrides.heroSubtitleZh : overrides.heroSubtitleEn) ||
+    h.heroSubtitle;
+  const philosophyOverride =
+    lang === "zh" ? overrides.philosophyBodyZh : overrides.philosophyBodyEn;
+  const philosophyBody = philosophyOverride
+    ? philosophyOverride.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+    : h.philosophyBody;
+
+  const researchHeading =
+    (lang === "zh" ? overrides.researchHeadingZh : overrides.researchHeadingEn) ||
+    h.researchHeading;
+  const researchIntro =
+    (lang === "zh" ? overrides.researchIntroZh : overrides.researchIntroEn) ||
+    h.researchIntro;
+  const researchAreasOverride =
+    lang === "zh" ? overrides.researchAreasZh : overrides.researchAreasEn;
+  const researchAreas = researchAreasOverride
+    ? researchAreasOverride
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [title, ...rest] = line.split("|");
+          return { title: title.trim(), desc: rest.join("|").trim() };
+        })
+    : h.researchAreas;
+
   const navItems = [
+    { id: "dashboard", label: h.dashboardHeading },
     { id: "research", label: h.researchHeading },
     { id: "philosophy", label: h.philosophyHeading },
-    { id: "dashboard", label: h.dashboardHeading },
   ];
 
   return (
@@ -74,11 +137,11 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">
               {h.heroEyebrow}
             </p>
-            <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-              {h.heroTitle}
+            <h1 className="mt-6 whitespace-pre-line text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              {heroTitle}
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
-              {h.heroSubtitle}
+            <p className="mt-6 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-muted">
+              {heroSubtitle}
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -98,10 +161,86 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
         </Container>
       </section>
 
+      {/* 動態佈告欄(淺色,來自後台 CMS) */}
+      <Section id="dashboard" heading={h.dashboardHeading} intro={h.dashboardIntro}>
+        {posts.length === 0 ? (
+          <p className="text-sm text-muted">目前沒有最新動態。</p>
+        ) : (
+          <ul className="divide-y divide-line border-y border-line">
+            {posts.map((item) => {
+              const open = openId === item.id;
+              const title =
+                (lang === "en" ? item.titleEn : null) || item.title;
+              const body = (lang === "en" ? item.bodyEn : null) || item.body;
+              const linkText =
+                (lang === "en" ? item.linkTextEn : null) || item.linkText;
+              const catLabel =
+                (lang === "en" ? CATEGORY_LABEL_EN[item.category] : null) ||
+                CATEGORY_LABEL[item.category] ||
+                item.category;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(open ? null : item.id)}
+                    aria-expanded={open}
+                    className="flex w-full items-center gap-4 py-5 text-left transition-[padding,background] hover:bg-accent/[0.06] hover:pl-3 sm:gap-6"
+                  >
+                    <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wider text-accent">
+                      {catLabel}
+                    </span>
+                    <span className="flex-1 text-base">{title}</span>
+                    <span className="shrink-0 font-mono text-sm text-muted">
+                      {item.date}
+                    </span>
+                    <span
+                      className={`shrink-0 text-muted transition-transform ${
+                        open ? "rotate-180" : ""
+                      }`}
+                      aria-hidden
+                    >
+                      ⌄
+                    </span>
+                  </button>
+
+                  {open && (
+                    <div className="pb-6 sm:pl-30">
+                      {item.imageUrl && (
+                        <Image
+                          src={item.imageUrl}
+                          alt={title}
+                          width={640}
+                          height={360}
+                          className="mb-4 h-auto w-full max-w-md border border-line object-cover"
+                          unoptimized
+                        />
+                      )}
+                      <p className="max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
+                        {body}
+                      </p>
+                      {item.linkUrl && (
+                        <a
+                          href={item.linkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-4 inline-flex items-center gap-1 border border-line-strong px-4 py-2 text-sm font-medium transition-colors hover:bg-foreground hover:text-background"
+                        >
+                          {linkText || (lang === "en" ? "Link" : "相關連結")} ↗
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Section>
+
       {/* 研究領域(淺色) */}
-      <Section id="research" heading={h.researchHeading} intro={h.researchIntro}>
+      <Section id="research" heading={researchHeading} intro={researchIntro}>
         <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
-          {h.researchAreas.map((area, i) => (
+          {researchAreas.map((area, i) => (
             <Reveal
               key={i}
               delay={i * 90}
@@ -126,7 +265,7 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
             </h2>
           </Reveal>
           <div className="max-w-3xl space-y-6">
-            {h.philosophyBody.map((para, i) => (
+            {philosophyBody.map((para, i) => (
               <Reveal
                 key={i}
                 delay={i * 120}
@@ -140,72 +279,6 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
         </Container>
       </section>
 
-      {/* 動態佈告欄(淺色,來自後台 CMS) */}
-      <Section id="dashboard" heading={h.dashboardHeading} intro={h.dashboardIntro}>
-        {posts.length === 0 ? (
-          <p className="text-sm text-muted">目前沒有最新動態。</p>
-        ) : (
-          <ul className="divide-y divide-line border-y border-line">
-            {posts.map((item) => {
-              const open = openId === item.id;
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(open ? null : item.id)}
-                    aria-expanded={open}
-                    className="flex w-full items-center gap-4 py-5 text-left transition-[padding,background] hover:bg-accent/[0.06] hover:pl-3 sm:gap-6"
-                  >
-                    <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wider text-accent">
-                      {CATEGORY_LABEL[item.category] ?? item.category}
-                    </span>
-                    <span className="flex-1 text-base">{item.title}</span>
-                    <span className="shrink-0 font-mono text-sm text-muted">
-                      {item.date}
-                    </span>
-                    <span
-                      className={`shrink-0 text-muted transition-transform ${
-                        open ? "rotate-180" : ""
-                      }`}
-                      aria-hidden
-                    >
-                      ⌄
-                    </span>
-                  </button>
-
-                  {open && (
-                    <div className="pb-6 sm:pl-30">
-                      {item.imageUrl && (
-                        <Image
-                          src={item.imageUrl}
-                          alt={item.title}
-                          width={640}
-                          height={360}
-                          className="mb-4 h-auto w-full max-w-md border border-line object-cover"
-                          unoptimized
-                        />
-                      )}
-                      <p className="max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
-                        {item.body}
-                      </p>
-                      {item.linkUrl && (
-                        <a
-                          href={item.linkUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-4 inline-flex items-center gap-1 border border-line-strong px-4 py-2 text-sm font-medium transition-colors hover:bg-foreground hover:text-background"
-                        >
-                          {item.linkText || "相關連結"} ↗
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Section>
     </>
   );
 }

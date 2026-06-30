@@ -25,10 +25,13 @@ export default async function EditDashboardPostPage({
           id: post.id,
           category: post.category,
           title: post.title,
+          titleEn: post.titleEn,
           body: post.body,
+          bodyEn: post.bodyEn,
           imageUrl: post.imageUrl,
           linkUrl: post.linkUrl,
           linkText: post.linkText,
+          linkTextEn: post.linkTextEn,
           publishedDate: post.publishedDate.toISOString().slice(0, 10),
         }}
       />

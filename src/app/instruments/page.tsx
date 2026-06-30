@@ -2,7 +2,6 @@
 // 受 Settings.showInstruments 控制(關閉時 404)。
 
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +14,7 @@ import {
 } from "@/lib/instruments";
 import { Container } from "@/components/ui/Container";
 import { InstrumentBooking } from "./instrument-booking";
+import { InstrumentCard } from "./instrument-card";
 import { CancelButton } from "./cancel-button";
 
 export const dynamic = "force-dynamic";
@@ -174,24 +174,14 @@ export default async function InstrumentsPage() {
                 : undefined;
           return (
             <div key={inst.id} className="border border-line p-5">
-              <div className="flex items-start gap-4">
-                {inst.photoUrl && (
-                  <Image
-                    src={inst.photoUrl}
-                    alt={inst.name}
-                    width={120}
-                    height={90}
-                    unoptimized
-                    className="h-20 w-auto border border-line object-cover"
-                  />
-                )}
-                <div className="min-w-0">
-                  <h3 className="font-medium">
-                    {inst.status === "MAINTENANCE" ? "🟡" : "🟢"} {inst.name}
-                  </h3>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{inst.purpose}</p>
-                </div>
-              </div>
+              <InstrumentCard
+                name={inst.name}
+                nameEn={inst.nameEn}
+                maintenance={inst.status === "MAINTENANCE"}
+                photoUrl={inst.photoUrl}
+                purpose={inst.purpose}
+                purposeEn={inst.purposeEn}
+              />
               <InstrumentBooking
                 instrumentId={inst.id}
                 busy={inst.reservations.map((r) => ({

@@ -17,7 +17,7 @@ export default async function EditAlumnusPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">編輯校友</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">編輯歷屆成員</h1>
       <AlumnusForm
         action={updateAlumnus}
         initial={{
@@ -25,6 +25,7 @@ export default async function EditAlumnusPage({
           name: a.name,
           gradYear: a.gradYear,
           destination: a.destination,
+          photoUrl: a.photoUrl,
           sortOrder: a.sortOrder,
         }}
       />

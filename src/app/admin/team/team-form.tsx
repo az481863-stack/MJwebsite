@@ -31,7 +31,15 @@ export function TeamForm({
       </Labeled>
       <Labeled label="身份階層" htmlFor="tier">
         <select id="tier" name="tier" defaultValue={initial?.tier ?? "PHD"} className={fieldCls}>
+          <option value="PROFESSOR">教授</option>
+          <option value="DISTINGUISHED_PROFESSOR">特聘教授</option>
+          <option value="EMERITUS_PROFESSOR">名譽教授</option>
+          <option value="ASSOC_PROFESSOR">副教授</option>
+          <option value="ASST_PROFESSOR">助理教授</option>
+          <option value="VISITING_PROFESSOR">客座教授</option>
+          <option value="ADJUNCT_PROFESSOR">兼任教授</option>
           <option value="POSTDOC">博後</option>
+          <option value="STAFF">專任助理</option>
           <option value="PHD">博士生</option>
           <option value="MASTER">碩士生</option>
           <option value="UNDERGRAD">專題生</option>
@@ -46,15 +54,7 @@ export function TeamForm({
         />
       </Labeled>
       <ImageUpload name="photoUrl" folder="team" defaultUrl={initial?.photoUrl} label="照片" />
-      <Labeled label="排序(數字越小越前面)" htmlFor="sortOrder">
-        <input
-          id="sortOrder"
-          name="sortOrder"
-          type="number"
-          defaultValue={initial?.sortOrder ?? 0}
-          className={fieldCls}
-        />
-      </Labeled>
+      <p className="text-xs text-muted">顯示順序請於列表頁拖曳調整。</p>
     </ContentFormShell>
   );
 }

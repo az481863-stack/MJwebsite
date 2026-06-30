@@ -7,8 +7,23 @@ import { useLanguage } from "@/lib/i18n/context";
 import { Section } from "@/components/ui/Section";
 import { submitContact, type ContactResult } from "./actions";
 
-export function ContactContent() {
-  const { t } = useLanguage();
+export interface ContactOverrides {
+  labNameZh: string;
+  labNameEn: string;
+  addressZh: string;
+  addressEn: string;
+  email: string;
+  phone: string;
+  officeHoursZh: string;
+  officeHoursEn: string;
+}
+
+export function ContactContent({
+  overrides,
+}: {
+  overrides: ContactOverrides;
+}) {
+  const { t, lang } = useLanguage();
   const c = t.contact;
   const f = c.form;
   const [state, formAction, pending] = useActionState<
@@ -21,17 +36,28 @@ export function ContactContent() {
     ? ((f as Record<string, unknown>)[state.message] as string) ?? state.message
     : null;
 
+  // 後台覆寫優先,留空則沿用字典預設(會切換的欄位依語系取中/英)。
+  const labName =
+    (lang === "en" ? overrides.labNameEn : overrides.labNameZh) || c.labName;
+  const address =
+    (lang === "en" ? overrides.addressEn : overrides.addressZh) || c.address;
+  const email = overrides.email || c.email;
+  const phone = overrides.phone || c.phone;
+  const officeHours =
+    (lang === "en" ? overrides.officeHoursEn : overrides.officeHoursZh) ||
+    c.officeHours;
+
   const rows = [
-    { label: c.addressLabel, value: c.address },
-    { label: c.emailLabel, value: c.email, href: `mailto:${c.email}` },
-    { label: c.phoneLabel, value: c.phone },
-    { label: c.officeHoursLabel, value: c.officeHours },
+    { label: c.addressLabel, value: address },
+    { label: c.emailLabel, value: email, href: `mailto:${email}` },
+    { label: c.phoneLabel, value: phone },
+    { label: c.officeHoursLabel, value: officeHours },
   ];
 
   return (
     <Section heading={c.heading} intro={c.intro}>
       <div className="max-w-2xl">
-        <p className="text-lg font-semibold">{c.labName}</p>
+        <p className="text-lg font-semibold">{labName}</p>
 
         <dl className="mt-8 divide-y divide-line border-y border-line">
           {rows.map((row, i) => (

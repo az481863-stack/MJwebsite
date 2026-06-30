@@ -17,8 +17,30 @@ function parse(formData: FormData) {
     name: String(formData.get("name") ?? "").trim(),
     gradYear: parseInt(String(formData.get("gradYear") ?? ""), 10),
     destination: String(formData.get("destination") ?? "").trim(),
+    photoUrl: String(formData.get("photoUrl") ?? "").trim() || null,
     sortOrder: parseInt(String(formData.get("sortOrder") ?? "0"), 10) || 0,
   };
+}
+
+// 2.4:拖曳排序——依傳入順序把每位歷屆成員的 sortOrder 設為其索引。需 ADMIN 以上。
+export async function reorderAlumni(orderedIds: string[]): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
+  const ids = orderedIds.filter((id) => typeof id === "string" && id);
+  if (ids.length === 0) return { ok: false, message: "順序資料無效。" };
+
+  await prisma.$transaction(
+    ids.map((id, i) =>
+      prisma.alumnus.update({
+        where: { id },
+        data: { sortOrder: i, updatedBy: me.id },
+      }),
+    ),
+  );
+  revalidatePath("/admin/alumni");
+  revalidatePath("/", "layout");
+  return { ok: true, message: "順序已更新。" };
 }
 
 export async function createAlumnus(
@@ -37,7 +59,7 @@ export async function createAlumnus(
       name: f.name,
       gradYear: f.gradYear,
       destination: f.destination,
-      sortOrder: f.sortOrder,
+      photoUrl: f.photoUrl,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -66,7 +88,7 @@ export async function updateAlumnus(
       name: f.name,
       gradYear: f.gradYear,
       destination: f.destination,
-      sortOrder: f.sortOrder,
+      photoUrl: f.photoUrl,
       updatedBy: me.id,
     },
   });

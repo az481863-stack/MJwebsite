@@ -88,7 +88,7 @@ export function ResearchContent({
                     {items.map((it) => (
                       <li key={it.id} className="py-3">
                         <p className="text-sm font-medium">{it.title}</p>
-                        <p className="mt-1 text-sm leading-relaxed text-muted">
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-muted">
                           {it.description}
                         </p>
                       </li>

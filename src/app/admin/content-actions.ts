@@ -63,6 +63,32 @@ async function mutate(
   return { ok: true, message: successMsg };
 }
 
+// 通用拖曳排序:依傳入順序把各筆 sortOrder 設為索引。需 ADMIN 以上。
+export async function reorderContent(
+  model: string,
+  orderedIds: string[],
+): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me || !roleAtLeast(me.role, "ADMIN")) {
+    return { ok: false, message: "權限不足。" };
+  }
+  const delegate = getDelegate(model);
+  if (!delegate) return { ok: false, message: "參數錯誤。" };
+  const ids = orderedIds.filter((id) => typeof id === "string" && id);
+  if (ids.length === 0) return { ok: false, message: "順序資料無效。" };
+
+  await Promise.all(
+    ids.map((id, i) =>
+      delegate.update({
+        where: { id },
+        data: { sortOrder: i, updatedBy: me.id },
+      }),
+    ),
+  );
+  revalidatePath("/", "layout");
+  return { ok: true, message: "順序已更新。" };
+}
+
 export async function publishContent(
   _prev: ActionResult | null,
   formData: FormData,

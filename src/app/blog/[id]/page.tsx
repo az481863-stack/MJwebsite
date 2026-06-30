@@ -23,6 +23,23 @@ export default async function BlogDetailPage({
   });
   if (!post) notFound();
 
+  // 英文版空白時 fallback 中文(部分翻譯也不會開天窗)。
+  const isEmptyDoc = (j: unknown): boolean => {
+    if (!j || typeof j !== "object") return true;
+    const content = (j as { content?: unknown[] }).content;
+    if (!Array.isArray(content) || content.length === 0) return true;
+    return content.every(
+      (n) =>
+        !(n as { content?: unknown[] }).content ||
+        ((n as { content?: unknown[] }).content as unknown[]).length === 0,
+    );
+  };
+  const bodyEnNode = isEmptyDoc(post.bodyEn) ? (
+    <TiptapContent json={post.bodyZh} />
+  ) : (
+    <TiptapContent json={post.bodyEn} />
+  );
+
   return (
     <Container className="py-16">
       <article className="mx-auto max-w-2xl">
@@ -37,11 +54,14 @@ export default async function BlogDetailPage({
           {post.publishedDate.toISOString().slice(0, 10).replace(/-/g, ".")}
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          <LangPick zh={post.titleZh} en={post.titleEn} />
+          <LangPick zh={post.titleZh} en={post.titleEn || post.titleZh} />
         </h1>
-        {post.summary && (
+        {(post.summary || post.summaryEn) && (
           <p className="mt-4 text-lg leading-relaxed text-muted">
-            {post.summary}
+            <LangPick
+              zh={post.summary ?? ""}
+              en={post.summaryEn || post.summary || ""}
+            />
           </p>
         )}
 
@@ -60,7 +80,7 @@ export default async function BlogDetailPage({
           <MathUpgrader>
             <LangPick
               zh={<TiptapContent json={post.bodyZh} />}
-              en={<TiptapContent json={post.bodyEn} />}
+              en={bodyEnNode}
             />
           </MathUpgrader>
         </div>

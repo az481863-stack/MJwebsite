@@ -17,6 +17,26 @@ export interface SiteSettingsData {
   showChatbot: boolean;
   chatbotKnowledgeZh: string;
   chatbotKnowledgeEn: string;
+  homeHeroTitleZh: string;
+  homeHeroTitleEn: string;
+  homeHeroSubtitleZh: string;
+  homeHeroSubtitleEn: string;
+  homePhilosophyBodyZh: string;
+  homePhilosophyBodyEn: string;
+  homeResearchHeadingZh: string;
+  homeResearchHeadingEn: string;
+  homeResearchIntroZh: string;
+  homeResearchIntroEn: string;
+  homeResearchAreasZh: string;
+  homeResearchAreasEn: string;
+  contactLabNameZh: string;
+  contactLabNameEn: string;
+  contactAddressZh: string;
+  contactAddressEn: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactOfficeHoursZh: string;
+  contactOfficeHoursEn: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -32,6 +52,26 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   showChatbot: false,
   chatbotKnowledgeZh: "",
   chatbotKnowledgeEn: "",
+  homeHeroTitleZh: "",
+  homeHeroTitleEn: "",
+  homeHeroSubtitleZh: "",
+  homeHeroSubtitleEn: "",
+  homePhilosophyBodyZh: "",
+  homePhilosophyBodyEn: "",
+  homeResearchHeadingZh: "",
+  homeResearchHeadingEn: "",
+  homeResearchIntroZh: "",
+  homeResearchIntroEn: "",
+  homeResearchAreasZh: "",
+  homeResearchAreasEn: "",
+  contactLabNameZh: "",
+  contactLabNameEn: "",
+  contactAddressZh: "",
+  contactAddressEn: "",
+  contactEmail: "",
+  contactPhone: "",
+  contactOfficeHoursZh: "",
+  contactOfficeHoursEn: "",
 };
 
 export async function getSettings(): Promise<SiteSettingsData> {
@@ -53,6 +93,26 @@ export async function getSettings(): Promise<SiteSettingsData> {
       showChatbot: s.showChatbot,
       chatbotKnowledgeZh: s.chatbotKnowledgeZh,
       chatbotKnowledgeEn: s.chatbotKnowledgeEn,
+      homeHeroTitleZh: s.homeHeroTitleZh,
+      homeHeroTitleEn: s.homeHeroTitleEn,
+      homeHeroSubtitleZh: s.homeHeroSubtitleZh,
+      homeHeroSubtitleEn: s.homeHeroSubtitleEn,
+      homePhilosophyBodyZh: s.homePhilosophyBodyZh,
+      homePhilosophyBodyEn: s.homePhilosophyBodyEn,
+      homeResearchHeadingZh: s.homeResearchHeadingZh,
+      homeResearchHeadingEn: s.homeResearchHeadingEn,
+      homeResearchIntroZh: s.homeResearchIntroZh,
+      homeResearchIntroEn: s.homeResearchIntroEn,
+      homeResearchAreasZh: s.homeResearchAreasZh,
+      homeResearchAreasEn: s.homeResearchAreasEn,
+      contactLabNameZh: s.contactLabNameZh,
+      contactLabNameEn: s.contactLabNameEn,
+      contactAddressZh: s.contactAddressZh,
+      contactAddressEn: s.contactAddressEn,
+      contactEmail: s.contactEmail,
+      contactPhone: s.contactPhone,
+      contactOfficeHoursZh: s.contactOfficeHoursZh,
+      contactOfficeHoursEn: s.contactOfficeHoursEn,
     };
   } catch {
     return DEFAULT_SETTINGS;

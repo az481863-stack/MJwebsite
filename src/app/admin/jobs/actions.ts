@@ -17,9 +17,11 @@ function parse(formData: FormData) {
   const slotsRaw = String(formData.get("slots") ?? "").trim();
   return {
     title: String(formData.get("title") ?? "").trim(),
+    titleEn: String(formData.get("titleEn") ?? "").trim() || null,
     recruitStatus: String(formData.get("recruitStatus") ?? "OPEN"),
     slots: slotsRaw ? parseInt(slotsRaw, 10) : null,
     description: String(formData.get("description") ?? "").trim(),
+    descriptionEn: String(formData.get("descriptionEn") ?? "").trim() || null,
     sortOrder: parseInt(String(formData.get("sortOrder") ?? "0"), 10) || 0,
   };
 }
@@ -38,10 +40,11 @@ export async function createJob(
   await prisma.jobOpening.create({
     data: {
       title: f.title,
+      titleEn: f.titleEn,
       recruitStatus: (f.recruitStatus === "FULL" ? "FULL" : "OPEN") as RecruitStatus,
       slots: f.slots,
       description: f.description,
-      sortOrder: f.sortOrder,
+      descriptionEn: f.descriptionEn,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -68,10 +71,11 @@ export async function updateJob(
     where: { id },
     data: {
       title: f.title,
+      titleEn: f.titleEn,
       recruitStatus: (f.recruitStatus === "FULL" ? "FULL" : "OPEN") as RecruitStatus,
       slots: f.slots,
       description: f.description,
-      sortOrder: f.sortOrder,
+      descriptionEn: f.descriptionEn,
       updatedBy: me.id,
     },
   });

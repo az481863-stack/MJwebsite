@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { AdminListShell } from "../content-list-shell";
+import { SortableAdminList } from "../sortable-admin-list";
 
 export default async function CoursesAdminPage() {
   const me = await getCurrentMember();
@@ -19,14 +19,21 @@ export default async function CoursesAdminPage() {
   ]);
 
   return (
-    <AdminListShell
+    <SortableAdminList
+      key={items.map((c) => `${c.id}:${c.status}`).join(",")}
       title="課程紀錄"
       basePath="/admin/courses"
       model="course"
-      items={items}
-      deleted={deleted}
-      renderRow={(c) => <p className="text-sm font-medium">{c.name}</p>}
-      renderDeleted={(c) => c.name}
+      items={items.map((c) => ({
+        id: c.id,
+        status: c.status,
+        primary: c.name,
+      }))}
+      deleted={deleted.map((c) => ({
+        id: c.id,
+        status: c.status,
+        label: c.name,
+      }))}
     />
   );
 }

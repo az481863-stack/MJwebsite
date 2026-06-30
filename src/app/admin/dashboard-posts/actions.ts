@@ -18,12 +18,15 @@ const CATEGORIES = ["ACADEMIC", "LAB_LIFE", "HONOR"];
 function parse(formData: FormData) {
   const category = String(formData.get("category") ?? "");
   const title = String(formData.get("title") ?? "").trim();
+  const titleEn = String(formData.get("titleEn") ?? "").trim() || null;
   const body = String(formData.get("body") ?? "").trim();
+  const bodyEn = String(formData.get("bodyEn") ?? "").trim() || null;
   const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   const linkUrl = String(formData.get("linkUrl") ?? "").trim() || null;
   const linkText = String(formData.get("linkText") ?? "").trim() || null;
+  const linkTextEn = String(formData.get("linkTextEn") ?? "").trim() || null;
   const dateStr = String(formData.get("publishedDate") ?? "");
-  return { category, title, body, imageUrl, linkUrl, linkText, dateStr };
+  return { category, title, titleEn, body, bodyEn, imageUrl, linkUrl, linkText, linkTextEn, dateStr };
 }
 
 export async function createDashboardPost(
@@ -43,10 +46,13 @@ export async function createDashboardPost(
     data: {
       category: f.category as DashboardCategory,
       title: f.title,
+      titleEn: f.titleEn,
       body: f.body,
+      bodyEn: f.bodyEn,
       imageUrl: f.imageUrl,
       linkUrl: f.linkUrl,
       linkText: f.linkText,
+      linkTextEn: f.linkTextEn,
       publishedDate: new Date(f.dateStr),
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
@@ -78,10 +84,13 @@ export async function updateDashboardPost(
     data: {
       category: f.category as DashboardCategory,
       title: f.title,
+      titleEn: f.titleEn,
       body: f.body,
+      bodyEn: f.bodyEn,
       imageUrl: f.imageUrl,
       linkUrl: f.linkUrl,
       linkText: f.linkText,
+      linkTextEn: f.linkTextEn,
       publishedDate: new Date(f.dateStr),
       updatedBy: me.id,
     },

@@ -28,6 +28,8 @@ export async function saveSettings(
   const accentRaw = String(formData.get("siteAccent") ?? "");
   const siteAccent = isAccentKey(accentRaw) ? accentRaw : DEFAULT_ACCENT;
 
+  const text = (k: string) => String(formData.get(k) ?? "").trim();
+
   const data = {
     showResearch: bool("showResearch"),
     showTeam: bool("showTeam"),
@@ -39,6 +41,26 @@ export async function saveSettings(
     showChatbot: bool("showChatbot"),
     instrumentMaxHours,
     siteAccent,
+    homeHeroTitleZh: text("homeHeroTitleZh"),
+    homeHeroTitleEn: text("homeHeroTitleEn"),
+    homeHeroSubtitleZh: text("homeHeroSubtitleZh"),
+    homeHeroSubtitleEn: text("homeHeroSubtitleEn"),
+    homePhilosophyBodyZh: text("homePhilosophyBodyZh"),
+    homePhilosophyBodyEn: text("homePhilosophyBodyEn"),
+    homeResearchHeadingZh: text("homeResearchHeadingZh"),
+    homeResearchHeadingEn: text("homeResearchHeadingEn"),
+    homeResearchIntroZh: text("homeResearchIntroZh"),
+    homeResearchIntroEn: text("homeResearchIntroEn"),
+    homeResearchAreasZh: text("homeResearchAreasZh"),
+    homeResearchAreasEn: text("homeResearchAreasEn"),
+    contactLabNameZh: text("contactLabNameZh"),
+    contactLabNameEn: text("contactLabNameEn"),
+    contactAddressZh: text("contactAddressZh"),
+    contactAddressEn: text("contactAddressEn"),
+    contactEmail: text("contactEmail"),
+    contactPhone: text("contactPhone"),
+    contactOfficeHoursZh: text("contactOfficeHoursZh"),
+    contactOfficeHoursEn: text("contactOfficeHoursEn"),
     updatedBy: me.id,
   };
 

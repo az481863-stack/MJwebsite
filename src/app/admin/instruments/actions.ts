@@ -42,7 +42,9 @@ async function syncManagers(instrumentId: string, raw: string, byId: string) {
 function parse(formData: FormData) {
   return {
     name: String(formData.get("name") ?? "").trim(),
+    nameEn: String(formData.get("nameEn") ?? "").trim() || null,
     purpose: String(formData.get("purpose") ?? "").trim(),
+    purposeEn: String(formData.get("purposeEn") ?? "").trim() || null,
     photoUrl: String(formData.get("photoUrl") ?? "").trim() || null,
     status: String(formData.get("status") ?? "NORMAL") === "MAINTENANCE"
       ? "MAINTENANCE"
@@ -66,10 +68,11 @@ export async function createInstrument(
   const created = await prisma.instrument.create({
     data: {
       name: f.name,
+      nameEn: f.nameEn,
       purpose: f.purpose,
+      purposeEn: f.purposeEn,
       photoUrl: f.photoUrl,
       status: f.status as InstrumentStatus,
-      sortOrder: f.sortOrder,
       createdBy: me.id,
       updatedBy: me.id,
     },
@@ -97,10 +100,11 @@ export async function updateInstrument(
     where: { id },
     data: {
       name: f.name,
+      nameEn: f.nameEn,
       purpose: f.purpose,
+      purposeEn: f.purposeEn,
       photoUrl: f.photoUrl,
       status: f.status as InstrumentStatus,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });
@@ -110,6 +114,29 @@ export async function updateInstrument(
   revalidatePath(`/admin/instruments/${id}`);
   revalidatePath("/", "layout");
   redirect("/admin/instruments");
+}
+
+// 拖曳排序——依傳入順序把每台儀器的 sortOrder 設為其索引。限 ADMIN(負責人只見子集,不開放排序)。
+export async function reorderInstruments(
+  orderedIds: string[],
+): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
+  const ids = orderedIds.filter((id) => typeof id === "string" && id);
+  if (ids.length === 0) return { ok: false, message: "順序資料無效。" };
+
+  await prisma.$transaction(
+    ids.map((id, i) =>
+      prisma.instrument.update({
+        where: { id },
+        data: { sortOrder: i, updatedBy: me.id },
+      }),
+    ),
+  );
+  revalidatePath("/admin/instruments");
+  revalidatePath("/", "layout");
+  return { ok: true, message: "順序已更新。" };
 }
 
 export async function softDeleteInstrument(
