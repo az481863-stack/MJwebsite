@@ -65,9 +65,9 @@ export function HomeContent({
     : h.philosophyBody;
 
   const navItems = [
+    { id: "dashboard", label: h.dashboardHeading },
     { id: "research", label: h.researchHeading },
     { id: "philosophy", label: h.philosophyHeading },
-    { id: "dashboard", label: h.dashboardHeading },
   ];
 
   return (
@@ -123,48 +123,6 @@ export function HomeContent({
                 {h.ctaSecondary}
               </Link>
             </div>
-          </div>
-        </Container>
-      </section>
-
-      {/* 研究領域(淺色) */}
-      <Section id="research" heading={h.researchHeading} intro={h.researchIntro}>
-        <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
-          {h.researchAreas.map((area, i) => (
-            <Reveal
-              key={i}
-              delay={i * 90}
-              className="bg-background p-8 transition-shadow hover:shadow-[inset_0_3px_0_var(--accent)]"
-            >
-              <span className="font-mono text-sm text-accent">0{i + 1}</span>
-              <h3 className="mt-4 text-lg font-semibold">{area.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                {area.desc}
-              </p>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* 主持人理念(深色帶) */}
-      <section id="philosophy" className="band-dark scroll-mt-20 py-16 sm:py-24">
-        <Container>
-          <Reveal as="header" className="mb-10 sm:mb-14">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {h.philosophyHeading}
-            </h2>
-          </Reveal>
-          <div className="max-w-3xl space-y-6">
-            {philosophyBody.map((para, i) => (
-              <Reveal
-                key={i}
-                delay={i * 120}
-                as="p"
-                className="text-lg leading-relaxed text-foreground/80"
-              >
-                {para}
-              </Reveal>
-            ))}
           </div>
         </Container>
       </section>
@@ -235,6 +193,49 @@ export function HomeContent({
           </ul>
         )}
       </Section>
+
+      {/* 研究領域(淺色) */}
+      <Section id="research" heading={h.researchHeading} intro={h.researchIntro}>
+        <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
+          {h.researchAreas.map((area, i) => (
+            <Reveal
+              key={i}
+              delay={i * 90}
+              className="bg-background p-8 transition-shadow hover:shadow-[inset_0_3px_0_var(--accent)]"
+            >
+              <span className="font-mono text-sm text-accent">0{i + 1}</span>
+              <h3 className="mt-4 text-lg font-semibold">{area.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted">
+                {area.desc}
+              </p>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
+      {/* 主持人理念(深色帶) */}
+      <section id="philosophy" className="band-dark scroll-mt-20 py-16 sm:py-24">
+        <Container>
+          <Reveal as="header" className="mb-10 sm:mb-14">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {h.philosophyHeading}
+            </h2>
+          </Reveal>
+          <div className="max-w-3xl space-y-6">
+            {philosophyBody.map((para, i) => (
+              <Reveal
+                key={i}
+                delay={i * 120}
+                as="p"
+                className="text-lg leading-relaxed text-foreground/80"
+              >
+                {para}
+              </Reveal>
+            ))}
+          </div>
+        </Container>
+      </section>
+
     </>
   );
 }
