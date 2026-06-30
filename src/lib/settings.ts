@@ -23,6 +23,12 @@ export interface SiteSettingsData {
   homeHeroSubtitleEn: string;
   homePhilosophyBodyZh: string;
   homePhilosophyBodyEn: string;
+  homeResearchHeadingZh: string;
+  homeResearchHeadingEn: string;
+  homeResearchIntroZh: string;
+  homeResearchIntroEn: string;
+  homeResearchAreasZh: string;
+  homeResearchAreasEn: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -44,6 +50,12 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   homeHeroSubtitleEn: "",
   homePhilosophyBodyZh: "",
   homePhilosophyBodyEn: "",
+  homeResearchHeadingZh: "",
+  homeResearchHeadingEn: "",
+  homeResearchIntroZh: "",
+  homeResearchIntroEn: "",
+  homeResearchAreasZh: "",
+  homeResearchAreasEn: "",
 };
 
 export async function getSettings(): Promise<SiteSettingsData> {
@@ -71,6 +83,12 @@ export async function getSettings(): Promise<SiteSettingsData> {
       homeHeroSubtitleEn: s.homeHeroSubtitleEn,
       homePhilosophyBodyZh: s.homePhilosophyBodyZh,
       homePhilosophyBodyEn: s.homePhilosophyBodyEn,
+      homeResearchHeadingZh: s.homeResearchHeadingZh,
+      homeResearchHeadingEn: s.homeResearchHeadingEn,
+      homeResearchIntroZh: s.homeResearchIntroZh,
+      homeResearchIntroEn: s.homeResearchIntroEn,
+      homeResearchAreasZh: s.homeResearchAreasZh,
+      homeResearchAreasEn: s.homeResearchAreasEn,
     };
   } catch {
     return DEFAULT_SETTINGS;

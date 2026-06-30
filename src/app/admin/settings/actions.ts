@@ -47,6 +47,12 @@ export async function saveSettings(
     homeHeroSubtitleEn: text("homeHeroSubtitleEn"),
     homePhilosophyBodyZh: text("homePhilosophyBodyZh"),
     homePhilosophyBodyEn: text("homePhilosophyBodyEn"),
+    homeResearchHeadingZh: text("homeResearchHeadingZh"),
+    homeResearchHeadingEn: text("homeResearchHeadingEn"),
+    homeResearchIntroZh: text("homeResearchIntroZh"),
+    homeResearchIntroEn: text("homeResearchIntroEn"),
+    homeResearchAreasZh: text("homeResearchAreasZh"),
+    homeResearchAreasEn: text("homeResearchAreasEn"),
     updatedBy: me.id,
   };
 

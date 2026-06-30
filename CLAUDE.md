@@ -439,6 +439,7 @@
   - **連線字串密碼一律 URL 編碼**,日後換密碼/重設時務必照做,否則重蹈問題 1。
   - **migration 走 DIRECT_URL(5432)、執行期走 DATABASE_URL(6543)** 的雙線設計要維持;新增 `env()` 依賴時記得 Vercel 也要同步補環境變數,否則 build 會掛(問題 3)。
   - GitHub Actions 保活已驗證可手動 `workflow_dispatch` 觸發;`SUPABASE_DB_URL` 用的是 DIRECT_URL。
+  - **改 schema 並 `prisma migrate/generate` 後,正在跑的 `npm run dev`(Turbopack)務必重啟**:Turbopack 不會在 generate 後熱重載產生的 Prisma client,會繼續用舊版,導致儲存時報 `PrismaClientValidationError: Unknown argument <新欄位>`(錯誤裡「可用欄位」清單會停在加新欄位之前)。程式本身沒問題,重啟 dev server 即解。〔2026-06-30 加首頁可編輯欄位時踩到〕
 
 ### 階段一:靜態內容網站
 - 完成日期:

@@ -32,6 +32,12 @@ export interface HomeOverrides {
   heroSubtitleEn: string;
   philosophyBodyZh: string;
   philosophyBodyEn: string;
+  researchHeadingZh: string;
+  researchHeadingEn: string;
+  researchIntroZh: string;
+  researchIntroEn: string;
+  researchAreasZh: string;
+  researchAreasEn: string;
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -63,6 +69,25 @@ export function HomeContent({
   const philosophyBody = philosophyOverride
     ? philosophyOverride.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
     : h.philosophyBody;
+
+  const researchHeading =
+    (lang === "zh" ? overrides.researchHeadingZh : overrides.researchHeadingEn) ||
+    h.researchHeading;
+  const researchIntro =
+    (lang === "zh" ? overrides.researchIntroZh : overrides.researchIntroEn) ||
+    h.researchIntro;
+  const researchAreasOverride =
+    lang === "zh" ? overrides.researchAreasZh : overrides.researchAreasEn;
+  const researchAreas = researchAreasOverride
+    ? researchAreasOverride
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [title, ...rest] = line.split("|");
+          return { title: title.trim(), desc: rest.join("|").trim() };
+        })
+    : h.researchAreas;
 
   const navItems = [
     { id: "dashboard", label: h.dashboardHeading },
@@ -195,9 +220,9 @@ export function HomeContent({
       </Section>
 
       {/* 研究領域(淺色) */}
-      <Section id="research" heading={h.researchHeading} intro={h.researchIntro}>
+      <Section id="research" heading={researchHeading} intro={researchIntro}>
         <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
-          {h.researchAreas.map((area, i) => (
+          {researchAreas.map((area, i) => (
             <Reveal
               key={i}
               delay={i * 90}

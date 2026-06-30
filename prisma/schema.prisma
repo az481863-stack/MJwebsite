@@ -360,6 +360,12 @@ model SiteSettings {
   homeHeroSubtitleEn   String @default("") @map("home_hero_subtitle_en")
   homePhilosophyBodyZh String @default("") @map("home_philosophy_body_zh") // 以空行分段
   homePhilosophyBodyEn String @default("") @map("home_philosophy_body_en") // 以空行分段
+  homeResearchHeadingZh String @default("") @map("home_research_heading_zh")
+  homeResearchHeadingEn String @default("") @map("home_research_heading_en")
+  homeResearchIntroZh   String @default("") @map("home_research_intro_zh")
+  homeResearchIntroEn   String @default("") @map("home_research_intro_en")
+  homeResearchAreasZh   String @default("") @map("home_research_areas_zh") // 一行一領域:標題 | 說明
+  homeResearchAreasEn   String @default("") @map("home_research_areas_en") // 一行一領域:標題 | 說明
 
   // 全站參數
   instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 階段五:預約總時數上限

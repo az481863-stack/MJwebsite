@@ -27,6 +27,12 @@ export default async function Home() {
         heroSubtitleEn: settings.homeHeroSubtitleEn,
         philosophyBodyZh: settings.homePhilosophyBodyZh,
         philosophyBodyEn: settings.homePhilosophyBodyEn,
+        researchHeadingZh: settings.homeResearchHeadingZh,
+        researchHeadingEn: settings.homeResearchHeadingEn,
+        researchIntroZh: settings.homeResearchIntroZh,
+        researchIntroEn: settings.homeResearchIntroEn,
+        researchAreasZh: settings.homeResearchAreasZh,
+        researchAreasEn: settings.homeResearchAreasEn,
       }}
       posts={posts.map((p) => ({
         id: p.id,

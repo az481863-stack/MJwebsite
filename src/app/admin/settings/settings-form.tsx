@@ -140,6 +140,87 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
             </label>
           </div>
         </div>
+
+        <h3 className="mt-8 text-base font-semibold">研究領域</h3>
+        <p className="mt-1 text-sm text-muted">
+          研究領域區塊的標題、引言與各領域卡片。各領域卡片請
+          <span className="font-medium text-foreground">一行一個</span>,以
+          <span className="font-medium text-foreground"> | </span>
+          分隔「標題」與「說明」(例:<code>奈米光電元件 | 設計並製作光偵測器與量子點結構</code>)。留空沿用預設。
+        </p>
+
+        <div className="mt-4 space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">標題(中文)</span>
+              <input
+                name="homeResearchHeadingZh"
+                defaultValue={initial.homeResearchHeadingZh}
+                placeholder={dictionaries.zh.home.researchHeading}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">標題(English)</span>
+              <input
+                name="homeResearchHeadingEn"
+                defaultValue={initial.homeResearchHeadingEn}
+                placeholder={dictionaries.en.home.researchHeading}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">引言(中文)</span>
+              <textarea
+                name="homeResearchIntroZh"
+                rows={2}
+                defaultValue={initial.homeResearchIntroZh}
+                placeholder={dictionaries.zh.home.researchIntro}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">引言(English)</span>
+              <textarea
+                name="homeResearchIntroEn"
+                rows={2}
+                defaultValue={initial.homeResearchIntroEn}
+                placeholder={dictionaries.en.home.researchIntro}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">各領域卡片(中文)</span>
+              <textarea
+                name="homeResearchAreasZh"
+                rows={4}
+                defaultValue={initial.homeResearchAreasZh}
+                placeholder={dictionaries.zh.home.researchAreas
+                  .map((a) => `${a.title} | ${a.desc}`)
+                  .join("\n")}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm leading-relaxed outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">各領域卡片(English)</span>
+              <textarea
+                name="homeResearchAreasEn"
+                rows={4}
+                defaultValue={initial.homeResearchAreasEn}
+                placeholder={dictionaries.en.home.researchAreas
+                  .map((a) => `${a.title} | ${a.desc}`)
+                  .join("\n")}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm leading-relaxed outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+        </div>
       </section>
 
       <section className="border-t border-line pt-6">
