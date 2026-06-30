@@ -111,7 +111,7 @@ export function TeamContent({ data }: { data: TeamData }) {
               >
                 <div>
                   <h3 className="text-base font-semibold">{job.title}</h3>
-                  <p className="mt-1 text-sm text-muted">{job.description}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{job.description}</p>
                 </div>
                 <span
                   className={`inline-flex w-fit shrink-0 items-center px-3 py-1 text-xs font-medium ${
