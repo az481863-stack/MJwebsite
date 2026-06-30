@@ -21,7 +21,7 @@
 | 2.1 | 招募職缺排版修正 | 修復文字全部疊加在一起的排版錯誤 | ✅ |
 | 2.2 | 儀器介紹互動優化 | 每台儀器說明可收合/展開;照片可點擊放大 | ✅ |
 | 2.2b | 團隊成員照片放大 | 團隊成員照片也改為可點擊放大(沿用同一 lightbox) | ✅ |
-| 2.3 | 後台人員排序 | 後台可調整現役成員的顯示順序 | ⬜ |
+| 2.3 | 後台人員排序 | 後台現役成員列表可拖曳排序(取代手填數字) | ✅ |
 | 2.4 | 校友改版 | 「校友去向」改名為「歷屆成員去向」,且去向需可放照片 | ⬜ |
 | 2.5 | 產學與專利排版修正 | 修復內文疊在一起的排版錯誤 | ✅ |
 
@@ -74,3 +74,11 @@
 ### 2.2b 團隊成員照片也可點擊放大(2026-06-30 完成)
 - 為避免重複,把放大邏輯抽成共用元件 `src/components/ZoomableImage.tsx`(縮圖按鈕 + lightbox + Esc/背景關閉 + 鎖捲動),`thumbClassName` 控制縮圖樣式。
 - `instrument-card.tsx` 重構為改用 `ZoomableImage`(移除自帶的 lightbox);`team-content.tsx` 成員照片也改用之(移除 `next/image` import)。
+
+### 2.3 後台現役成員拖曳排序(2026-06-30 完成)
+- 痛點:`sortOrder` 早已存在,但只能逐一進每位成員編輯頁手填數字、插隊還要重算,極不直覺。
+- 採拖曳(使用者選 B):引入 `@dnd-kit/core` `@dnd-kit/sortable` `@dnd-kit/utilities`(React 生態主流)。
+- 後台「現役成員」列表改 client 元件 `team-list.tsx`(垂直可排序),拖曳握把 ⠿;放開 → `reorderTeam(orderedIds)` server action 於交易內把 `sortOrder` 設為新索引(順帶把舊的全 0 資料正規化成連續序號)→ `router.refresh()`。樂觀更新即時呈現。
+- `AdminListShell` 為 server component 且 `renderRow` 函式無法跨 server→client 邊界,故 team 改用專屬 client 列表;`StatusBadge`/`ContentRowActions`(皆 client)沿用,已刪除區與新增鈕留在 `page.tsx`。`page.tsx` 以「id+status 簽章」當 `key`,發布/刪除後重掛取最新、純排序不重掛。
+- 無 migration(`sortOrder` 既有)。前台 `/team` 本就以 `sortOrder` 升冪排,拖曳結果即時反映。
+- 檔案:`src/app/admin/team/{actions,page}.tsx`、新增 `src/app/admin/team/team-list.tsx`。

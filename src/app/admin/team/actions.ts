@@ -53,6 +53,27 @@ export async function createTeamMember(
   redirect("/admin/team");
 }
 
+// 2.3:拖曳排序——依傳入的順序把每位成員的 sortOrder 設為其索引。需 ADMIN 以上。
+export async function reorderTeam(orderedIds: string[]): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
+  const ids = orderedIds.filter((id) => typeof id === "string" && id);
+  if (ids.length === 0) return { ok: false, message: "順序資料無效。" };
+
+  await prisma.$transaction(
+    ids.map((id, i) =>
+      prisma.teamMember.update({
+        where: { id },
+        data: { sortOrder: i, updatedBy: me.id },
+      }),
+    ),
+  );
+  revalidatePath("/admin/team");
+  revalidatePath("/", "layout");
+  return { ok: true, message: "順序已更新。" };
+}
+
 export async function updateTeamMember(
   _prev: ActionResult | null,
   formData: FormData,
