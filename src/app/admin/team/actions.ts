@@ -13,7 +13,20 @@ export interface ActionResult {
   message: string;
 }
 
-const TIERS = ["POSTDOC", "PHD", "MASTER", "UNDERGRAD"];
+const TIERS = [
+  "PROFESSOR",
+  "DISTINGUISHED_PROFESSOR",
+  "EMERITUS_PROFESSOR",
+  "ASSOC_PROFESSOR",
+  "ASST_PROFESSOR",
+  "VISITING_PROFESSOR",
+  "ADJUNCT_PROFESSOR",
+  "POSTDOC",
+  "STAFF",
+  "PHD",
+  "MASTER",
+  "UNDERGRAD",
+];
 
 function parse(formData: FormData) {
   return {

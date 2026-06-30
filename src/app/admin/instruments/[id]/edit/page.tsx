@@ -32,7 +32,9 @@ export default async function EditInstrumentPage({
           initial={{
             id: inst.id,
             name: inst.name,
+            nameEn: inst.nameEn,
             purpose: inst.purpose,
+            purposeEn: inst.purposeEn,
             photoUrl: inst.photoUrl,
             status: inst.status,
             sortOrder: inst.sortOrder,

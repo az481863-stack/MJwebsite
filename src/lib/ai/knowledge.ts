@@ -105,7 +105,10 @@ export async function aggregateSiteContent(): Promise<string> {
     parts.push(
       `# 現役成員\n` +
         teamMembers
-          .map((m) => `- ${m.name}(${m.tier})${m.researchTopic ? `:${m.researchTopic}` : ""}`)
+          .map(
+            (m) =>
+              `- ${m.name}(${dictionaries.zh.team.tierLabels[m.tier] ?? m.tier})${m.researchTopic ? `:${m.researchTopic}` : ""}`,
+          )
           .join("\n"),
     );
   }

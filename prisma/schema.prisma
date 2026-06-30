@@ -132,7 +132,15 @@ enum DashboardCategory {
 
 // G-3 現役成員身份階層
 enum TeamTier {
+  PROFESSOR // 教授
+  DISTINGUISHED_PROFESSOR // 特聘教授
+  EMERITUS_PROFESSOR // 名譽教授
+  ASSOC_PROFESSOR // 副教授
+  ASST_PROFESSOR // 助理教授
+  VISITING_PROFESSOR // 客座教授
+  ADJUNCT_PROFESSOR // 兼任教授
   POSTDOC // 博後
+  STAFF // 專任助理
   PHD // 博士生
   MASTER // 碩士生
   UNDERGRAD // 專題生
@@ -156,10 +164,13 @@ model DashboardPost {
   id            String            @id @default(uuid())
   category      DashboardCategory
   title         String
+  titleEn       String?           @map("title_en")
   body          String
+  bodyEn        String?           @map("body_en")
   imageUrl      String?           @map("image_url")
   linkUrl       String?           @map("link_url")
   linkText      String?           @map("link_text")
+  linkTextEn    String?           @map("link_text_en")
   publishedDate DateTime          @map("published_date")
   status        ContentStatus     @default(DRAFT)
 
@@ -243,10 +254,12 @@ model Alumnus {
 model JobOpening {
   id            String        @id @default(uuid())
   title         String
+  titleEn       String?       @map("title_en")
   sortOrder     Int           @default(0) @map("sort_order") // 層級排序
   recruitStatus RecruitStatus @default(OPEN) @map("recruit_status")
   slots         Int? // 名額(選)
   description   String
+  descriptionEn String?       @map("description_en")
   status        ContentStatus @default(DRAFT)
 
   createdAt DateTime  @default(now()) @map("created_at")
@@ -266,6 +279,7 @@ model BlogPost {
   titleZh       String        @map("title_zh")
   titleEn       String        @map("title_en")
   summary       String?
+  summaryEn     String?       @map("summary_en")
   bodyZh        Json          @map("body_zh") // Tiptap JSON
   bodyEn        Json          @map("body_en") // Tiptap JSON
   coverUrl      String?       @map("cover_url")
@@ -417,7 +431,9 @@ enum ConditionReport {
 model Instrument {
   id        String           @id @default(uuid())
   name      String
+  nameEn    String?          @map("name_en")
   purpose   String // 用途說明(長文)
+  purposeEn String?          @map("purpose_en")
   photoUrl  String?          @map("photo_url")
   status    InstrumentStatus @default(NORMAL) // 目前狀態(手動調整)
   sortOrder Int              @default(0) @map("sort_order")

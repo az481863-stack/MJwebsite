@@ -38,10 +38,13 @@ export default async function Home() {
         id: p.id,
         category: p.category,
         title: p.title,
+        titleEn: p.titleEn,
         body: p.body,
+        bodyEn: p.bodyEn,
         imageUrl: p.imageUrl,
         linkUrl: p.linkUrl,
         linkText: p.linkText,
+        linkTextEn: p.linkTextEn,
         date: p.publishedDate.toISOString().slice(0, 10).replace(/-/g, "."),
       }))}
     />

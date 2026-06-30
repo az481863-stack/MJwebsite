@@ -23,6 +23,7 @@ export default async function BlogPage() {
         titleZh: p.titleZh,
         titleEn: p.titleEn,
         summary: p.summary,
+        summaryEn: p.summaryEn,
         coverUrl: p.coverUrl,
         date: p.publishedDate.toISOString().slice(0, 10).replace(/-/g, "."),
       }))}

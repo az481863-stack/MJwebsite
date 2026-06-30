@@ -120,3 +120,32 @@ export async function rewriteBlog(docText: string): Promise<BlogRewrite> {
     "不要包 <html>/<body>,不要使用 <img> 或行內樣式。忠於原意,不杜撰事實。";
   return callGeminiJson<BlogRewrite>(system, docText, schema);
 }
+
+// 通用「多欄位中→英翻譯」(供後台各內容類型的「一鍵翻譯」按鈕)。
+// 傳入 { 欄位名: 中文值 },回傳 { 欄位名: 英文值 }。空值欄位略過。
+// 以動態 JSON schema 強制逐鍵對應,避免漏譯/錯位。
+export async function translateFieldsToEnglish(
+  fields: Record<string, string>,
+): Promise<Record<string, string>> {
+  const keys = Object.keys(fields).filter((k) => fields[k]?.trim());
+  if (keys.length === 0) return {};
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: Object.fromEntries(
+      keys.map((k) => [k, { type: Type.STRING }]),
+    ),
+    required: keys,
+    propertyOrdering: keys,
+  };
+  const system =
+    "你是專業的繁體中文→英文翻譯。將使用者提供的 JSON 物件中每個欄位的『值』翻成自然、" +
+    "專業且通順的英文,忠於原意、保留換行;不要新增或刪減欄位、不要翻譯鍵名(key)、" +
+    "不要附加任何說明,直接回傳鍵相同的 JSON 物件。";
+  const subset = Object.fromEntries(keys.map((k) => [k, fields[k]]));
+  return callGeminiJson<Record<string, string>>(
+    system,
+    JSON.stringify(subset),
+    schema,
+  );
+}

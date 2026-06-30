@@ -17,10 +17,13 @@ export interface DashboardItem {
   id: string;
   category: string;
   title: string;
+  titleEn: string | null;
   body: string;
+  bodyEn: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
   linkText: string | null;
+  linkTextEn: string | null;
   date: string; // YYYY.MM.DD
 }
 
@@ -44,6 +47,12 @@ const CATEGORY_LABEL: Record<string, string> = {
   ACADEMIC: "學術快報",
   LAB_LIFE: "實驗室日常",
   HONOR: "榮譽榜",
+};
+
+const CATEGORY_LABEL_EN: Record<string, string> = {
+  ACADEMIC: "Academic News",
+  LAB_LIFE: "Lab Life",
+  HONOR: "Honors",
 };
 
 export function HomeContent({
@@ -160,6 +169,15 @@ export function HomeContent({
           <ul className="divide-y divide-line border-y border-line">
             {posts.map((item) => {
               const open = openId === item.id;
+              const title =
+                (lang === "en" ? item.titleEn : null) || item.title;
+              const body = (lang === "en" ? item.bodyEn : null) || item.body;
+              const linkText =
+                (lang === "en" ? item.linkTextEn : null) || item.linkText;
+              const catLabel =
+                (lang === "en" ? CATEGORY_LABEL_EN[item.category] : null) ||
+                CATEGORY_LABEL[item.category] ||
+                item.category;
               return (
                 <li key={item.id}>
                   <button
@@ -169,9 +187,9 @@ export function HomeContent({
                     className="flex w-full items-center gap-4 py-5 text-left transition-[padding,background] hover:bg-accent/[0.06] hover:pl-3 sm:gap-6"
                   >
                     <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wider text-accent">
-                      {CATEGORY_LABEL[item.category] ?? item.category}
+                      {catLabel}
                     </span>
-                    <span className="flex-1 text-base">{item.title}</span>
+                    <span className="flex-1 text-base">{title}</span>
                     <span className="shrink-0 font-mono text-sm text-muted">
                       {item.date}
                     </span>
@@ -190,7 +208,7 @@ export function HomeContent({
                       {item.imageUrl && (
                         <Image
                           src={item.imageUrl}
-                          alt={item.title}
+                          alt={title}
                           width={640}
                           height={360}
                           className="mb-4 h-auto w-full max-w-md border border-line object-cover"
@@ -198,7 +216,7 @@ export function HomeContent({
                         />
                       )}
                       <p className="max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
-                        {item.body}
+                        {body}
                       </p>
                       {item.linkUrl && (
                         <a
@@ -207,7 +225,7 @@ export function HomeContent({
                           rel="noopener noreferrer"
                           className="mt-4 inline-flex items-center gap-1 border border-line-strong px-4 py-2 text-sm font-medium transition-colors hover:bg-foreground hover:text-background"
                         >
-                          {item.linkText || "相關連結"} ↗
+                          {linkText || (lang === "en" ? "Link" : "相關連結")} ↗
                         </a>
                       )}
                     </div>

@@ -46,9 +46,11 @@ export default async function TeamPage() {
         jobs: jobs.map((j) => ({
           id: j.id,
           title: j.title,
+          titleEn: j.titleEn,
           recruitStatus: j.recruitStatus,
           slots: j.slots,
           description: j.description,
+          descriptionEn: j.descriptionEn,
         })),
       }}
     />

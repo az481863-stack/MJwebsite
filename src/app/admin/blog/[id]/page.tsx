@@ -31,6 +31,7 @@ export default async function EditBlogPage({
           titleZh: p.titleZh,
           titleEn: p.titleEn,
           summary: p.summary,
+          summaryEn: p.summaryEn,
           bodyZh: p.bodyZh,
           bodyEn: p.bodyEn,
           coverUrl: p.coverUrl,

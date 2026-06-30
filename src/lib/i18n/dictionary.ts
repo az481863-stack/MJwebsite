@@ -58,7 +58,21 @@ export interface Dictionary {
     heading: string;
     intro: string;
     membersHeading: string;
-    tierLabels: Record<"POSTDOC" | "PHD" | "MASTER" | "UNDERGRAD", string>;
+    tierLabels: Record<
+      | "PROFESSOR"
+      | "DISTINGUISHED_PROFESSOR"
+      | "EMERITUS_PROFESSOR"
+      | "ASSOC_PROFESSOR"
+      | "ASST_PROFESSOR"
+      | "VISITING_PROFESSOR"
+      | "ADJUNCT_PROFESSOR"
+      | "POSTDOC"
+      | "STAFF"
+      | "PHD"
+      | "MASTER"
+      | "UNDERGRAD",
+      string
+    >;
     emptyMembers: string;
     emptyAlumni: string;
     emptyJobs: string;
@@ -246,7 +260,15 @@ const zh: Dictionary = {
     intro: "我們是一群對光與物質充滿好奇的人。歡迎有熱情的你加入。",
     membersHeading: "現役成員",
     tierLabels: {
+      PROFESSOR: "教授",
+      DISTINGUISHED_PROFESSOR: "特聘教授",
+      EMERITUS_PROFESSOR: "名譽教授",
+      ASSOC_PROFESSOR: "副教授",
+      ASST_PROFESSOR: "助理教授",
+      VISITING_PROFESSOR: "客座教授",
+      ADJUNCT_PROFESSOR: "兼任教授",
       POSTDOC: "博後",
+      STAFF: "專任助理",
       PHD: "博士生",
       MASTER: "碩士生",
       UNDERGRAD: "專題生",
@@ -501,7 +523,15 @@ const en: Dictionary = {
     intro: "We are a group of people curious about light and matter. Passionate newcomers are always welcome.",
     membersHeading: "Current Members",
     tierLabels: {
+      PROFESSOR: "Professor",
+      DISTINGUISHED_PROFESSOR: "Distinguished Professor",
+      EMERITUS_PROFESSOR: "Emeritus Professor",
+      ASSOC_PROFESSOR: "Associate Professor",
+      ASST_PROFESSOR: "Assistant Professor",
+      VISITING_PROFESSOR: "Visiting Professor",
+      ADJUNCT_PROFESSOR: "Adjunct Professor",
       POSTDOC: "Postdoc",
+      STAFF: "Research Assistant",
       PHD: "PhD Student",
       MASTER: "Master's Student",
       UNDERGRAD: "Undergraduate",

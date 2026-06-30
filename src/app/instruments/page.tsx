@@ -176,9 +176,11 @@ export default async function InstrumentsPage() {
             <div key={inst.id} className="border border-line p-5">
               <InstrumentCard
                 name={inst.name}
+                nameEn={inst.nameEn}
                 maintenance={inst.status === "MAINTENANCE"}
                 photoUrl={inst.photoUrl}
                 purpose={inst.purpose}
+                purposeEn={inst.purposeEn}
               />
               <InstrumentBooking
                 instrumentId={inst.id}

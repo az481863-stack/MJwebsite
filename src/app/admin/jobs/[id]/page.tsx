@@ -23,9 +23,11 @@ export default async function EditJobPage({
         initial={{
           id: j.id,
           title: j.title,
+          titleEn: j.titleEn,
           recruitStatus: j.recruitStatus,
           slots: j.slots,
           description: j.description,
+          descriptionEn: j.descriptionEn,
           sortOrder: j.sortOrder,
         }}
       />

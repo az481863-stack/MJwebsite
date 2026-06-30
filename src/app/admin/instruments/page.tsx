@@ -5,6 +5,7 @@ import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reconcile, managedInstrumentIds } from "@/lib/instruments";
 import { DeleteInstrumentButton } from "./row-actions";
+import { InstrumentAdminList } from "./instrument-admin-list";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,21 @@ export default async function InstrumentsAdminPage() {
         <p className="mt-2 text-sm text-muted">您僅能管理自己負責的機台。</p>
       )}
 
+      {isAdmin ? (
+        <InstrumentAdminList
+          key={instruments.map((i) => `${i.id}:${i.status}`).join(",")}
+          initial={instruments.map((inst) => ({
+            id: inst.id,
+            name: inst.name,
+            maintenance: inst.status === "MAINTENANCE",
+            photoUrl: inst.photoUrl,
+            inUse: inst.reservations.filter((r) => r.status === "IN_USE").length,
+            overdue: inst.reservations.filter((r) => r.status === "OVERDUE")
+              .length,
+            managerEmails: inst.managers.map((m) => m.member.loginEmail),
+          }))}
+        />
+      ) : (
       <ul className="mt-6 space-y-3">
         {instruments.map((inst) => {
           const inUse = inst.reservations.filter((r) => r.status === "IN_USE").length;
@@ -115,10 +131,11 @@ export default async function InstrumentsAdminPage() {
         })}
         {instruments.length === 0 && (
           <li className="border border-line p-6 text-sm text-muted">
-            尚無儀器。{isAdmin && "點右上角「新增儀器」開始。"}
+            尚無儀器。
           </li>
         )}
       </ul>
+      )}
     </div>
   );
 }

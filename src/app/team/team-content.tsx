@@ -2,17 +2,34 @@
 
 // 團隊與招募(前台):成員/校友/職缺來自後台 CMS;intro/標題/應徵範本仍為 i18n 文案。
 
+import type { TeamTier } from "@/generated/prisma/client";
 import { useLanguage } from "@/lib/i18n/context";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { Section } from "@/components/ui/Section";
 import { CopyButton } from "@/components/CopyButton";
 import { PageNav } from "@/components/PageNav";
 
+// 現役成員前台分組顯示的層級順序(由上到下)。層級內順序仍由後台拖曳(sortOrder)決定。
+const TIER_ORDER: TeamTier[] = [
+  "PROFESSOR",
+  "DISTINGUISHED_PROFESSOR",
+  "EMERITUS_PROFESSOR",
+  "ASSOC_PROFESSOR",
+  "ASST_PROFESSOR",
+  "VISITING_PROFESSOR",
+  "ADJUNCT_PROFESSOR",
+  "POSTDOC",
+  "STAFF",
+  "PHD",
+  "MASTER",
+  "UNDERGRAD",
+];
+
 export interface TeamData {
   members: {
     id: string;
     name: string;
-    tier: "POSTDOC" | "PHD" | "MASTER" | "UNDERGRAD";
+    tier: TeamTier;
     photoUrl: string | null;
     researchTopic: string | null;
   }[];
@@ -26,14 +43,16 @@ export interface TeamData {
   jobs: {
     id: string;
     title: string;
+    titleEn: string | null;
     recruitStatus: "OPEN" | "FULL";
     slots: number | null;
     description: string;
+    descriptionEn: string | null;
   }[];
 }
 
 export function TeamContent({ data }: { data: TeamData }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const team = t.team;
 
   const navItems = [
@@ -52,31 +71,44 @@ export function TeamContent({ data }: { data: TeamData }) {
         {data.members.length === 0 ? (
           <p className="text-sm text-muted">{team.emptyMembers}</p>
         ) : (
-          <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2">
-            {data.members.map((m) => (
-              <div key={m.id} className="flex gap-4 bg-background p-8">
-                {m.photoUrl && (
-                  <ZoomableImage
-                    src={m.photoUrl}
-                    alt={m.name}
-                    width={80}
-                    height={80}
-                    thumbClassName="h-20 w-20 border border-line object-cover"
-                  />
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold">{m.name}</h3>
-                  <p className="mt-1 text-sm font-medium text-foreground/70">
-                    {team.tierLabels[m.tier]}
-                  </p>
-                  {m.researchTopic && (
-                    <p className="mt-2 text-sm leading-relaxed text-muted">
-                      {m.researchTopic}
-                    </p>
-                  )}
+          <div className="space-y-10">
+            {TIER_ORDER.map((tier) => {
+              const group = data.members.filter((m) => m.tier === tier);
+              if (group.length === 0) return null;
+              return (
+                <div key={tier}>
+                  <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-accent">
+                    {team.tierLabels[tier]}
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {group.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex gap-4 border border-line bg-background p-8"
+                      >
+                        {m.photoUrl && (
+                          <ZoomableImage
+                            src={m.photoUrl}
+                            alt={m.name}
+                            width={80}
+                            height={80}
+                            thumbClassName="h-20 w-20 border border-line object-cover"
+                          />
+                        )}
+                        <div>
+                          <h4 className="text-lg font-semibold">{m.name}</h4>
+                          {m.researchTopic && (
+                            <p className="mt-2 text-sm leading-relaxed text-muted">
+                              {m.researchTopic}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Section>
@@ -133,8 +165,12 @@ export function TeamContent({ data }: { data: TeamData }) {
                 className="flex flex-col gap-2 bg-background p-6 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <h3 className="text-base font-semibold">{job.title}</h3>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{job.description}</p>
+                  <h3 className="text-base font-semibold">
+                    {(lang === "en" ? job.titleEn : null) || job.title}
+                  </h3>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">
+                    {(lang === "en" ? job.descriptionEn : null) || job.description}
+                  </p>
                 </div>
                 <span
                   className={`inline-flex w-fit shrink-0 items-center px-3 py-1 text-xs font-medium ${
