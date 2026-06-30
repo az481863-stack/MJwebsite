@@ -353,6 +353,14 @@ model SiteSettings {
   showIndustry    Boolean @default(true) @map("show_industry") // G-8 產學與專利
   showHighschool  Boolean @default(true) @map("show_highschool") // G-9 給高中生的話
 
+  // 首頁可編輯文字(留空則沿用 i18n 字典預設;中英各一,依前台語系取用)
+  homeHeroTitleZh      String @default("") @map("home_hero_title_zh")
+  homeHeroTitleEn      String @default("") @map("home_hero_title_en")
+  homeHeroSubtitleZh   String @default("") @map("home_hero_subtitle_zh")
+  homeHeroSubtitleEn   String @default("") @map("home_hero_subtitle_en")
+  homePhilosophyBodyZh String @default("") @map("home_philosophy_body_zh") // 以空行分段
+  homePhilosophyBodyEn String @default("") @map("home_philosophy_body_en") // 以空行分段
+
   // 全站參數
   instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 階段五:預約總時數上限
 

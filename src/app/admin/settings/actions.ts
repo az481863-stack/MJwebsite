@@ -28,6 +28,8 @@ export async function saveSettings(
   const accentRaw = String(formData.get("siteAccent") ?? "");
   const siteAccent = isAccentKey(accentRaw) ? accentRaw : DEFAULT_ACCENT;
 
+  const text = (k: string) => String(formData.get(k) ?? "").trim();
+
   const data = {
     showResearch: bool("showResearch"),
     showTeam: bool("showTeam"),
@@ -39,6 +41,12 @@ export async function saveSettings(
     showChatbot: bool("showChatbot"),
     instrumentMaxHours,
     siteAccent,
+    homeHeroTitleZh: text("homeHeroTitleZh"),
+    homeHeroTitleEn: text("homeHeroTitleEn"),
+    homeHeroSubtitleZh: text("homeHeroSubtitleZh"),
+    homeHeroSubtitleEn: text("homeHeroSubtitleEn"),
+    homePhilosophyBodyZh: text("homePhilosophyBodyZh"),
+    homePhilosophyBodyEn: text("homePhilosophyBodyEn"),
     updatedBy: me.id,
   };
 

@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import type { SiteSettingsData } from "@/lib/settings";
 import { ACCENTS } from "@/lib/accent";
+import { dictionaries } from "@/lib/i18n/dictionary";
 import { saveSettings, type ActionResult } from "./actions";
 
 const PAGE_TOGGLES: { key: keyof SiteSettingsData; label: string }[] = [
@@ -59,6 +60,86 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
           defaultValue={initial.instrumentMaxHours}
           className="mt-1.5 w-32 border border-line px-3 py-2.5 text-sm outline-none focus:border-line-strong"
         />
+      </section>
+
+      <section className="border-t border-line pt-6">
+        <h2 className="text-lg font-semibold">首頁文字</h2>
+        <p className="mt-1 text-sm text-muted">
+          編輯首頁的標題、副標與「主持人理念」內文。中、英文各一份(隨前台語系切換顯示)。
+          <span className="font-medium text-foreground">留空</span>則沿用系統預設文字(灰色提示即為預設)。
+          理念內文以<span className="font-medium text-foreground">空行</span>分段。
+        </p>
+
+        <div className="mt-4 space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">首頁標題(中文)</span>
+              <textarea
+                name="homeHeroTitleZh"
+                rows={2}
+                defaultValue={initial.homeHeroTitleZh}
+                placeholder={dictionaries.zh.home.heroTitle}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">首頁標題(English)</span>
+              <textarea
+                name="homeHeroTitleEn"
+                rows={2}
+                defaultValue={initial.homeHeroTitleEn}
+                placeholder={dictionaries.en.home.heroTitle}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">首頁副標(中文)</span>
+              <textarea
+                name="homeHeroSubtitleZh"
+                rows={3}
+                defaultValue={initial.homeHeroSubtitleZh}
+                placeholder={dictionaries.zh.home.heroSubtitle}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">首頁副標(English)</span>
+              <textarea
+                name="homeHeroSubtitleEn"
+                rows={3}
+                defaultValue={initial.homeHeroSubtitleEn}
+                placeholder={dictionaries.en.home.heroSubtitle}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">主持人理念內文(中文)</span>
+              <textarea
+                name="homePhilosophyBodyZh"
+                rows={6}
+                defaultValue={initial.homePhilosophyBodyZh}
+                placeholder={dictionaries.zh.home.philosophyBody.join("\n\n")}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm leading-relaxed outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">主持人理念內文(English)</span>
+              <textarea
+                name="homePhilosophyBodyEn"
+                rows={6}
+                defaultValue={initial.homePhilosophyBodyEn}
+                placeholder={dictionaries.en.home.philosophyBody.join("\n\n")}
+                className="mt-1.5 w-full resize-y border border-line px-3 py-2 text-sm leading-relaxed outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+        </div>
       </section>
 
       <section className="border-t border-line pt-6">

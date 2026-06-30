@@ -24,16 +24,45 @@ export interface DashboardItem {
   date: string; // YYYY.MM.DD
 }
 
+// 首頁可由後台 Settings 覆寫的文字(留空則沿用 i18n 字典預設)。
+export interface HomeOverrides {
+  heroTitleZh: string;
+  heroTitleEn: string;
+  heroSubtitleZh: string;
+  heroSubtitleEn: string;
+  philosophyBodyZh: string;
+  philosophyBodyEn: string;
+}
+
 const CATEGORY_LABEL: Record<string, string> = {
   ACADEMIC: "學術快報",
   LAB_LIFE: "實驗室日常",
   HONOR: "榮譽榜",
 };
 
-export function HomeContent({ posts }: { posts: DashboardItem[] }) {
-  const { t } = useLanguage();
+export function HomeContent({
+  posts,
+  overrides,
+}: {
+  posts: DashboardItem[];
+  overrides: HomeOverrides;
+}) {
+  const { t, lang } = useLanguage();
   const h = t.home;
   const [openId, setOpenId] = useState<string | null>(null);
+
+  // 後台覆寫優先,留空則沿用字典預設(依當前語系挑中/英文)。
+  const heroTitle =
+    (lang === "zh" ? overrides.heroTitleZh : overrides.heroTitleEn) ||
+    h.heroTitle;
+  const heroSubtitle =
+    (lang === "zh" ? overrides.heroSubtitleZh : overrides.heroSubtitleEn) ||
+    h.heroSubtitle;
+  const philosophyOverride =
+    lang === "zh" ? overrides.philosophyBodyZh : overrides.philosophyBodyEn;
+  const philosophyBody = philosophyOverride
+    ? philosophyOverride.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+    : h.philosophyBody;
 
   const navItems = [
     { id: "research", label: h.researchHeading },
@@ -74,11 +103,11 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">
               {h.heroEyebrow}
             </p>
-            <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-              {h.heroTitle}
+            <h1 className="mt-6 whitespace-pre-line text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              {heroTitle}
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
-              {h.heroSubtitle}
+            <p className="mt-6 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-muted">
+              {heroSubtitle}
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -126,7 +155,7 @@ export function HomeContent({ posts }: { posts: DashboardItem[] }) {
             </h2>
           </Reveal>
           <div className="max-w-3xl space-y-6">
-            {h.philosophyBody.map((para, i) => (
+            {philosophyBody.map((para, i) => (
               <Reveal
                 key={i}
                 delay={i * 120}

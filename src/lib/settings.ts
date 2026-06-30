@@ -17,6 +17,12 @@ export interface SiteSettingsData {
   showChatbot: boolean;
   chatbotKnowledgeZh: string;
   chatbotKnowledgeEn: string;
+  homeHeroTitleZh: string;
+  homeHeroTitleEn: string;
+  homeHeroSubtitleZh: string;
+  homeHeroSubtitleEn: string;
+  homePhilosophyBodyZh: string;
+  homePhilosophyBodyEn: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -32,6 +38,12 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   showChatbot: false,
   chatbotKnowledgeZh: "",
   chatbotKnowledgeEn: "",
+  homeHeroTitleZh: "",
+  homeHeroTitleEn: "",
+  homeHeroSubtitleZh: "",
+  homeHeroSubtitleEn: "",
+  homePhilosophyBodyZh: "",
+  homePhilosophyBodyEn: "",
 };
 
 export async function getSettings(): Promise<SiteSettingsData> {
@@ -53,6 +65,12 @@ export async function getSettings(): Promise<SiteSettingsData> {
       showChatbot: s.showChatbot,
       chatbotKnowledgeZh: s.chatbotKnowledgeZh,
       chatbotKnowledgeEn: s.chatbotKnowledgeEn,
+      homeHeroTitleZh: s.homeHeroTitleZh,
+      homeHeroTitleEn: s.homeHeroTitleEn,
+      homeHeroSubtitleZh: s.homeHeroSubtitleZh,
+      homeHeroSubtitleEn: s.homeHeroSubtitleEn,
+      homePhilosophyBodyZh: s.homePhilosophyBodyZh,
+      homePhilosophyBodyEn: s.homePhilosophyBodyEn,
     };
   } catch {
     return DEFAULT_SETTINGS;
