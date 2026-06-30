@@ -2,8 +2,8 @@
 
 // 團隊與招募(前台):成員/校友/職缺來自後台 CMS;intro/標題/應徵範本仍為 i18n 文案。
 
-import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/context";
+import { ZoomableImage } from "@/components/ZoomableImage";
 import { Section } from "@/components/ui/Section";
 import { CopyButton } from "@/components/CopyButton";
 import { PageNav } from "@/components/PageNav";
@@ -50,13 +50,12 @@ export function TeamContent({ data }: { data: TeamData }) {
             {data.members.map((m) => (
               <div key={m.id} className="flex gap-4 bg-background p-8">
                 {m.photoUrl && (
-                  <Image
+                  <ZoomableImage
                     src={m.photoUrl}
                     alt={m.name}
                     width={80}
                     height={80}
-                    unoptimized
-                    className="h-20 w-20 shrink-0 border border-line object-cover"
+                    thumbClassName="h-20 w-20 border border-line object-cover"
                   />
                 )}
                 <div>
