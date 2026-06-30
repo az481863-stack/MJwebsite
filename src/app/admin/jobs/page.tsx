@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { AdminListShell } from "../content-list-shell";
+import { SortableAdminList } from "../sortable-admin-list";
 
 export default async function JobsAdminPage() {
   const me = await getCurrentMember();
@@ -19,23 +19,24 @@ export default async function JobsAdminPage() {
   ]);
 
   return (
-    <AdminListShell
+    <SortableAdminList
+      key={items.map((j) => `${j.id}:${j.status}`).join(",")}
       title="職缺管理"
       basePath="/admin/jobs"
       model="jobOpening"
-      items={items}
-      deleted={deleted}
-      renderRow={(j) => (
-        <p className="text-sm">
-          <span className="font-medium">{j.title}</span>
-          <span className="text-muted">
-            {" "}
-            · {j.recruitStatus === "OPEN" ? "開放" : "額滿"}
-            {j.slots != null ? ` · ${j.slots} 名` : ""}
-          </span>
-        </p>
-      )}
-      renderDeleted={(j) => j.title}
+      items={items.map((j) => ({
+        id: j.id,
+        status: j.status,
+        primary: j.title,
+        secondary: `${j.recruitStatus === "OPEN" ? "開放" : "額滿"}${
+          j.slots != null ? ` · ${j.slots} 名` : ""
+        }`,
+      }))}
+      deleted={deleted.map((j) => ({
+        id: j.id,
+        status: j.status,
+        label: j.title,
+      }))}
     />
   );
 }

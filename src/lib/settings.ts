@@ -29,6 +29,14 @@ export interface SiteSettingsData {
   homeResearchIntroEn: string;
   homeResearchAreasZh: string;
   homeResearchAreasEn: string;
+  contactLabNameZh: string;
+  contactLabNameEn: string;
+  contactAddressZh: string;
+  contactAddressEn: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactOfficeHoursZh: string;
+  contactOfficeHoursEn: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -56,6 +64,14 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   homeResearchIntroEn: "",
   homeResearchAreasZh: "",
   homeResearchAreasEn: "",
+  contactLabNameZh: "",
+  contactLabNameEn: "",
+  contactAddressZh: "",
+  contactAddressEn: "",
+  contactEmail: "",
+  contactPhone: "",
+  contactOfficeHoursZh: "",
+  contactOfficeHoursEn: "",
 };
 
 export async function getSettings(): Promise<SiteSettingsData> {
@@ -89,6 +105,14 @@ export async function getSettings(): Promise<SiteSettingsData> {
       homeResearchIntroEn: s.homeResearchIntroEn,
       homeResearchAreasZh: s.homeResearchAreasZh,
       homeResearchAreasEn: s.homeResearchAreasEn,
+      contactLabNameZh: s.contactLabNameZh,
+      contactLabNameEn: s.contactLabNameEn,
+      contactAddressZh: s.contactAddressZh,
+      contactAddressEn: s.contactAddressEn,
+      contactEmail: s.contactEmail,
+      contactPhone: s.contactPhone,
+      contactOfficeHoursZh: s.contactOfficeHoursZh,
+      contactOfficeHoursEn: s.contactOfficeHoursEn,
     };
   } catch {
     return DEFAULT_SETTINGS;

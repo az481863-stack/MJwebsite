@@ -118,15 +118,7 @@ export function InstrumentForm({
       <p className="-mt-2 text-xs text-muted">
         負責人須為已存在的會員;找不到的 email 會被忽略。負責人可管理此機台的使用狀況、改機況、代簽,並收異常警報。
       </p>
-      <Labeled label="排序(數字越小越前面)" htmlFor="sortOrder">
-        <input
-          id="sortOrder"
-          name="sortOrder"
-          type="number"
-          defaultValue={initial?.sortOrder ?? 0}
-          className={fieldCls}
-        />
-      </Labeled>
+      <p className="text-xs text-muted">顯示順序請於儀器管理列表頁拖曳調整。</p>
 
       {state && !state.ok && <p className="text-sm text-red-600">{state.message}</p>}
 

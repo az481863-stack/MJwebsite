@@ -60,7 +60,6 @@ export async function createAlumnus(
       gradYear: f.gradYear,
       destination: f.destination,
       photoUrl: f.photoUrl,
-      sortOrder: f.sortOrder,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -90,7 +89,6 @@ export async function updateAlumnus(
       gradYear: f.gradYear,
       destination: f.destination,
       photoUrl: f.photoUrl,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });

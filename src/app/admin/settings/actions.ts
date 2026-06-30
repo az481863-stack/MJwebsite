@@ -53,6 +53,14 @@ export async function saveSettings(
     homeResearchIntroEn: text("homeResearchIntroEn"),
     homeResearchAreasZh: text("homeResearchAreasZh"),
     homeResearchAreasEn: text("homeResearchAreasEn"),
+    contactLabNameZh: text("contactLabNameZh"),
+    contactLabNameEn: text("contactLabNameEn"),
+    contactAddressZh: text("contactAddressZh"),
+    contactAddressEn: text("contactAddressEn"),
+    contactEmail: text("contactEmail"),
+    contactPhone: text("contactPhone"),
+    contactOfficeHoursZh: text("contactOfficeHoursZh"),
+    contactOfficeHoursEn: text("contactOfficeHoursEn"),
     updatedBy: me.id,
   };
 

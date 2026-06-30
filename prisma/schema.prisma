@@ -382,6 +382,16 @@ model SiteSettings {
   homeResearchAreasZh   String @default("") @map("home_research_areas_zh") // 一行一領域:標題 | 說明
   homeResearchAreasEn   String @default("") @map("home_research_areas_en") // 一行一領域:標題 | 說明
 
+  // 聯絡頁基本資訊(留空則沿用字典預設)。名稱/地址/辦公時間中英各一;Email/電話語言中性。
+  contactLabNameZh      String @default("") @map("contact_lab_name_zh")
+  contactLabNameEn      String @default("") @map("contact_lab_name_en")
+  contactAddressZh      String @default("") @map("contact_address_zh")
+  contactAddressEn      String @default("") @map("contact_address_en")
+  contactEmail          String @default("") @map("contact_email")
+  contactPhone          String @default("") @map("contact_phone")
+  contactOfficeHoursZh  String @default("") @map("contact_office_hours_zh")
+  contactOfficeHoursEn  String @default("") @map("contact_office_hours_en")
+
   // 全站參數
   instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 階段五:預約總時數上限
 

@@ -37,7 +37,6 @@ export async function createCourse(
       name: f.name,
       outline: f.outline,
       handoutUrl: f.handoutUrl,
-      sortOrder: f.sortOrder,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -66,7 +65,6 @@ export async function updateCourse(
       name: f.name,
       outline: f.outline,
       handoutUrl: f.handoutUrl,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });

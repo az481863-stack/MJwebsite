@@ -73,7 +73,6 @@ export async function createInstrument(
       purposeEn: f.purposeEn,
       photoUrl: f.photoUrl,
       status: f.status as InstrumentStatus,
-      sortOrder: f.sortOrder,
       createdBy: me.id,
       updatedBy: me.id,
     },
@@ -106,7 +105,6 @@ export async function updateInstrument(
       purposeEn: f.purposeEn,
       photoUrl: f.photoUrl,
       status: f.status as InstrumentStatus,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });

@@ -39,6 +39,13 @@
 | 3.3 | 儀器說明 | 後台加英文欄 + 一鍵翻譯;儀器卡片依語系切換 | ✅ |
 | 3.4 | 博士後徵才 | 職缺後台加英文欄 + 一鍵翻譯;前台依語系切換 | ✅ |
 
+### 四、其他追加
+
+| # | 項目 | 說明 | 狀態 |
+|---|------|------|------|
+| 4.1 | 聯絡資訊後台維護 | 聯絡頁實驗室名稱/地址/Email/電話/辦公時間改為後台 Settings 可編輯 | ✅ |
+| 4.2 | 全站排序一律拖曳 | 課程/職缺/產學也改拖曳排序;抽通用 `SortableAdminList`;移除各表單手填排序數字 | ✅ |
+
 ---
 
 ## 第三類(中英翻譯)決策(2026-06-30)
@@ -134,3 +141,17 @@
 - **3.2 Blog**:Blog 本已雙語(titleZh/En、bodyZh/En),補 `summaryEn`(同上 migration)。內文是 Tiptap JSON,故採**寫庫後 reload**:`ai-actions.ts` 的 `translateBlog(id)` 把已存中文(標題/摘要/內文 zh→HTML→翻譯→Tiptap)翻好寫回英文欄;`blog-translate-button.tsx`(需先存草稿)→ `window.location.reload()` 帶出英文編輯器。前台列表/詳情頁英文空白時 fallback 中文(`isEmptyDoc` 判斷內文)。
 - **填法慣例**:中文填好 → 按「一鍵翻譯」→ 檢查英文 → 儲存。英文留空前台自動顯示中文,不開天窗。AI 未設金鑰時翻譯鈕報錯,但雙語欄位與手填完全不受影響(AI 為加分項非地基)。
 - **未納入**:前台頁面框架文案(如儀器頁標題、我的預約等)仍中文;本次只處理教授點名的 4 類「內容」。
+
+### 4.1 聯絡資訊後台維護(2026-06-30 完成)
+- 聯絡頁基本資訊原寫死於字典(附錄 I);改為後台 Settings 可編輯,沿用 1.1 範式(留空 fallback 字典)。
+- `SiteSettings` 加 8 欄,migration `add_contact_settings`:名稱/地址/辦公時間中英各一(隨語系切換);Email/電話語言中性單欄。
+- 後台「設定 → 聯絡資訊」區塊;`contact-content.tsx` 依語系取值、空值 fallback;heading/intro/欄位標籤與表單仍用字典。
+- 檔案:`prisma/schema.prisma`、`src/lib/settings.ts`、`src/app/admin/settings/{actions,settings-form}.tsx`、`src/app/contact/{page,contact-content}.tsx`。
+
+### 4.2 全站排序一律拖曳(2026-06-30 完成)
+- 需求:全站排序一律用拖曳。有 `sortOrder` 又還在手填的剩課程、職缺、產學;一併改拖曳。
+- 抽出通用 `src/app/admin/sortable-admin-list.tsx`(client 全外殼:標題+新增+可拖曳列表+已刪除區),列以可序列化資料描述(`primary/secondary/group`),避免跨 server→client 傳函式;可選 `groups` 分組(僅同組內拖曳,供產學依分類)。
+- 通用 reorder:`content-actions.ts` 加 `reorderContent(model, ids)`(沿用既有 model 白名單;`Promise.all` 批次設 `sortOrder=索引`)。
+- courses/jobs/industry 後台頁改用 `SortableAdminList`(取代 `AdminListShell`);industry 以 `CAT_GROUPS` 分組(與前台 CAT_ORDER 一致)。
+- **移除所有手填排序欄位**:6 種表單(team/alumni/jobs/courses/industry/instrument)移除「排序數字」輸入;create/update 不再寫 `sortOrder`(改由拖曳專責),新項目以 schema 預設 0 進場(可再拖曳定位),**編輯不再重置排序**。
+- 既有的 team(分層)/alumni/instrument(限 ADMIN、含分層與權限)維持各自專屬 client 列表;courses/jobs/industry 用新通用元件。Publications(年份排)、Blog/佈告欄(日期排)無手動排序,不適用。

@@ -40,7 +40,6 @@ export async function createIndustry(
       category: f.category as IndustryCategory,
       title: f.title,
       description: f.description,
-      sortOrder: f.sortOrder,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -69,7 +68,6 @@ export async function updateIndustry(
       category: f.category as IndustryCategory,
       title: f.title,
       description: f.description,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });

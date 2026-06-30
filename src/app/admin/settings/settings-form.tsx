@@ -224,6 +224,100 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
       </section>
 
       <section className="border-t border-line pt-6">
+        <h2 className="text-lg font-semibold">聯絡資訊</h2>
+        <p className="mt-1 text-sm text-muted">
+          聯絡教授頁的基本資訊。名稱、地址、辦公時間中、英各一(隨前台語系切換);
+          Email、電話為單欄。<span className="font-medium text-foreground">留空</span>則沿用系統預設(灰字提示即為預設)。
+        </p>
+
+        <div className="mt-4 space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">實驗室名稱(中文)</span>
+              <input
+                name="contactLabNameZh"
+                defaultValue={initial.contactLabNameZh}
+                placeholder={dictionaries.zh.contact.labName}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">實驗室名稱(English)</span>
+              <input
+                name="contactLabNameEn"
+                defaultValue={initial.contactLabNameEn}
+                placeholder={dictionaries.en.contact.labName}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">地址(中文)</span>
+              <input
+                name="contactAddressZh"
+                defaultValue={initial.contactAddressZh}
+                placeholder={dictionaries.zh.contact.address}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">地址(English)</span>
+              <input
+                name="contactAddressEn"
+                defaultValue={initial.contactAddressEn}
+                placeholder={dictionaries.en.contact.address}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">Email</span>
+              <input
+                name="contactEmail"
+                defaultValue={initial.contactEmail}
+                placeholder={dictionaries.zh.contact.email}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">電話</span>
+              <input
+                name="contactPhone"
+                defaultValue={initial.contactPhone}
+                placeholder={dictionaries.zh.contact.phone}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">辦公時間(中文)</span>
+              <input
+                name="contactOfficeHoursZh"
+                defaultValue={initial.contactOfficeHoursZh}
+                placeholder={dictionaries.zh.contact.officeHours}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">辦公時間(English)</span>
+              <input
+                name="contactOfficeHoursEn"
+                defaultValue={initial.contactOfficeHoursEn}
+                placeholder={dictionaries.en.contact.officeHours}
+                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-line pt-6">
         <h2 className="text-lg font-semibold">前台主題重點色</h2>
         <p className="mt-1 text-sm text-muted">
           套用於全站前台(Dark Optics)的重點色:Hero 雷射光束、按鈕、連結與重點。點選即預覽。

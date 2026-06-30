@@ -49,15 +49,9 @@ export function IndustryForm({
           className={fieldCls}
         />
       </Labeled>
-      <Labeled label="排序(數字越小越前面)" htmlFor="sortOrder">
-        <input
-          id="sortOrder"
-          name="sortOrder"
-          type="number"
-          defaultValue={initial?.sortOrder ?? 0}
-          className={fieldCls}
-        />
-      </Labeled>
+      <p className="text-xs text-muted">
+        顯示順序請於列表頁拖曳調整(僅同分類內)。
+      </p>
     </ContentFormShell>
   );
 }

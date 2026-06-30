@@ -55,7 +55,6 @@ export async function createTeamMember(
       tier: f.tier as TeamTier,
       photoUrl: f.photoUrl,
       researchTopic: f.researchTopic,
-      sortOrder: f.sortOrder,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -106,7 +105,6 @@ export async function updateTeamMember(
       tier: f.tier as TeamTier,
       photoUrl: f.photoUrl,
       researchTopic: f.researchTopic,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });

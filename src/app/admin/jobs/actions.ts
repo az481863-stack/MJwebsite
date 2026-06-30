@@ -45,7 +45,6 @@ export async function createJob(
       slots: f.slots,
       description: f.description,
       descriptionEn: f.descriptionEn,
-      sortOrder: f.sortOrder,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -77,7 +76,6 @@ export async function updateJob(
       slots: f.slots,
       description: f.description,
       descriptionEn: f.descriptionEn,
-      sortOrder: f.sortOrder,
       updatedBy: me.id,
     },
   });
