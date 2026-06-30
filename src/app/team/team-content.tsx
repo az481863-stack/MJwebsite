@@ -16,7 +16,13 @@ export interface TeamData {
     photoUrl: string | null;
     researchTopic: string | null;
   }[];
-  alumni: { id: string; name: string; gradYear: number; destination: string }[];
+  alumni: {
+    id: string;
+    name: string;
+    gradYear: number;
+    destination: string;
+    photoUrl: string | null;
+  }[];
   jobs: {
     id: string;
     title: string;
@@ -84,13 +90,31 @@ export function TeamContent({ data }: { data: TeamData }) {
             {data.alumni.map((a) => (
               <li
                 key={a.id}
-                className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:gap-6"
+                className="flex items-center gap-4 py-4"
               >
-                <span className="font-mono text-sm text-muted sm:w-16">
-                  {a.gradYear}
-                </span>
-                <span className="w-28 shrink-0 font-medium">{a.name}</span>
-                <span className="text-muted">{a.destination}</span>
+                {a.photoUrl ? (
+                  <ZoomableImage
+                    src={a.photoUrl}
+                    alt={a.name}
+                    width={48}
+                    height={48}
+                    thumbClassName="h-12 w-12 rounded-full border border-line object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-line bg-foreground/[0.03] text-sm text-muted"
+                  >
+                    {a.name.slice(0, 1)}
+                  </span>
+                )}
+                <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-6">
+                  <span className="font-mono text-sm text-muted sm:w-16">
+                    {a.gradYear}
+                  </span>
+                  <span className="w-28 shrink-0 font-medium">{a.name}</span>
+                  <span className="text-muted">{a.destination}</span>
+                </div>
               </li>
             ))}
           </ul>

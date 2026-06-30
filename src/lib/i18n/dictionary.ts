@@ -252,7 +252,7 @@ const zh: Dictionary = {
       UNDERGRAD: "專題生",
     },
     emptyMembers: "尚未新增成員。",
-    emptyAlumni: "尚未新增校友。",
+    emptyAlumni: "尚未新增歷屆成員。",
     emptyJobs: "目前沒有開放職缺。",
     members: [
       { name: "吳孟哲 教授", role: "主持人 (PI)", topic: "半導體光譜學、量子材料" },
@@ -260,7 +260,7 @@ const zh: Dictionary = {
       { name: "李同學", role: "碩士生", topic: "量子點光偵測器製程" },
       { name: "陳同學", role: "專題生", topic: "低溫光譜量測系統" },
     ],
-    alumniHeading: "校友去向",
+    alumniHeading: "歷屆成員去向",
     alumni: [
       { name: "張同學", year: "2024", destination: "台積電 製程整合工程師" },
       { name: "林同學", year: "2023", destination: "中研院 博士後研究員" },

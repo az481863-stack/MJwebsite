@@ -15,7 +15,7 @@ export const CMS_TYPES: CmsTypeMeta[] = [
   { key: "dashboard-posts", label: "動態佈告欄", path: "/admin/dashboard-posts", minRole: "ADMIN" },
   { key: "publications", label: "Publications", path: "/admin/publications", minRole: "STUDENT" },
   { key: "team", label: "現役成員", path: "/admin/team", minRole: "ADMIN" },
-  { key: "alumni", label: "校友去向", path: "/admin/alumni", minRole: "ADMIN" },
+  { key: "alumni", label: "歷屆成員去向", path: "/admin/alumni", minRole: "ADMIN" },
   { key: "jobs", label: "職缺管理", path: "/admin/jobs", minRole: "ADMIN" },
   { key: "blog", label: "光電小講堂 Blog", path: "/admin/blog", minRole: "STUDENT" },
   { key: "courses", label: "課程紀錄", path: "/admin/courses", minRole: "ADMIN" },

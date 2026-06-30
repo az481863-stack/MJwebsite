@@ -22,7 +22,7 @@
 | 2.2 | 儀器介紹互動優化 | 每台儀器說明可收合/展開;照片可點擊放大 | ✅ |
 | 2.2b | 團隊成員照片放大 | 團隊成員照片也改為可點擊放大(沿用同一 lightbox) | ✅ |
 | 2.3 | 後台人員排序 | 後台現役成員列表可拖曳排序(取代手填數字) | ✅ |
-| 2.4 | 校友改版 | 「校友去向」改名為「歷屆成員去向」,且去向需可放照片 | ⬜ |
+| 2.4 | 校友改版 | 改名「歷屆成員去向」、去向可放照片、後台可拖曳排序 | ✅ |
 | 2.5 | 產學與專利排版修正 | 修復內文疊在一起的排版錯誤 | ✅ |
 
 ### 三、多國語系(中英文翻譯)
@@ -82,3 +82,10 @@
 - `AdminListShell` 為 server component 且 `renderRow` 函式無法跨 server→client 邊界,故 team 改用專屬 client 列表;`StatusBadge`/`ContentRowActions`(皆 client)沿用,已刪除區與新增鈕留在 `page.tsx`。`page.tsx` 以「id+status 簽章」當 `key`,發布/刪除後重掛取最新、純排序不重掛。
 - 無 migration(`sortOrder` 既有)。前台 `/team` 本就以 `sortOrder` 升冪排,拖曳結果即時反映。
 - 檔案:`src/app/admin/team/{actions,page}.tsx`、新增 `src/app/admin/team/team-list.tsx`。
+
+### 2.4 歷屆成員去向:改名 + 照片 + 拖曳排序(2026-06-30 完成)
+- **改名**:中文「校友去向」→「歷屆成員去向」(字典 `alumniHeading`、`emptyAlumni`、admin registry 標籤、新增/編輯頁標題、knowledge.ts);**英文維持 "Alumni"**(使用者選擇)。
+- **照片**:`Alumnus` 加 `photoUrl String?`,migration `20260630104210_add_alumnus_photo`;後台表單加 `ImageUpload`(folder `alumni/`),actions parse/create/update 一併存。前台採「**列表 + 小圓頭像**」(使用者選擇):有照片用 `ZoomableImage`(可點擊放大),無照片顯示姓名首字佔位圓。
+- **拖曳排序**(使用者追加,比照 2.3):新增 `reorderAlumni` action + client `alumni-list.tsx`;admin alumni 頁改用拖曳列表。**排序基準由 `gradYear desc` 改為 `sortOrder asc` 優先**(前台 team/page 與 admin 同步),否則拖曳會與年份排序打架。
+- 檔案:`prisma/schema.prisma`、`src/lib/i18n/dictionary.ts`、`src/lib/cms/registry.ts`、`src/lib/ai/knowledge.ts`、`src/app/team/{page,team-content}.tsx`、`src/app/admin/alumni/{actions,page,alumni-form}.tsx`、`src/app/admin/alumni/[id]/page.tsx`、`src/app/admin/alumni/new/page.tsx`、新增 `src/app/admin/alumni/alumni-list.tsx`。
+- 衍生:`team-list.tsx` 與 `alumni-list.tsx` 高度雷同,日後第三個需要拖曳排序的類型出現時可抽成通用 client `SortableList`(以 render prop 提供握把);目前兩份夠清楚,暫不過度抽象。

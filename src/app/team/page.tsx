@@ -18,7 +18,7 @@ export default async function TeamPage() {
     }),
     prisma.alumnus.findMany({
       where: { status: "PUBLISHED", deletedAt: null },
-      orderBy: [{ gradYear: "desc" }, { sortOrder: "asc" }],
+      orderBy: [{ sortOrder: "asc" }, { gradYear: "desc" }],
     }),
     prisma.jobOpening.findMany({
       where: { status: "PUBLISHED", deletedAt: null },
@@ -41,6 +41,7 @@ export default async function TeamPage() {
           name: a.name,
           gradYear: a.gradYear,
           destination: a.destination,
+          photoUrl: a.photoUrl,
         })),
         jobs: jobs.map((j) => ({
           id: j.id,

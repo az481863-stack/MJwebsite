@@ -224,6 +224,7 @@ model Alumnus {
   name        String
   gradYear    Int           @map("grad_year")
   destination String
+  photoUrl    String?       @map("photo_url")
   sortOrder   Int           @default(0) @map("sort_order")
   status      ContentStatus @default(DRAFT)
 
