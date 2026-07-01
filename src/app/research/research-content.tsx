@@ -6,6 +6,7 @@
 import { useLanguage } from "@/lib/i18n/context";
 import { Section } from "@/components/ui/Section";
 import { PageNav } from "@/components/PageNav";
+import { ResearchAreas } from "@/components/ResearchAreas";
 
 export interface IndustryEntry {
   id: string;
@@ -36,10 +37,14 @@ export function ResearchContent({
   industry,
   publications,
   showIndustry,
+  researchAreasZh,
+  researchAreasEn,
 }: {
   industry: IndustryEntry[];
   publications: PublicationEntry[];
   showIndustry: boolean;
+  researchAreasZh: string;
+  researchAreasEn: string;
 }) {
   const { t, lang } = useLanguage();
   const r = t.research;
@@ -54,21 +59,9 @@ export function ResearchContent({
     <>
       <PageNav items={navItems} />
 
-      {/* 研究領域(寫死) */}
+      {/* 研究領域(與首頁共用同一份後台資料與樣式) */}
       <Section id="areas" heading={r.heading} intro={r.intro}>
-        <div className="space-y-px overflow-hidden border border-line bg-line">
-          {r.areas.map((area, i) => (
-            <div key={i} className="flex flex-col gap-3 bg-background p-8 sm:flex-row sm:gap-8">
-              <span className="font-mono text-sm text-muted sm:w-12">0{i + 1}</span>
-              <div className="sm:flex-1">
-                <h3 className="text-lg font-semibold">{area.title}</h3>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-                  {area.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ResearchAreas areasZh={researchAreasZh} areasEn={researchAreasEn} />
       </Section>
 
       {/* 產學與專利(後台 CMS;可由 Settings 隱藏) */}

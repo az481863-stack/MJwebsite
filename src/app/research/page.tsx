@@ -25,6 +25,8 @@ export default async function ResearchPage() {
   return (
     <ResearchContent
       showIndustry={settings.showIndustry}
+      researchAreasZh={settings.homeResearchAreasZh}
+      researchAreasEn={settings.homeResearchAreasEn}
       industry={industry.map((it) => ({
         id: it.id,
         category: it.category,
