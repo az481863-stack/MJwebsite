@@ -86,8 +86,12 @@ export function ChatWidget() {
     }
   }
 
-  // 後台「使用說明」頁只顯示「管理員小幫手」,不顯示前台實驗室小幫手。
-  if (pathname === "/admin/guide") return null;
+  // 實驗室小幫手只出現在前台公開頁;後台/會員/登入等頁面不顯示
+  // (後台改由「管理員小幫手」負責,見 admin/layout.tsx)。
+  const BACKEND_PREFIXES = ["/admin", "/account", "/login", "/setup", "/invite", "/auth"];
+  if (BACKEND_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return null;
+  }
 
   return (
     <>

@@ -5,9 +5,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
-import { isAiEnabled } from "@/lib/ai/gemini";
 import { GuideView } from "./guide-view";
-import { AdminChatWidget } from "@/components/AdminChatWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +14,6 @@ export default async function AdminGuidePage() {
   if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
 
   const settings = await getSettings();
-  const hasGuide = settings.adminGuide.trim().length > 0;
 
   return (
     <div className="space-y-6">
@@ -29,9 +26,6 @@ export default async function AdminGuidePage() {
       </div>
 
       <GuideView initial={settings.adminGuide} canEdit={roleAtLeast(me.role, "ADMIN")} />
-
-      {/* 管理員小幫手:僅在本頁掛載;需有 GEMINI_API_KEY 且說明頁已有內容才顯示 */}
-      {isAiEnabled() && hasGuide && <AdminChatWidget />}
     </div>
   );
 }
