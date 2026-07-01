@@ -412,6 +412,9 @@ model SiteSettings {
   chatbotKnowledgeZh String  @default("") @map("chatbot_knowledge_zh") // 中文知識庫(主來源)
   chatbotKnowledgeEn String  @default("") @map("chatbot_knowledge_en") // 英文知識庫(維護時譯好存檔)
 
+  // 後台「使用說明」頁內容(Markdown;供新接手的管理員閱讀,並作為管理員小幫手的知識庫)
+  adminGuide String @default("") @map("admin_guide")
+
   updatedAt DateTime @updatedAt @map("updated_at")
   updatedBy String?  @map("updated_by")
 

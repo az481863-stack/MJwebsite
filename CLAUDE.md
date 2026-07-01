@@ -621,6 +621,17 @@
   - 除錯心法:下次出現無法回覆,到 Vercel → Functions/Logs 找 `[chat]` 開頭訊息即可定位真兇(逾時 / safety / 工具例外 / 金鑰),不必再猜。付費層下的間歇失敗最可能為串流逾時或 safety 擋回應,與用量無關。
   - 提醒:AI 相關 server 端錯誤一律**至少 `console.error` 保留**,勿再用空 catch 吞掉(否則正式站問題無從追查)。
 
+### 後台「使用說明」頁 + 管理員小幫手(2026-07-01)
+> 需求:後台新增一個「使用說明」頁,供未來接手的管理員閱讀後台操作指引;並在該頁提供**專用的 AI 管理員小幫手**(與前台「實驗室小幫手」區隔、顏色不同),該頁**不顯示**前台實驗室小幫手。
+- **使用說明頁 `/admin/guide`(ADMIN 以上)**:內容為 **Markdown**,存於 `SiteSettings.adminGuide`(migration `admin_guide`)。頁面預設閱讀模式(Markdown 渲染),按「編輯」切成純文字 Markdown 編輯 → 儲存(`saveAdminGuide`,ADMIN 守衛)。渲染用新依賴 **`react-markdown` + `remark-gfm`**,以 `src/components/Markdown.tsx` 的 tailwind component overrides 套版(未裝 typography 外掛)。側邊欄「管理」區加「使用說明」連結。
+- **管理員小幫手(Emerald 綠 `#059669`)**:
+  - 只掛在 `/admin/guide` 一頁(`AdminChatWidget.tsx`,client);**知識來源 = 該頁 `adminGuide` 全文**(量小,直接放 system prompt,**無 function calling**)。
+  - 後端 `streamAdminChat()`(併入 `src/lib/ai/chat.ts`,與 `streamChat` 並存)+ 新路由 `/api/admin-chat`,**僅限已登入 ADMIN**(route 內 `getCurrentMember` + `roleAtLeast` 再驗)、繁中固定;防濫用比照 `/api/chat`(IP 限流/單則長度/則數)。
+  - 顯示條件:`isAiEnabled()` 且 `adminGuide` 非空才掛載(空說明無可問)。
+- **前台實驗室小幫手於本頁隱藏**:`ChatWidget.tsx` 以 `usePathname()` 判斷,`/admin/guide` 直接 `return null`(hooks 之後、JSX 之前 early return);故該頁只出現綠色管理員小幫手。與前台青色 `--accent` 小幫手視覺明確區隔(後台淺色介面 + Emerald)。
+- 偏差/決策:管理員小幫手知識**綁使用說明頁內容**(非另開知識庫、非寫死 prompt),與教授確認;顏色採 Emerald(與前台重點色系區隔)。後台一律繁中,故管理員小幫手不做 i18n。
+- 提醒:無新環境變數(沿用 `GEMINI_API_KEY`)。說明頁需先按「編輯」填入內容,管理員小幫手才會出現且答得準;交接說明應含此步驟。
+
 ### 交付與交接
 - 完成日期:
 - 實際與規格的偏差:

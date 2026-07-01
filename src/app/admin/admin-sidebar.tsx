@@ -77,6 +77,11 @@ export function AdminSidebar({
                       網站設定
                     </Link>
                   </li>
+                  <li>
+                    <Link href="/admin/guide" className={itemCls("/admin/guide")}>
+                      使用說明
+                    </Link>
+                  </li>
                 </>
               )}
             </ul>
