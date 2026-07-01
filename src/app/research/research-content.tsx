@@ -37,20 +37,34 @@ export function ResearchContent({
   industry,
   publications,
   showIndustry,
+  researchHeadingZh,
+  researchHeadingEn,
+  researchIntroZh,
+  researchIntroEn,
   researchAreasZh,
   researchAreasEn,
 }: {
   industry: IndustryEntry[];
   publications: PublicationEntry[];
   showIndustry: boolean;
+  researchHeadingZh: string;
+  researchHeadingEn: string;
+  researchIntroZh: string;
+  researchIntroEn: string;
   researchAreasZh: string;
   researchAreasEn: string;
 }) {
   const { t, lang } = useLanguage();
   const r = t.research;
 
+  // 標題/引言:後台覆寫優先(與首頁研究領域共用同一組 Settings 欄位),空值 fallback 研究頁字典。
+  const areasHeading =
+    (lang === "en" ? researchHeadingEn : researchHeadingZh) || r.heading;
+  const areasIntro =
+    (lang === "en" ? researchIntroEn : researchIntroZh) || r.intro;
+
   const navItems = [
-    { id: "areas", label: r.heading },
+    { id: "areas", label: areasHeading },
     ...(showIndustry ? [{ id: "industry", label: r.industryHeading }] : []),
     { id: "publications", label: r.pubHeading },
   ];
@@ -60,7 +74,7 @@ export function ResearchContent({
       <PageNav items={navItems} />
 
       {/* 研究領域(與首頁共用同一份後台資料與樣式) */}
-      <Section id="areas" heading={r.heading} intro={r.intro}>
+      <Section id="areas" heading={areasHeading} intro={areasIntro}>
         <ResearchAreas areasZh={researchAreasZh} areasEn={researchAreasEn} />
       </Section>
 
