@@ -85,7 +85,10 @@ export async function POST(req: Request) {
         for await (const delta of streamChat(messages, lang, knowledge)) {
           controller.enqueue(encoder.encode(delta));
         }
-      } catch {
+      } catch (err) {
+        // 印出真正的錯誤,供 Vercel Functions log 追查「無法回應」的真兇
+        // (逾時 / safety filter / 工具例外 / 金鑰等)。
+        console.error("[chat] streamChat failed:", err);
         controller.enqueue(
           encoder.encode(
             lang === "en"

@@ -99,6 +99,10 @@ export async function* streamChat(
     parts: [{ text: m.text }],
   }));
 
+  // 追蹤整段對話是否吐出過任何文字;若全程沉默,結尾回一句 fallback,
+  // 避免使用者看到「完全空白」(safety filter 擋掉、或工具迴圈耗盡等情況)。
+  let yieldedAny = false;
+
   // 最多 3 輪:容納「模型呼叫工具 → 我們回傳結果 → 模型再答」。
   for (let round = 0; round < 3; round++) {
     const stream = await ai.models.generateContentStream({
@@ -112,10 +116,22 @@ export async function* streamChat(
     for await (const chunk of stream) {
       if (chunk.functionCalls?.length) calls.push(...chunk.functionCalls);
       const t = chunk.text;
-      if (t) yield t;
+      if (t) {
+        yieldedAny = true;
+        yield t;
+      }
     }
 
-    if (calls.length === 0) return; // 沒有工具呼叫 = 已是最終答案。
+    if (calls.length === 0) {
+      // 沒有工具呼叫 = 已是最終答案。若全程沒吐任何文字,補一句 fallback。
+      if (!yieldedAny) {
+        console.error("[chat] model returned no text (possible safety block).");
+        yield lang === "en"
+          ? "Sorry, I'm not sure about that. Please see the [Contact](/contact) page."
+          : "抱歉,我不太確定這個問題,請參考[聯絡教授](/contact)頁面。";
+      }
+      return;
+    }
 
     // 把模型的工具呼叫與我們的回應接回對話,進入下一輪取最終答案。
     contents.push({ role: "model", parts: calls.map((c) => ({ functionCall: c })) });
@@ -127,5 +143,13 @@ export async function* streamChat(
       });
     }
     contents.push({ role: "user", parts: responseParts });
+  }
+
+  // 3 輪工具迴圈耗盡仍無最終答案:補一句 fallback,避免靜默。
+  if (!yieldedAny) {
+    console.error("[chat] tool loop exhausted without a final answer.");
+    yield lang === "en"
+      ? "Sorry, I couldn't complete that. Please see the [Contact](/contact) page."
+      : "抱歉,我暫時無法完成這個查詢,請參考[聯絡教授](/contact)頁面。";
   }
 }
