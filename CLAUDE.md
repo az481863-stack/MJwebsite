@@ -322,11 +322,11 @@
 - **Publications 含摘要(abstract)**:論文書目(作者/年份/標題/期刊)+ 摘要直接放入知識庫(資料量小,不需 function calling)。可答「論文主旨」;論文全文層級的細節不在系統內,一律引導 DOI/聯絡頁,不杜撰。
 
 ### 對話與護欄
-- **多輪對話 + 串流**:支援連續追問(前端保留當輪歷史送回);回應逐字 streaming 顯示。對話歷史**僅存瀏覽器當次工作階段,不存 DB**(比照階段四聯絡訊息取捨)。
+- **多輪對話 + 串流**:支援連續追問(前端保留當輪歷史送回);回應逐字 streaming 顯示。〔原「對話不存 DB」已於後續回饋輪反轉:為後台檢視功能,對話現**留存於 `ChatLog` 表、90 天由 cron 自動清理**;後台可依 IP 檢視並封鎖特定 IP。見開發日誌「小幫手對話後台 + IP 封鎖」後記。〕
 - **護欄**:system prompt 限定「只依知識庫回答與本實驗室/網站相關問題;知識庫沒有的就說不知道並引導至聯絡頁,不得杜撰人名/論文/數據;涉及即時資料(如某儀器現在是否可約)一律引導至對應頁面,不臆測」。
 - **語系**:回答語言跟隨使用者提問語言(中文知識庫 → 英文問則翻譯作答);介面文案跟隨前台 [EN/中文] 切換。
 - **開關**:`isAiEnabled()`(未設 `GEMINI_API_KEY` 即不渲染聊天入口)+ Settings 的 `showChatbot` 顯示/隱藏開關(沿用階段三「頁面顯示/隱藏」範式)。
-- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):每 IP 速率限制 + 單則訊息長度上限 + 單輪對話則數上限(沿用階段四「記憶體 IP 限流」思路,並承認 serverless 多實例下非全域共享的限制)。
+- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):**多段 IP 速率限制(DB 持久化)** + 單則訊息長度上限 + 單輪對話則數上限。限流為同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500,任一窗超限即擋;存 DB 故跨 serverless 實例與冷啟動皆準(取代原記憶體版,見 `src/lib/ratelimit.ts`)。搭配 Google AI Studio 端「月花費上限」兜底燒錢攻擊。
 
 ### 模組與檔案
 - AI 程式集中 `src/lib/ai/chat.ts`(Gemini streaming + function calling + 組 system prompt)與 `src/lib/ai/knowledge.ts`(彙整全站內容 + 呼叫 Gemini 濃縮 + `getBlogContentByQuery` 供工具呼叫);與階段六 `gemini.ts` 同風格,換模型只動 AI 模組。
@@ -344,7 +344,7 @@
 - [x] 「翻譯」能將目前中文編輯欄位內容譯為英文回填英文編輯欄位;結果僅為待確認內容,未按儲存不影響線上聊天。〔`translateToEnglish` 回傳文字、前端填入 state,未存檔〕
 - [x] 「更新」與「翻譯」皆為整份覆蓋對應編輯欄位(非合併);儲存後聊天即採用新知識庫。〔回傳整份取代 textarea state;`saveKnowledge` upsert〕
 - [x] `showChatbot` 關閉或未設 `GEMINI_API_KEY` 時前台完全不出現聊天入口;Gemini 失效時「更新知識庫」報錯,但手動編輯/既有知識庫/網站其他功能不受影響。〔layout `showChatbot && isAiEnabled()` 才掛載;action try/catch〕
-- [x] 防濫用生效:超過 IP 速率限制 / 訊息過長 / 單輪則數過多時正確擋下並提示。〔route:每 IP 10 分鐘 30 次、單則 ≤1000 字、歷史 ≤20 則〕
+- [x] 防濫用生效:超過 IP 速率限制 / 訊息過長 / 單輪則數過多時正確擋下並提示。〔route:多段 IP 限流(每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500,DB 持久化)、單則 ≤1000 字、歷史 ≤20 則〕
 
 ---
 
@@ -590,7 +590,7 @@
   - `callGeminiText`(純文字輸出)補進既有 `gemini.ts`,與階段六的 `callGeminiJson` 並存;聊天串流另寫在 `chat.ts`(`generateContentStream`)。換模型仍只動 `src/lib/ai/`。
 - 衍生的新待辦/技術債:
   - **防濫用為記憶體限流**(每 IP 10 分鐘 30 次、單則 ≤1000 字、歷史 ≤20 則),serverless 多實例下非全域共享,屬「基本防灌」(同階段四取捨);若被濫用再上 Upstash/Redis 或 Turnstile。
-  - **對話不存 DB**(僅當次工作階段);若日後想分析訪客問題需新增 `ChatLog` 表。
+  - ~~**對話不存 DB**(僅當次工作階段)~~ 〔已反轉,見「小幫手對話後台 + IP 封鎖」後記:改留存 `ChatLog`,90 天清理〕。
   - 知識庫**需手動先按「更新知識庫」+「翻譯」+「儲存」**才有內容;空知識庫時機器人會大多回「不確定」。交接說明應含此維護步驟。
   - **無新環境變數**:沿用 `GEMINI_API_KEY`(可選 `GEMINI_MODEL`)。前台聊天入口需「`showChatbot` 開 + 有金鑰」雙條件。
 - 給後續階段的提醒:
@@ -620,6 +620,17 @@
   - 改動:(1) [route.ts](src/app/api/chat/route.ts) 的 catch 改 `console.error("[chat] streamChat failed:", err)`;(2) [chat.ts](src/lib/ai/chat.ts) `streamChat` 追蹤是否吐過文字,**模型全程無文字(多為 safety filter 擋掉)或工具迴圈跑滿 3 輪仍無答案時**,回一句 fallback(引導聯絡頁)並記 log,取代原本的「靜默空白回覆」。
   - 除錯心法:下次出現無法回覆,到 Vercel → Functions/Logs 找 `[chat]` 開頭訊息即可定位真兇(逾時 / safety / 工具例外 / 金鑰),不必再猜。付費層下的間歇失敗最可能為串流逾時或 safety 擋回應,與用量無關。
   - 提醒:AI 相關 server 端錯誤一律**至少 `console.error` 保留**,勿再用空 catch 吞掉(否則正式站問題無從追查)。
+  - **真兇確認(同日,本機重現)**:log 明確吐出 `429 RESOURCE_EXHAUSTED`,`quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier`、`limit: 20`。即這支 `GEMINI_API_KEY` 所屬的 Google Cloud 專案**未啟用 API billing,仍在免費層(gemini-2.5-flash 每天 20 次)**,用完整天 429、隔天重置 → 正是「有時無法回覆」的間歇現象。
+    - ⚠️ **關鍵誤區**:吳教授帳號綁的是 **Gemini App 消費端訂閱(AI Pro / Plus,每月固定費)**,與 **Gemini API(按 token 計費、綁 Google Cloud billing)是兩套完全獨立的計費**,App 訂閱對 API 金鑰額度**毫無幫助**。
+    - **解法(不改程式)**:到 Google AI Studio 找這支金鑰所屬專案 → Google Cloud Console 幫**該專案**啟用 billing(綁卡),金鑰即自動升付費層。務必確認「綁 billing 的專案」與「金鑰所屬專案」是同一個(AI Studio 常自動建無 billing 的新專案)。
+    - **成本評估**:以一天 200 次估,gemini-2.5-flash 付費層月費約 US$8–28(典型 ~NT$500);訪客少實際多半遠低於此。這是**獨立於 App 訂閱、需綁教授名下的另一筆帳單**(交接時與 Resend/Supabase 並列說明)。
+  - **多段 IP 限流改 DB 持久化(同日)**:原聊天限流為記憶體版(每 IP 10 分鐘 30 次),serverless 多實例/冷啟動不共享,長窗形同虛設。應教授要求新增多段窗(同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500),**日/月窗唯有存 DB 才有意義** → 新增 `RateHit` 表(migration `add_rate_hits`)與 `src/lib/ratelimit.ts`(`checkRateLimit`:抓最長窗內的列於記憶體分窗計數,通過才記一列並清該 IP 過期列;`purgeOldRateHits` 由 `/api/cron` 每 15 分全域回收 >32 天舊列)。`/api/chat` 改呼叫 `checkRateLimit("chat", ip)`。**fail-open**:限流本身 DB 讀寫出錯時放行並 `console.error`,不因限流故障拖垮聊天(燒錢有 Google 月花費上限兜底)。後台/聯絡表單暫未套用,需要時同一 helper 換 scope 即可。
+  - **小幫手對話後台 + IP 封鎖(同日)**:教授要求可在後台檢視訪客與前台小幫手的對話,並能關掉特定 IP 的小幫手。**這反轉了階段七「對話不存 DB」的刻意取捨** → 新增 `ChatLog`(留存每則訊息)與 `IpBlock`(封鎖清單)兩表(migration `add_chat_logs_ip_block`)、`src/lib/chatlog.ts`(留存/查詢/封鎖/清理)。
+    - **後台頁 `/admin/chat-logs`(ADMIN 以上)**:日期 filter(預設今日,台灣時區)→ 列出當天對話過的 IP(訊息數/最後時間/封鎖狀態);點 IP 進 `/admin/chat-logs/[ip]`(對話頁,日期 filter 預設帶入點進來的日期,逐則氣泡呈現)。兩頁 IP 旁皆有封鎖 switch(`toggleIpBlock` server action,ADMIN 守衛)。側邊欄「管理」區加入口。
+    - **封鎖生效 + 到量隱藏**:root `layout.tsx` 讀訪客 IP,`isIpBlocked` 命中**或** `isRateLimited("chat")` 已達任一窗上限,即不掛 `ChatWidget`(「到達上限直接隱藏小幫手」);`/api/chat` 亦擋(封鎖 403、限流 429,雙保險)。留存於 `/api/chat`:記使用者訊息 + 串流結束後記完整回覆(fire-and-forget、內建 try/catch,不影響聊天)。`isRateLimited` 為 `ratelimit.ts` 新增的**唯讀**檢查(不記錄),供 layout 用。
+    - **🔒 只存雜湊 IP(隱私,後續加強)**:教授查得「IP↔對話」屬個資,故 `ChatLog`/`IpBlock`/`RateHit` 一律存**帶密鑰(pepper)的 SHA-256 雜湊**,不存原始 IP(`src/lib/iphash.ts` 的 `hashIp`,密鑰 `IP_HASH_SECRET`)。**關鍵**:單純雜湊 IPv4(2^32)可暴力還原,故必須加只有伺服器知道的密鑰才真正不可逆。Prisma 欄位改名 `ipHash` 但 `@map("ip")` 保留原 DB 欄位 → **無需 migration**。代價:後台看不到真實 IP,只見雜湊前綴(分組/封鎖照常)。換 `IP_HASH_SECRET` 會使既有雜湊全部失聯(封鎖/分組重置)。**Vercel 需新增 `IP_HASH_SECRET`**(見 `docs/env-vars.md`)。
+    - **隱私/保留**:對話為個資,**90 天由 `/api/cron` 自動清理**(`purgeOldChatLogs`);雜湊後仍是弱識別(同一 IP 常多人共用且會變動),封鎖屬**軟性勸退**非可靠存取控制,後台頁已明示此限制。日期運算一律以台灣 UTC+8 當地日計(`taiwanDayRangeUtc`)。
+  - **快取(context caching)評估:暫不做**。知識庫每次請求都隨 system prompt 重送(無狀態 API 本質),是主要 input 成本。但:(1) **Gemini 2.5 隱式快取預設開啟、零程式碼、無儲存費**,穩定前綴(護欄+知識庫)已自動享折扣;三個獨立快取桶(前台中/前台英/後台 adminGuide)各自快取、本就不需共用。(2) **顯式快取**在本專案量級「快取獎金」天花板僅個位數美元/月,且該折扣隱式已免費拿走,顯式反而多付儲存費(~$1/1M/hr),淨差幾乎打平或更貴,又要多維護快取生命週期 → 不划算,違反「AI 為加分項、別過度工程」。日後量真的大、帳單有感再議。
 
 ### 後台「使用說明」頁 + 管理員小幫手(2026-07-01)
 > 需求:後台新增一個「使用說明」頁,供未來接手的管理員閱讀後台操作指引;並在該頁提供**專用的 AI 管理員小幫手**(與前台「實驗室小幫手」區隔、顏色不同),該頁**不顯示**前台實驗室小幫手。

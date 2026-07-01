@@ -22,6 +22,7 @@
 | `CRON_SECRET` | 階段五:保護 `/api/cron`(儀器自動簽到/逾時對帳)的 Bearer 密語 | 自填一組夠長的隨機字串 | ✅ | ✅(儀器系統) |
 | `GEMINI_API_KEY` | 階段六/七:Blog/Publications「AI 快速新增」+ 聊天機器人(知識庫彙整/翻譯、前台聊天);未設則兩者功能皆隱藏 | Google AI Studio → Get API key | ✅ | 建議(要 AI) |
 | `GEMINI_MODEL` | (選填)覆寫 Gemini 模型,預設 `gemini-2.5-flash`;階段六/七共用 | 自填 | ➖ | ➖ |
+| `IP_HASH_SECRET` | 訪客 IP 雜湊密鑰(隱私):聊天留存/限流/封鎖只存加密鑰雜湊、不存原始 IP。未設則用不安全開發預設並警告 | 自填一組夠長的隨機字串 | ✅ | ✅(有聊天) |
 
 ## 重要提醒(踩過的坑)
 

@@ -520,6 +520,47 @@ model Reservation {
   @@map("reservations")
 }
 
+// 訪客與前台小幫手的對話紀錄。階段七原刻意不存 DB(隱私取捨);為後台檢視功能
+// 改為留存,90 天由 cron 自動清理(見 src/lib/chatlog.ts、/api/cron)。
+// 🔒 ipHash = 帶密鑰(pepper)的 SHA-256,絕不存原始 IP(見 src/lib/iphash.ts);
+//    避免「IP↔對話」可反推的個資風險。欄位沿用 DB 舊名 ip(@map),值為雜湊。
+// ⚠️ 雜湊後仍是弱識別(同一 IP 常多人共用且會變動),僅供粗略檢視/軟性勸退。
+model ChatLog {
+  id        String   @id @default(uuid())
+  ipHash    String   @map("ip") // 值為雜湊,非原始 IP
+  role      String // "user" | "model"
+  text      String
+  lang      String // "zh" | "en"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+  @@map("chat_logs")
+}
+
+// 前台小幫手的封鎖清單:switch 關 = blocked=true = 該(雜湊)IP 進站看不到小幫手。
+// 預設「開」= 清單無此雜湊或 blocked=false。屬軟性勸退(IP 為弱識別)。
+model IpBlock {
+  ipHash    String   @id @map("ip") // 值為雜湊,非原始 IP
+  blocked   Boolean  @default(true)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("ip_blocks")
+}
+
+// 多段速率限制計數:每次通過的請求記一列,依 scope+雜湊IP+時間窗查詢。
+// 用於防濫用(同一 IP 每小時/每 6 小時/每日/每月呼叫上限),見 src/lib/ratelimit.ts。
+// 記憶體限流在 serverless 多實例/冷啟動下不共享,故長窗(日/月)改存 DB 才精準。
+model RateHit {
+  id        String   @id @default(uuid())
+  scope     String // 限流範圍(如 "chat"),供不同端點各自計數
+  ipHash    String   @map("ip") // 值為雜湊,非原始 IP
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([scope, ipHash, createdAt])
+  @@map("rate_hits")
+}
+
 // 簽退/異常紀錄
 model Checkout {
   id            String          @id @default(uuid())
