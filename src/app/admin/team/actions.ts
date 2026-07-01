@@ -14,6 +14,7 @@ export interface ActionResult {
 }
 
 const TIERS = [
+  "PI",
   "PROFESSOR",
   "DISTINGUISHED_PROFESSOR",
   "EMERITUS_PROFESSOR",
@@ -21,6 +22,7 @@ const TIERS = [
   "ASST_PROFESSOR",
   "VISITING_PROFESSOR",
   "ADJUNCT_PROFESSOR",
+  "COLLABORATING_PROFESSOR",
   "POSTDOC",
   "STAFF",
   "PHD",

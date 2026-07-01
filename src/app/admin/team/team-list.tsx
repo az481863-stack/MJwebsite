@@ -34,6 +34,7 @@ export interface TeamRow {
 }
 
 const TIER_LABEL: Record<string, string> = {
+  PI: "實驗室主持人",
   PROFESSOR: "教授",
   DISTINGUISHED_PROFESSOR: "特聘教授",
   EMERITUS_PROFESSOR: "名譽教授",
@@ -41,6 +42,7 @@ const TIER_LABEL: Record<string, string> = {
   ASST_PROFESSOR: "助理教授",
   VISITING_PROFESSOR: "客座教授",
   ADJUNCT_PROFESSOR: "兼任教授",
+  COLLABORATING_PROFESSOR: "合作教授",
   POSTDOC: "博後",
   STAFF: "專任助理",
   PHD: "博士生",
