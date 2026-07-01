@@ -73,6 +73,11 @@ export function AdminSidebar({
                     </Link>
                   </li>
                   <li>
+                    <Link href="/admin/chat-logs" className={itemCls("/admin/chat-logs")}>
+                      小幫手對話紀錄
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/admin/settings" className={itemCls("/admin/settings")}>
                       網站設定
                     </Link>

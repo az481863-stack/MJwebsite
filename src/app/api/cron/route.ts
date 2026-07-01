@@ -4,12 +4,15 @@
 import { NextResponse } from "next/server";
 import { reconcile } from "@/lib/instruments";
 import { purgeOldRateHits } from "@/lib/ratelimit";
+import { purgeOldChatLogs } from "@/lib/chatlog";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // 限流計數保留期:略長於最長窗(1 個月),回收離開後不再出現的 IP 舊列。
 const RATE_HIT_TTL_MS = 32 * 24 * 60 * 60 * 1000;
+// 小幫手對話保留期:90 天(個資自動清理,見 CLAUDE.md 階段七後記)。
+const CHAT_LOG_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -23,11 +26,13 @@ export async function GET(req: Request) {
   }
 
   const result = await reconcile();
-  const purged = await purgeOldRateHits(RATE_HIT_TTL_MS);
+  const purgedRateHits = await purgeOldRateHits(RATE_HIT_TTL_MS);
+  const purgedChatLogs = await purgeOldChatLogs(CHAT_LOG_TTL_MS);
   return NextResponse.json({
     ok: true,
     ...result,
-    purgedRateHits: purged,
+    purgedRateHits,
+    purgedChatLogs,
     at: new Date().toISOString(),
   });
 }

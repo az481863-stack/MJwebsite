@@ -10,6 +10,7 @@ import { streamChat, type ChatMessage } from "@/lib/ai/chat";
 import { combineKnowledgeZh } from "@/lib/ai/knowledge";
 import { getSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { isIpBlocked, logChatMessage } from "@/lib/chatlog";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,6 +29,12 @@ export async function POST(req: Request) {
   }
 
   const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
+
+  // 後台可封鎖特定 IP:被封鎖者一律擋(前台亦不掛 widget,此為雙保險)。
+  if (await isIpBlocked(ip)) {
+    return NextResponse.json({ error: "blocked" }, { status: 403 });
+  }
+
   const rate = await checkRateLimit("chat", ip);
   if (!rate.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -69,26 +76,32 @@ export async function POST(req: Request) {
       ? settings.chatbotKnowledgeEn
       : combineKnowledgeZh(settings.chatbotKnowledgeZh, settings.chatbotSupplementZh);
 
+  // 記錄使用者本則訊息(fire-and-forget,失敗不影響聊天)。
+  void logChatMessage(ip, "user", messages[messages.length - 1].text, lang);
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      let full = ""; // 累積完整回覆,串流結束後留存供後台檢視
       try {
         for await (const delta of streamChat(messages, lang, knowledge)) {
+          full += delta;
           controller.enqueue(encoder.encode(delta));
         }
       } catch (err) {
         // 印出真正的錯誤,供 Vercel Functions log 追查「無法回應」的真兇
         // (逾時 / safety filter / 工具例外 / 金鑰等)。
         console.error("[chat] streamChat failed:", err);
-        controller.enqueue(
-          encoder.encode(
-            lang === "en"
-              ? "\n[Sorry, the assistant is temporarily unavailable.]"
-              : "\n[抱歉,客服助理暫時無法回應。]",
-          ),
-        );
+        const fb =
+          lang === "en"
+            ? "\n[Sorry, the assistant is temporarily unavailable.]"
+            : "\n[抱歉,客服助理暫時無法回應。]";
+        full += fb;
+        controller.enqueue(encoder.encode(fb));
       } finally {
         controller.close();
+        // 留存小幫手的完整回覆(與使用者所見一致,含 fallback)。
+        void logChatMessage(ip, "model", full, lang);
       }
     },
   });
