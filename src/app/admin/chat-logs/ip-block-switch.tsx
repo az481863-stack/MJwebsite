@@ -7,10 +7,10 @@ import { useState, useTransition } from "react";
 import { toggleIpBlock } from "./actions";
 
 export function IpBlockSwitch({
-  ip,
+  ipHash,
   initialBlocked,
 }: {
-  ip: string;
+  ipHash: string;
   initialBlocked: boolean;
 }) {
   // UI 以「開=可見」為直覺,故 on = 未封鎖。
@@ -21,7 +21,7 @@ export function IpBlockSwitch({
     const next = !on;
     setOn(next); // 樂觀更新
     startTransition(async () => {
-      const res = await toggleIpBlock(ip, !next); // blocked = !on
+      const res = await toggleIpBlock(ipHash, !next); // blocked = !on
       if (!res.ok) {
         setOn(!next); // 回滾
         alert(res.message ?? "更新失敗");

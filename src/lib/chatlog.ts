@@ -29,8 +29,9 @@ export function normalizeDate(input: string | undefined | null): string {
 
 // ── 寫入 ──────────────────────────────────────────────────────
 
+// ipHash = 已雜湊的 IP(見 src/lib/iphash.ts);本模組一律只收/存雜湊,不碰原始 IP。
 export async function logChatMessage(
-  ip: string,
+  ipHash: string,
   role: "user" | "model",
   text: string,
   lang: "zh" | "en",
@@ -38,7 +39,7 @@ export async function logChatMessage(
   const trimmed = text.trim();
   if (!trimmed) return;
   try {
-    await prisma.chatLog.create({ data: { ip, role, text: trimmed, lang } });
+    await prisma.chatLog.create({ data: { ipHash, role, text: trimmed, lang } });
   } catch (err) {
     console.error("[chatlog] write failed:", err);
   }
@@ -46,11 +47,11 @@ export async function logChatMessage(
 
 // ── IP 封鎖 ───────────────────────────────────────────────────
 
-// 該 IP 是否被封鎖(看不到小幫手)。查詢失敗一律視為未封鎖(fail-open)。
-export async function isIpBlocked(ip: string): Promise<boolean> {
-  if (!ip || ip === "unknown") return false;
+// 該(雜湊)IP 是否被封鎖(看不到小幫手)。查詢失敗一律視為未封鎖(fail-open)。
+export async function isIpBlocked(ipHash: string): Promise<boolean> {
+  if (!ipHash || ipHash === "unknown") return false;
   try {
-    const row = await prisma.ipBlock.findUnique({ where: { ip } });
+    const row = await prisma.ipBlock.findUnique({ where: { ipHash } });
     return row?.blocked === true;
   } catch (err) {
     console.error("[chatlog] isIpBlocked failed:", err);
@@ -59,10 +60,13 @@ export async function isIpBlocked(ip: string): Promise<boolean> {
 }
 
 // 設定封鎖狀態(blocked=true 擋、false 放行)。供後台 switch 使用。
-export async function setIpBlocked(ip: string, blocked: boolean): Promise<void> {
+export async function setIpBlocked(
+  ipHash: string,
+  blocked: boolean,
+): Promise<void> {
   await prisma.ipBlock.upsert({
-    where: { ip },
-    create: { ip, blocked },
+    where: { ipHash },
+    create: { ipHash, blocked },
     update: { blocked },
   });
 }
@@ -70,34 +74,36 @@ export async function setIpBlocked(ip: string, blocked: boolean): Promise<void> 
 // ── 後台查詢 ──────────────────────────────────────────────────
 
 export interface ChatIpSummary {
-  ip: string;
+  ipHash: string; // 雜湊識別碼(非原始 IP)
   count: number; // 當日訊息數
   lastAt: Date | null; // 當日最後一則時間
   blocked: boolean; // 是否已封鎖
 }
 
-// 某台灣日期,所有與小幫手對話過的 IP(含訊息數、最後時間、封鎖狀態)。
+// 某台灣日期,所有與小幫手對話過的(雜湊)IP(含訊息數、最後時間、封鎖狀態)。
 export async function listChatIpsForDate(dateStr: string): Promise<ChatIpSummary[]> {
   const { start, end } = taiwanDayRangeUtc(dateStr);
   const groups = await prisma.chatLog.groupBy({
-    by: ["ip"],
+    by: ["ipHash"],
     where: { createdAt: { gte: start, lt: end } },
     _count: { _all: true },
     _max: { createdAt: true },
   });
-  const ips = groups.map((g) => g.ip);
+  const hashes = groups.map((g) => g.ipHash);
   const blocks =
-    ips.length > 0
-      ? await prisma.ipBlock.findMany({ where: { ip: { in: ips } } })
+    hashes.length > 0
+      ? await prisma.ipBlock.findMany({ where: { ipHash: { in: hashes } } })
       : [];
-  const blockedSet = new Set(blocks.filter((b) => b.blocked).map((b) => b.ip));
+  const blockedSet = new Set(
+    blocks.filter((b) => b.blocked).map((b) => b.ipHash),
+  );
 
   return groups
     .map((g) => ({
-      ip: g.ip,
+      ipHash: g.ipHash,
       count: g._count._all,
       lastAt: g._max.createdAt,
-      blocked: blockedSet.has(g.ip),
+      blocked: blockedSet.has(g.ipHash),
     }))
     .sort((a, b) => (b.lastAt?.getTime() ?? 0) - (a.lastAt?.getTime() ?? 0));
 }
@@ -110,14 +116,14 @@ export interface ChatLogEntry {
   createdAt: Date;
 }
 
-// 某 IP 於某台灣日期的所有對話(時間正序)。
+// 某(雜湊)IP 於某台灣日期的所有對話(時間正序)。
 export async function getConversationForIpDate(
-  ip: string,
+  ipHash: string,
   dateStr: string,
 ): Promise<ChatLogEntry[]> {
   const { start, end } = taiwanDayRangeUtc(dateStr);
   return prisma.chatLog.findMany({
-    where: { ip, createdAt: { gte: start, lt: end } },
+    where: { ipHash, createdAt: { gte: start, lt: end } },
     orderBy: { createdAt: "asc" },
     select: { id: true, role: true, text: true, lang: true, createdAt: true },
   });

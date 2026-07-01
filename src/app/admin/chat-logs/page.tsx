@@ -35,10 +35,11 @@ export default async function ChatLogsPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">小幫手對話紀錄</h1>
         <p className="mt-1 text-sm text-muted">
-          選日期查看當天與前台小幫手對話過的 IP;點 IP 看完整對話。右側開關預設開啟,
-          關閉後該 IP 進站將看不到小幫手。
+          選日期查看當天與前台小幫手對話過的訪客;點識別碼看完整對話。右側開關預設開啟,
+          關閉後該訪客進站將看不到小幫手。
           <br />
-          ⚠️ IP 常為多人共用且會變動,僅供粗略檢視與軟性勸退,非可靠識別或封鎖。
+          🔒 為保護隱私,系統只存「雜湊後的識別碼」不存真實 IP,無法還原。
+          ⚠️ 同一 IP 常多人共用且會變動,僅供粗略檢視與軟性勸退,非可靠識別或封鎖。
         </p>
       </div>
 
@@ -53,7 +54,7 @@ export default async function ChatLogsPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line bg-foreground/[0.02] text-left text-xs uppercase tracking-wider text-muted">
-                <th className="px-4 py-2 font-medium">IP</th>
+                <th className="px-4 py-2 font-medium">訪客識別碼(雜湊)</th>
                 <th className="px-4 py-2 font-medium">訊息數</th>
                 <th className="px-4 py-2 font-medium">最後對話</th>
                 <th className="px-4 py-2 text-right font-medium">小幫手</th>
@@ -61,13 +62,14 @@ export default async function ChatLogsPage({
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.ip} className="border-b border-line last:border-0">
+                <tr key={r.ipHash} className="border-b border-line last:border-0">
                   <td className="px-4 py-2">
                     <Link
-                      href={`/admin/chat-logs/${encodeURIComponent(r.ip)}?date=${date}`}
+                      href={`/admin/chat-logs/${encodeURIComponent(r.ipHash)}?date=${date}`}
                       className="font-mono text-foreground underline-offset-2 hover:underline"
+                      title={r.ipHash}
                     >
-                      {r.ip}
+                      {r.ipHash === "unknown" ? "unknown" : r.ipHash.slice(0, 12)}
                     </Link>
                     {r.blocked && (
                       <span className="ml-2 rounded-sm bg-red-500/10 px-1.5 py-0.5 text-xs text-red-600">
@@ -79,7 +81,7 @@ export default async function ChatLogsPage({
                   <td className="px-4 py-2 text-muted">{fmtTime(r.lastAt)}</td>
                   <td className="px-4 py-2">
                     <div className="flex justify-end">
-                      <IpBlockSwitch ip={r.ip} initialBlocked={r.blocked} />
+                      <IpBlockSwitch ipHash={r.ipHash} initialBlocked={r.blocked} />
                     </div>
                   </td>
                 </tr>

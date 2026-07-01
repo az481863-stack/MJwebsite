@@ -9,6 +9,8 @@ import { getSettings } from "@/lib/settings";
 import { accentHex } from "@/lib/accent";
 import { isAiEnabled } from "@/lib/ai/gemini";
 import { isIpBlocked } from "@/lib/chatlog";
+import { isRateLimited } from "@/lib/ratelimit";
+import { hashIp } from "@/lib/iphash";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { RouteMask } from "@/components/RouteMask";
@@ -48,12 +50,15 @@ export default async function RootLayout({
   const accent = accentHex(settings.siteAccent);
 
   // 階段七:聊天入口僅在「後台開關開啟」且「已設 GEMINI_API_KEY」時掛載;
-  // 另若訪客 IP 被後台封鎖,亦不掛(見 /admin/chat-logs 的 switch)。
-  const visitorIp = ((await headers()).get("x-forwarded-for") ?? "")
-    .split(",")[0]
-    .trim();
+  // 另若訪客 IP 被後台封鎖、或已達速率上限,亦不掛(見 /admin/chat-logs 的 switch)。
+  const baseChatbotEnabled = settings.showChatbot && isAiEnabled();
+  const visitorHash = baseChatbotEnabled
+    ? hashIp((await headers()).get("x-forwarded-for"))
+    : "unknown";
   const chatbotEnabled =
-    settings.showChatbot && isAiEnabled() && !(await isIpBlocked(visitorIp));
+    baseChatbotEnabled &&
+    !(await isIpBlocked(visitorHash)) &&
+    !(await isRateLimited("chat", visitorHash));
 
   return (
     <html

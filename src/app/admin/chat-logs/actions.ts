@@ -12,22 +12,23 @@ export interface ToggleResult {
   message?: string;
 }
 
-// blocked=true 代表關掉小幫手(封鎖該 IP);false 代表恢復。
+// ipHash = 已雜湊的 IP(後台不接觸原始 IP)。
+// blocked=true 代表關掉小幫手(封鎖);false 代表恢復。
 export async function toggleIpBlock(
-  ip: string,
+  ipHash: string,
   blocked: boolean,
 ): Promise<ToggleResult> {
   const me = await getCurrentMember();
   if (!me || !roleAtLeast(me.role, "ADMIN")) {
     return { ok: false, message: "權限不足" };
   }
-  if (!ip || ip === "unknown") {
-    return { ok: false, message: "無效的 IP" };
+  if (!ipHash || ipHash === "unknown") {
+    return { ok: false, message: "無效的識別碼" };
   }
   try {
-    await setIpBlocked(ip, blocked);
+    await setIpBlocked(ipHash, blocked);
     revalidatePath("/admin/chat-logs");
-    revalidatePath(`/admin/chat-logs/${encodeURIComponent(ip)}`);
+    revalidatePath(`/admin/chat-logs/${encodeURIComponent(ipHash)}`);
     return { ok: true };
   } catch {
     return { ok: false, message: "更新失敗" };

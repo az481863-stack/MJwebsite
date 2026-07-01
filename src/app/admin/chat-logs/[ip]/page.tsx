@@ -33,11 +33,11 @@ export default async function IpConversationPage({
   const me = await getCurrentMember();
   if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
 
-  const ip = decodeURIComponent((await params).ip);
+  const ipHash = decodeURIComponent((await params).ip);
   const date = normalizeDate((await searchParams).date);
   const [messages, blocked] = await Promise.all([
-    getConversationForIpDate(ip, date),
-    isIpBlocked(ip),
+    getConversationForIpDate(ipHash, date),
+    isIpBlocked(ipHash),
   ]);
 
   return (
@@ -50,10 +50,15 @@ export default async function IpConversationPage({
           ← 回 IP 列表
         </Link>
         <div className="mt-2 flex items-center justify-between gap-4">
-          <h1 className="font-mono text-xl font-semibold tracking-tight">{ip}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted">
+          <h1
+            className="truncate font-mono text-xl font-semibold tracking-tight"
+            title={ipHash}
+          >
+            {ipHash === "unknown" ? "unknown" : ipHash.slice(0, 16)}
+          </h1>
+          <div className="flex shrink-0 items-center gap-2 text-sm text-muted">
             小幫手
-            <IpBlockSwitch ip={ip} initialBlocked={blocked} />
+            <IpBlockSwitch ipHash={ipHash} initialBlocked={blocked} />
           </div>
         </div>
       </div>

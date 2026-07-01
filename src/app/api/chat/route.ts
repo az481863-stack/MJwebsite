@@ -11,6 +11,7 @@ import { combineKnowledgeZh } from "@/lib/ai/knowledge";
 import { getSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { isIpBlocked, logChatMessage } from "@/lib/chatlog";
+import { hashIp } from "@/lib/iphash";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,14 +29,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "聊天功能未開啟" }, { status: 403 });
   }
 
-  const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
+  // 只保留雜湊,不留原始 IP(隱私,見 src/lib/iphash.ts)。
+  const ipHash = hashIp(req.headers.get("x-forwarded-for"));
 
   // 後台可封鎖特定 IP:被封鎖者一律擋(前台亦不掛 widget,此為雙保險)。
-  if (await isIpBlocked(ip)) {
+  if (await isIpBlocked(ipHash)) {
     return NextResponse.json({ error: "blocked" }, { status: 403 });
   }
 
-  const rate = await checkRateLimit("chat", ip);
+  const rate = await checkRateLimit("chat", ipHash);
   if (!rate.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
@@ -77,7 +79,7 @@ export async function POST(req: Request) {
       : combineKnowledgeZh(settings.chatbotKnowledgeZh, settings.chatbotSupplementZh);
 
   // 記錄使用者本則訊息(fire-and-forget,失敗不影響聊天)。
-  void logChatMessage(ip, "user", messages[messages.length - 1].text, lang);
+  void logChatMessage(ipHash, "user", messages[messages.length - 1].text, lang);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -101,7 +103,7 @@ export async function POST(req: Request) {
       } finally {
         controller.close();
         // 留存小幫手的完整回覆(與使用者所見一致,含 fallback)。
-        void logChatMessage(ip, "model", full, lang);
+        void logChatMessage(ipHash, "model", full, lang);
       }
     },
   });
