@@ -326,7 +326,7 @@
 - **護欄**:system prompt 限定「只依知識庫回答與本實驗室/網站相關問題;知識庫沒有的就說不知道並引導至聯絡頁,不得杜撰人名/論文/數據;涉及即時資料(如某儀器現在是否可約)一律引導至對應頁面,不臆測」。
 - **語系**:回答語言跟隨使用者提問語言(中文知識庫 → 英文問則翻譯作答);介面文案跟隨前台 [EN/中文] 切換。
 - **開關**:`isAiEnabled()`(未設 `GEMINI_API_KEY` 即不渲染聊天入口)+ Settings 的 `showChatbot` 顯示/隱藏開關(沿用階段三「頁面顯示/隱藏」範式)。
-- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):每 IP 速率限制 + 單則訊息長度上限 + 單輪對話則數上限(沿用階段四「記憶體 IP 限流」思路,並承認 serverless 多實例下非全域共享的限制)。
+- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):**多段 IP 速率限制(DB 持久化)** + 單則訊息長度上限 + 單輪對話則數上限。限流為同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500,任一窗超限即擋;存 DB 故跨 serverless 實例與冷啟動皆準(取代原記憶體版,見 `src/lib/ratelimit.ts`)。搭配 Google AI Studio 端「月花費上限」兜底燒錢攻擊。
 
 ### 模組與檔案
 - AI 程式集中 `src/lib/ai/chat.ts`(Gemini streaming + function calling + 組 system prompt)與 `src/lib/ai/knowledge.ts`(彙整全站內容 + 呼叫 Gemini 濃縮 + `getBlogContentByQuery` 供工具呼叫);與階段六 `gemini.ts` 同風格,換模型只動 AI 模組。
@@ -344,7 +344,7 @@
 - [x] 「翻譯」能將目前中文編輯欄位內容譯為英文回填英文編輯欄位;結果僅為待確認內容,未按儲存不影響線上聊天。〔`translateToEnglish` 回傳文字、前端填入 state,未存檔〕
 - [x] 「更新」與「翻譯」皆為整份覆蓋對應編輯欄位(非合併);儲存後聊天即採用新知識庫。〔回傳整份取代 textarea state;`saveKnowledge` upsert〕
 - [x] `showChatbot` 關閉或未設 `GEMINI_API_KEY` 時前台完全不出現聊天入口;Gemini 失效時「更新知識庫」報錯,但手動編輯/既有知識庫/網站其他功能不受影響。〔layout `showChatbot && isAiEnabled()` 才掛載;action try/catch〕
-- [x] 防濫用生效:超過 IP 速率限制 / 訊息過長 / 單輪則數過多時正確擋下並提示。〔route:每 IP 10 分鐘 30 次、單則 ≤1000 字、歷史 ≤20 則〕
+- [x] 防濫用生效:超過 IP 速率限制 / 訊息過長 / 單輪則數過多時正確擋下並提示。〔route:多段 IP 限流(每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500,DB 持久化)、單則 ≤1000 字、歷史 ≤20 則〕
 
 ---
 
@@ -624,6 +624,7 @@
     - ⚠️ **關鍵誤區**:吳教授帳號綁的是 **Gemini App 消費端訂閱(AI Pro / Plus,每月固定費)**,與 **Gemini API(按 token 計費、綁 Google Cloud billing)是兩套完全獨立的計費**,App 訂閱對 API 金鑰額度**毫無幫助**。
     - **解法(不改程式)**:到 Google AI Studio 找這支金鑰所屬專案 → Google Cloud Console 幫**該專案**啟用 billing(綁卡),金鑰即自動升付費層。務必確認「綁 billing 的專案」與「金鑰所屬專案」是同一個(AI Studio 常自動建無 billing 的新專案)。
     - **成本評估**:以一天 200 次估,gemini-2.5-flash 付費層月費約 US$8–28(典型 ~NT$500);訪客少實際多半遠低於此。這是**獨立於 App 訂閱、需綁教授名下的另一筆帳單**(交接時與 Resend/Supabase 並列說明)。
+  - **多段 IP 限流改 DB 持久化(同日)**:原聊天限流為記憶體版(每 IP 10 分鐘 30 次),serverless 多實例/冷啟動不共享,長窗形同虛設。應教授要求新增多段窗(同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500),**日/月窗唯有存 DB 才有意義** → 新增 `RateHit` 表(migration `add_rate_hits`)與 `src/lib/ratelimit.ts`(`checkRateLimit`:抓最長窗內的列於記憶體分窗計數,通過才記一列並清該 IP 過期列;`purgeOldRateHits` 由 `/api/cron` 每 15 分全域回收 >32 天舊列)。`/api/chat` 改呼叫 `checkRateLimit("chat", ip)`。**fail-open**:限流本身 DB 讀寫出錯時放行並 `console.error`,不因限流故障拖垮聊天(燒錢有 Google 月花費上限兜底)。後台/聯絡表單暫未套用,需要時同一 helper 換 scope 即可。
   - **快取(context caching)評估:暫不做**。知識庫每次請求都隨 system prompt 重送(無狀態 API 本質),是主要 input 成本。但:(1) **Gemini 2.5 隱式快取預設開啟、零程式碼、無儲存費**,穩定前綴(護欄+知識庫)已自動享折扣;三個獨立快取桶(前台中/前台英/後台 adminGuide)各自快取、本就不需共用。(2) **顯式快取**在本專案量級「快取獎金」天花板僅個位數美元/月,且該折扣隱式已免費拿走,顯式反而多付儲存費(~$1/1M/hr),淨差幾乎打平或更貴,又要多維護快取生命週期 → 不划算,違反「AI 為加分項、別過度工程」。日後量真的大、帳單有感再議。
 
 ### 後台「使用說明」頁 + 管理員小幫手(2026-07-01)

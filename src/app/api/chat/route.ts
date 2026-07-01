@@ -1,35 +1,21 @@
 // 階段七:聊天機器人 API。POST { messages, lang } → 串流回傳文字。
 // 護欄/知識庫見 src/lib/ai/chat.ts;知識來源為 Settings 的中/英知識庫(維護時譯好)。
-// 防濫用:每 IP 記憶體速率限制 + 單則長度上限 + 單輪則數上限。
-// (記憶體限流在 serverless 多實例下非全域共享,屬「基本防灌」,沿用階段四思路。)
+// 防濫用:多段 IP 速率限制(DB 持久化)+ 單則長度上限 + 單輪則數上限。
+// 限流見 src/lib/ratelimit.ts 的 CHAT_RATE_WINDOWS(每小時 50 / 每 6 小時 100 /
+// 每日 150 / 每月 500),存 DB 故跨 serverless 實例、冷啟動皆準(取代舊記憶體版)。
 
 import { NextResponse } from "next/server";
 import { isAiEnabled } from "@/lib/ai/gemini";
 import { streamChat, type ChatMessage } from "@/lib/ai/chat";
 import { combineKnowledgeZh } from "@/lib/ai/knowledge";
 import { getSettings } from "@/lib/settings";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MAX_MESSAGE_CHARS = 1000; // 單則訊息長度上限
 const MAX_TURNS = 20; // 單輪對話(送回的歷史)則數上限
-const RATE_WINDOW_MS = 10 * 60 * 1000; // 10 分鐘
-const RATE_MAX = 30; // 每 IP 每視窗最多 30 次
-
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const arr = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
-  if (arr.length >= RATE_MAX) {
-    hits.set(ip, arr);
-    return true;
-  }
-  arr.push(now);
-  hits.set(ip, arr);
-  return false;
-}
 
 export async function POST(req: Request) {
   if (!isAiEnabled()) {
@@ -42,7 +28,8 @@ export async function POST(req: Request) {
   }
 
   const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
-  if (rateLimited(ip)) {
+  const rate = await checkRateLimit("chat", ip);
+  if (!rate.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 

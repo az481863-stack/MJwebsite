@@ -3,9 +3,13 @@
 
 import { NextResponse } from "next/server";
 import { reconcile } from "@/lib/instruments";
+import { purgeOldRateHits } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+// 限流計數保留期:略長於最長窗(1 個月),回收離開後不再出現的 IP 舊列。
+const RATE_HIT_TTL_MS = 32 * 24 * 60 * 60 * 1000;
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -19,5 +23,11 @@ export async function GET(req: Request) {
   }
 
   const result = await reconcile();
-  return NextResponse.json({ ok: true, ...result, at: new Date().toISOString() });
+  const purged = await purgeOldRateHits(RATE_HIT_TTL_MS);
+  return NextResponse.json({
+    ok: true,
+    ...result,
+    purgedRateHits: purged,
+    at: new Date().toISOString(),
+  });
 }

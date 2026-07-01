@@ -520,6 +520,19 @@ model Reservation {
   @@map("reservations")
 }
 
+// 多段速率限制計數:每次通過的請求記一列,依 scope+IP+時間窗查詢。
+// 用於防濫用(同一 IP 每小時/每 6 小時/每日/每月呼叫上限),見 src/lib/ratelimit.ts。
+// 記憶體限流在 serverless 多實例/冷啟動下不共享,故長窗(日/月)改存 DB 才精準。
+model RateHit {
+  id        String   @id @default(uuid())
+  scope     String // 限流範圍(如 "chat"),供不同端點各自計數
+  ip        String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([scope, ip, createdAt])
+  @@map("rate_hits")
+}
+
 // 簽退/異常紀錄
 model Checkout {
   id            String          @id @default(uuid())
