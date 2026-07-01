@@ -45,6 +45,9 @@
 |---|------|------|------|
 | 4.1 | 聯絡資訊後台維護 | 聯絡頁實驗室名稱/地址/Email/電話/辦公時間改為後台 Settings 可編輯 | ✅ |
 | 4.2 | 全站排序一律拖曳 | 課程/職缺/產學也改拖曳排序;抽通用 `SortableAdminList`;移除各表單手填排序數字 | ✅ |
+| 4.3 | 課程/產學/給高中生的話 英文欄 | 三者加英文欄 + 一鍵 AI 翻譯;前台依語系切換、空值 fallback 中文 | ✅ |
+| 4.4 | 研究領域首頁/研究頁一致 | 兩頁研究領域(標題/引言/卡片)改用同一份後台資料 + 共用直式清單元件(padding 減半、間距縮小);研究領域列加 hover 動效 | ✅ |
+| 4.5 | 動態佈告欄過期 + 拖曳 | 加過期日(預設發布日 +7 天),過期入過期區;未過期未刪除可拖曳排序 | ✅ |
 
 ---
 
@@ -155,3 +158,23 @@
 - courses/jobs/industry 後台頁改用 `SortableAdminList`(取代 `AdminListShell`);industry 以 `CAT_GROUPS` 分組(與前台 CAT_ORDER 一致)。
 - **移除所有手填排序欄位**:6 種表單(team/alumni/jobs/courses/industry/instrument)移除「排序數字」輸入;create/update 不再寫 `sortOrder`(改由拖曳專責),新項目以 schema 預設 0 進場(可再拖曳定位),**編輯不再重置排序**。
 - 既有的 team(分層)/alumni/instrument(限 ADMIN、含分層與權限)維持各自專屬 client 列表;courses/jobs/industry 用新通用元件。Publications(年份排)、Blog/佈告欄(日期排)無手動排序,不適用。
+
+### 4.3 課程/產學/給高中生的話 加英文欄 + 一鍵翻譯(2026-07-01 完成)
+- 沿用 3.1–3.4 的路線 A + `TranslateButton`/`translateFieldsAction` 機制;migration `add_course_industry_highschool_en`。
+- **課程 Course**:加 `nameEn`/`outlineEn`;`course-form` 英文欄 controlled + 翻譯鈕(collect 讀 name/outline);`courses-content` 依語系取、fallback。
+- **產學 IndustryItem**:加 `titleEn`/`descriptionEn`;`industry-form` 同上;`research-content` 依語系取、fallback(分類分組不變)。
+- **給高中生的話 HighSchoolMessage**:加 `contentEn`;單篇長文,`highschool-form` 加英文 textarea(controlled)+ 翻譯鈕(formRef 讀 content);`for-students` 依語系取、fallback。
+- 填法一致:中文填好 → 一鍵翻譯 → 檢查 → 儲存;英文留空前台顯示中文。
+
+### 4.4 研究領域:首頁與研究頁一致 + 統一樣式(2026-07-01 完成)
+- 需求:研究頁的研究領域區塊要和首頁一模一樣、皆由後台控制;採研究頁的直式清單排版(吳教授偏好),但**每項間距縮小、框框 padding 減半**。並解決首頁 grid 奇數留灰色空格問題。
+- 作法:抽共用元件 `src/components/ResearchAreas.tsx`(直式編號清單,`p-4` 半 padding、`space-y-px` 緊湊),吃 Settings 的 `homeResearchAreasZh/En`(留空 fallback 首頁字典)。
+- 首頁 `home-content.tsx` 移除原 3 欄 grid、改用 `ResearchAreas`;研究頁 `research-content.tsx` 原本吃 `t.research.areas`(不同內容)改為吃同一份 Settings 資料(`research/page.tsx` 傳入)。兩頁自此完全一致、單一維護點(後台 → 設定 → 首頁文字 → 研究領域)。
+- 附帶:直式清單無空格,首頁不再出現奇數灰色空框。
+
+### 4.5 動態佈告欄:過期日 + 拖曳排序(2026-07-01 完成)
+- `DashboardPost` 加 `expiresAt DateTime?` 與 `sortOrder Int`,migration `add_dashboard_expiry_sort`(並回填既有資料 expires_at = published_date + 7 天)。
+- 過期日:表單新增「過期日」欄位,**留空則預設發布日 +7 天**(`computeExpiry`);actions create/update 一併存。
+- 後台三區:有效(未過期未刪除,**可拖曳排序**)/ 已過期(可編輯延長或刪除,不可拖曳)/ 已刪除。`SortableAdminList` 新增可選 `expired` 區塊。拖曳沿用通用 `reorderContent("dashboardPost", ids)`。
+- 前台首頁:只顯示**未過期**(null 視為未過期)且已發布,排序改 `sortOrder asc`(拖曳結果)→ `publishedDate desc`,取前 5。
+- 檔案:`prisma/schema.prisma`、`src/app/admin/dashboard-posts/{page,actions,dashboard-post-form,[id]/page}.tsx`、`src/app/admin/sortable-admin-list.tsx`、`src/app/page.tsx`。

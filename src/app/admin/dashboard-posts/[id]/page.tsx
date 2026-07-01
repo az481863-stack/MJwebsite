@@ -33,6 +33,9 @@ export default async function EditDashboardPostPage({
           linkText: post.linkText,
           linkTextEn: post.linkTextEn,
           publishedDate: post.publishedDate.toISOString().slice(0, 10),
+          expiresAt: post.expiresAt
+            ? post.expiresAt.toISOString().slice(0, 10)
+            : "",
         }}
       />
     </div>

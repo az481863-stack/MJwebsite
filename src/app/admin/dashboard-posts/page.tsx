@@ -1,10 +1,9 @@
-// 動態佈告欄 列表(ADMIN 以上)。含草稿/已發布與已刪除區。
+// 動態佈告欄 列表(ADMIN 以上)。有效區(可拖曳)/ 過期區 / 已刪除區。
 
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ContentRowActions, StatusBadge } from "../content-row-actions";
+import { SortableAdminList } from "../sortable-admin-list";
 
 const CATEGORY_LABEL: Record<string, string> = {
   ACADEMIC: "學術快報",
@@ -12,14 +11,25 @@ const CATEGORY_LABEL: Record<string, string> = {
   HONOR: "榮譽榜",
 };
 
+function secondary(p: {
+  category: string;
+  publishedDate: Date;
+  expiresAt: Date | null;
+}): string {
+  const pub = p.publishedDate.toISOString().slice(0, 10);
+  const exp = p.expiresAt ? p.expiresAt.toISOString().slice(0, 10) : "無";
+  return `${CATEGORY_LABEL[p.category] ?? p.category} · 發布 ${pub} · 過期 ${exp}`;
+}
+
 export default async function DashboardPostsPage() {
   const me = await getCurrentMember();
   if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
 
-  const [items, deleted] = await Promise.all([
+  const now = new Date();
+  const [alive, deleted] = await Promise.all([
     prisma.dashboardPost.findMany({
       where: { deletedAt: null },
-      orderBy: { publishedDate: "desc" },
+      orderBy: [{ sortOrder: "asc" }, { publishedDate: "desc" }],
     }),
     prisma.dashboardPost.findMany({
       where: { deletedAt: { not: null } },
@@ -27,71 +37,33 @@ export default async function DashboardPostsPage() {
     }),
   ]);
 
+  // 有效(未過期)可拖曳;過期進過期區。null 視為未過期。
+  const active = alive.filter((p) => !p.expiresAt || p.expiresAt > now);
+  const expired = alive.filter((p) => p.expiresAt && p.expiresAt <= now);
+
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">動態佈告欄</h1>
-        <Link
-          href="/admin/dashboard-posts/new"
-          className="bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85"
-        >
-          新增
-        </Link>
-      </header>
-
-      {items.length === 0 ? (
-        <p className="text-sm text-muted">尚無內容。</p>
-      ) : (
-        <ul className="divide-y divide-line border-y border-line">
-          {items.map((p) => (
-            <li key={p.id} className="flex items-start justify-between gap-4 py-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={p.status} />
-                  <span className="text-xs text-muted">
-                    {CATEGORY_LABEL[p.category]} ·{" "}
-                    {p.publishedDate.toISOString().slice(0, 10)}
-                  </span>
-                </div>
-                <p className="mt-1 truncate text-sm font-medium">{p.title}</p>
-              </div>
-              <ContentRowActions
-                model="dashboardPost"
-                id={p.id}
-                status={p.status}
-                deleted={false}
-                editPath={`/admin/dashboard-posts/${p.id}`}
-                listPath="/admin/dashboard-posts"
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {deleted.length > 0 && (
-        <details className="border-t border-line pt-4">
-          <summary className="cursor-pointer text-sm text-muted">
-            已刪除({deleted.length})
-          </summary>
-          <ul className="mt-3 divide-y divide-line border-y border-line">
-            {deleted.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-4 py-3">
-                <span className="truncate text-sm text-muted line-through">
-                  {p.title}
-                </span>
-                <ContentRowActions
-                  model="dashboardPost"
-                  id={p.id}
-                  status={p.status}
-                  deleted
-                  editPath=""
-                  listPath="/admin/dashboard-posts"
-                />
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </div>
+    <SortableAdminList
+      key={alive.map((p) => `${p.id}:${p.status}:${p.expiresAt && p.expiresAt <= now ? "x" : "a"}`).join(",")}
+      title="動態佈告欄"
+      basePath="/admin/dashboard-posts"
+      model="dashboardPost"
+      items={active.map((p) => ({
+        id: p.id,
+        status: p.status,
+        primary: p.title,
+        secondary: secondary(p),
+      }))}
+      expired={expired.map((p) => ({
+        id: p.id,
+        status: p.status,
+        primary: p.title,
+        secondary: secondary(p),
+      }))}
+      deleted={deleted.map((p) => ({
+        id: p.id,
+        status: p.status,
+        label: p.title,
+      }))}
+    />
   );
 }

@@ -132,6 +132,7 @@ enum DashboardCategory {
 
 // G-3 現役成員身份階層
 enum TeamTier {
+  PI // 實驗室主持人
   PROFESSOR // 教授
   DISTINGUISHED_PROFESSOR // 特聘教授
   EMERITUS_PROFESSOR // 名譽教授
@@ -139,6 +140,7 @@ enum TeamTier {
   ASST_PROFESSOR // 助理教授
   VISITING_PROFESSOR // 客座教授
   ADJUNCT_PROFESSOR // 兼任教授
+  COLLABORATING_PROFESSOR // 合作教授
   POSTDOC // 博後
   STAFF // 專任助理
   PHD // 博士生
@@ -172,6 +174,8 @@ model DashboardPost {
   linkText      String?           @map("link_text")
   linkTextEn    String?           @map("link_text_en")
   publishedDate DateTime          @map("published_date")
+  expiresAt     DateTime?         @map("expires_at") // 過期日(預設發布日 +7 天);過期後前台不顯示、後台入過期區
+  sortOrder     Int               @default(0) @map("sort_order")
   status        ContentStatus     @default(DRAFT)
 
   createdAt DateTime  @default(now()) @map("created_at")
@@ -301,7 +305,9 @@ model BlogPost {
 model Course {
   id          String        @id @default(uuid())
   name        String
+  nameEn      String?       @map("name_en")
   outline     String
+  outlineEn   String?       @map("outline_en")
   handoutUrl  String?       @map("handout_url")
   sortOrder   Int           @default(0) @map("sort_order")
   status      ContentStatus @default(DRAFT)
@@ -319,10 +325,12 @@ model Course {
 
 // G-8 產學與專利
 model IndustryItem {
-  id          String           @id @default(uuid())
-  category    IndustryCategory
-  title       String
-  description String
+  id            String           @id @default(uuid())
+  category      IndustryCategory
+  title         String
+  titleEn       String?          @map("title_en")
+  description   String
+  descriptionEn String?          @map("description_en")
   sortOrder   Int              @default(0) @map("sort_order")
   status      ContentStatus    @default(DRAFT)
 
@@ -339,9 +347,10 @@ model IndustryItem {
 
 // G-9 給高中生的話(單篇長文;通常只有一筆有效)
 model HighSchoolMessage {
-  id      String        @id @default(uuid())
-  content String
-  status  ContentStatus @default(DRAFT)
+  id        String        @id @default(uuid())
+  content   String
+  contentEn String?       @map("content_en")
+  status    ContentStatus @default(DRAFT)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")

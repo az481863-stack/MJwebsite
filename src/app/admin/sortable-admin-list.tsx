@@ -94,6 +94,7 @@ export function SortableAdminList({
   model,
   items: initial,
   deleted,
+  expired,
   groups,
   newLabel = "新增",
 }: {
@@ -102,6 +103,7 @@ export function SortableAdminList({
   model: string;
   items: SortableRow[];
   deleted: { id: string; status: "DRAFT" | "PUBLISHED"; label: string }[];
+  expired?: SortableRow[];
   groups?: { key: string; label: string }[];
   newLabel?: string;
 }) {
@@ -199,6 +201,38 @@ export function SortableAdminList({
             ))}
           </DndContext>
         </div>
+      )}
+
+      {expired && expired.length > 0 && (
+        <section className="border-t border-line pt-6">
+          <h2 className="text-sm font-semibold text-muted">
+            已過期({expired.length})· 可編輯延長過期日或刪除
+          </h2>
+          <ul className="mt-3 divide-y divide-line border-y border-line">
+            {expired.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-start justify-between gap-4 py-4 opacity-70"
+              >
+                <div className="min-w-0">
+                  <StatusBadge status={item.status} />
+                  <p className="mt-1 text-sm font-medium">{item.primary}</p>
+                  {item.secondary && (
+                    <p className="text-xs text-muted">{item.secondary}</p>
+                  )}
+                </div>
+                <ContentRowActions
+                  model={model}
+                  id={item.id}
+                  status={item.status}
+                  deleted={false}
+                  editPath={`${basePath}/${item.id}`}
+                  listPath={basePath}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {deleted.length > 0 && (

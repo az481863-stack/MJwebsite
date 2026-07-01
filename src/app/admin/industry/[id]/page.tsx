@@ -24,7 +24,9 @@ export default async function EditIndustryPage({
           id: it.id,
           category: it.category,
           title: it.title,
+          titleEn: it.titleEn,
           description: it.description,
+          descriptionEn: it.descriptionEn,
           sortOrder: it.sortOrder,
         }}
       />

@@ -21,6 +21,7 @@ export async function saveHighSchoolMessage(
 
   const content = String(formData.get("content") ?? "").trim();
   if (!content) return { ok: false, message: "請填寫內容。" };
+  const contentEn = String(formData.get("contentEn") ?? "").trim() || null;
   const status = formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT";
 
   const existing = await prisma.highSchoolMessage.findFirst({
@@ -30,11 +31,11 @@ export async function saveHighSchoolMessage(
   if (existing) {
     await prisma.highSchoolMessage.update({
       where: { id: existing.id },
-      data: { content, status, updatedBy: me.id },
+      data: { content, contentEn, status, updatedBy: me.id },
     });
   } else {
     await prisma.highSchoolMessage.create({
-      data: { content, status, createdBy: me.id, updatedBy: me.id },
+      data: { content, contentEn, status, createdBy: me.id, updatedBy: me.id },
     });
   }
 

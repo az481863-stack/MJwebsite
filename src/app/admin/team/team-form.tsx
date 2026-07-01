@@ -31,6 +31,7 @@ export function TeamForm({
       </Labeled>
       <Labeled label="身份階層" htmlFor="tier">
         <select id="tier" name="tier" defaultValue={initial?.tier ?? "PHD"} className={fieldCls}>
+          <option value="PI">實驗室主持人</option>
           <option value="PROFESSOR">教授</option>
           <option value="DISTINGUISHED_PROFESSOR">特聘教授</option>
           <option value="EMERITUS_PROFESSOR">名譽教授</option>
@@ -38,6 +39,7 @@ export function TeamForm({
           <option value="ASST_PROFESSOR">助理教授</option>
           <option value="VISITING_PROFESSOR">客座教授</option>
           <option value="ADJUNCT_PROFESSOR">兼任教授</option>
+          <option value="COLLABORATING_PROFESSOR">合作教授</option>
           <option value="POSTDOC">博後</option>
           <option value="STAFF">專任助理</option>
           <option value="PHD">博士生</option>

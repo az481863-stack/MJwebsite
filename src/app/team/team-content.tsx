@@ -11,6 +11,7 @@ import { PageNav } from "@/components/PageNav";
 
 // 現役成員前台分組顯示的層級順序(由上到下)。層級內順序仍由後台拖曳(sortOrder)決定。
 const TIER_ORDER: TeamTier[] = [
+  "PI",
   "PROFESSOR",
   "DISTINGUISHED_PROFESSOR",
   "EMERITUS_PROFESSOR",
@@ -18,6 +19,7 @@ const TIER_ORDER: TeamTier[] = [
   "ASST_PROFESSOR",
   "VISITING_PROFESSOR",
   "ADJUNCT_PROFESSOR",
+  "COLLABORATING_PROFESSOR",
   "POSTDOC",
   "STAFF",
   "PHD",

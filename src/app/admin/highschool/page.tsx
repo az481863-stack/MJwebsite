@@ -19,6 +19,7 @@ export default async function HighSchoolAdminPage() {
       </header>
       <HighSchoolForm
         initialContent={msg?.content ?? ""}
+        initialContentEn={msg?.contentEn ?? ""}
         initialPublished={msg?.status === "PUBLISHED"}
       />
     </div>

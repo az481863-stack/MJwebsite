@@ -14,7 +14,9 @@ export default async function CoursesPage() {
       courses={courses.map((c) => ({
         id: c.id,
         name: c.name,
+        nameEn: c.nameEn,
         outline: c.outline,
+        outlineEn: c.outlineEn,
         handoutUrl: c.handoutUrl,
       }))}
     />

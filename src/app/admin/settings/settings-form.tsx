@@ -143,7 +143,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
 
         <h3 className="mt-8 text-base font-semibold">研究領域</h3>
         <p className="mt-1 text-sm text-muted">
-          研究領域區塊的標題、引言與各領域卡片。各領域卡片請
+          研究領域區塊的標題、引言與各領域卡片(<span className="font-medium text-foreground">首頁與「研究與產學」頁共用</span>,改一次兩頁同步)。各領域卡片請
           <span className="font-medium text-foreground">一行一個</span>,以
           <span className="font-medium text-foreground"> | </span>
           分隔「標題」與「說明」(例:<code>奈米光電元件 | 設計並製作光偵測器與量子點結構</code>)。留空沿用預設。

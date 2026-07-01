@@ -19,7 +19,9 @@ function parse(formData: FormData) {
   return {
     category: String(formData.get("category") ?? ""),
     title: String(formData.get("title") ?? "").trim(),
+    titleEn: String(formData.get("titleEn") ?? "").trim() || null,
     description: String(formData.get("description") ?? "").trim(),
+    descriptionEn: String(formData.get("descriptionEn") ?? "").trim() || null,
     sortOrder: parseInt(String(formData.get("sortOrder") ?? "0"), 10) || 0,
   };
 }
@@ -39,7 +41,9 @@ export async function createIndustry(
     data: {
       category: f.category as IndustryCategory,
       title: f.title,
+      titleEn: f.titleEn,
       description: f.description,
+      descriptionEn: f.descriptionEn,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -67,7 +71,9 @@ export async function updateIndustry(
     data: {
       category: f.category as IndustryCategory,
       title: f.title,
+      titleEn: f.titleEn,
       description: f.description,
+      descriptionEn: f.descriptionEn,
       updatedBy: me.id,
     },
   });

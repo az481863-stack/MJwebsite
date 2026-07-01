@@ -26,7 +26,15 @@ function parse(formData: FormData) {
   const linkText = String(formData.get("linkText") ?? "").trim() || null;
   const linkTextEn = String(formData.get("linkTextEn") ?? "").trim() || null;
   const dateStr = String(formData.get("publishedDate") ?? "");
-  return { category, title, titleEn, body, bodyEn, imageUrl, linkUrl, linkText, linkTextEn, dateStr };
+  const expiresStr = String(formData.get("expiresAt") ?? "").trim();
+  return { category, title, titleEn, body, bodyEn, imageUrl, linkUrl, linkText, linkTextEn, dateStr, expiresStr };
+}
+
+// 過期日:表單有填用之;否則預設發布日 +7 天。
+function computeExpiry(dateStr: string, expiresStr: string): Date | null {
+  if (expiresStr) return new Date(expiresStr);
+  if (!dateStr) return null;
+  return new Date(new Date(dateStr).getTime() + 7 * 24 * 60 * 60 * 1000);
 }
 
 export async function createDashboardPost(
@@ -54,6 +62,7 @@ export async function createDashboardPost(
       linkText: f.linkText,
       linkTextEn: f.linkTextEn,
       publishedDate: new Date(f.dateStr),
+      expiresAt: computeExpiry(f.dateStr, f.expiresStr),
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
@@ -92,6 +101,7 @@ export async function updateDashboardPost(
       linkText: f.linkText,
       linkTextEn: f.linkTextEn,
       publishedDate: new Date(f.dateStr),
+      expiresAt: computeExpiry(f.dateStr, f.expiresStr),
       updatedBy: me.id,
     },
   });

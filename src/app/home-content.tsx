@@ -12,6 +12,7 @@ import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { PageNav } from "@/components/PageNav";
 import { Reveal } from "@/components/Reveal";
+import { ResearchAreas } from "@/components/ResearchAreas";
 
 export interface DashboardItem {
   id: string;
@@ -85,18 +86,6 @@ export function HomeContent({
   const researchIntro =
     (lang === "zh" ? overrides.researchIntroZh : overrides.researchIntroEn) ||
     h.researchIntro;
-  const researchAreasOverride =
-    lang === "zh" ? overrides.researchAreasZh : overrides.researchAreasEn;
-  const researchAreas = researchAreasOverride
-    ? researchAreasOverride
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const [title, ...rest] = line.split("|");
-          return { title: title.trim(), desc: rest.join("|").trim() };
-        })
-    : h.researchAreas;
 
   const navItems = [
     { id: "dashboard", label: h.dashboardHeading },
@@ -237,23 +226,12 @@ export function HomeContent({
         )}
       </Section>
 
-      {/* 研究領域(淺色) */}
+      {/* 研究領域(淺色;與研究頁共用同一份後台資料與樣式) */}
       <Section id="research" heading={researchHeading} intro={researchIntro}>
-        <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-3">
-          {researchAreas.map((area, i) => (
-            <Reveal
-              key={i}
-              delay={i * 90}
-              className="bg-background p-8 transition-shadow hover:shadow-[inset_0_3px_0_var(--accent)]"
-            >
-              <span className="font-mono text-sm text-accent">0{i + 1}</span>
-              <h3 className="mt-4 text-lg font-semibold">{area.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                {area.desc}
-              </p>
-            </Reveal>
-          ))}
-        </div>
+        <ResearchAreas
+          areasZh={overrides.researchAreasZh}
+          areasEn={overrides.researchAreasEn}
+        />
       </Section>
 
       {/* 主持人理念(深色帶) */}

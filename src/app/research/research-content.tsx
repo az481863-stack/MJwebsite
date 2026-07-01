@@ -6,12 +6,15 @@
 import { useLanguage } from "@/lib/i18n/context";
 import { Section } from "@/components/ui/Section";
 import { PageNav } from "@/components/PageNav";
+import { ResearchAreas } from "@/components/ResearchAreas";
 
 export interface IndustryEntry {
   id: string;
   category: "PATENT" | "LICENSABLE" | "COLLABORATION";
   title: string;
+  titleEn: string | null;
   description: string;
+  descriptionEn: string | null;
 }
 
 export interface PublicationEntry {
@@ -34,16 +37,34 @@ export function ResearchContent({
   industry,
   publications,
   showIndustry,
+  researchHeadingZh,
+  researchHeadingEn,
+  researchIntroZh,
+  researchIntroEn,
+  researchAreasZh,
+  researchAreasEn,
 }: {
   industry: IndustryEntry[];
   publications: PublicationEntry[];
   showIndustry: boolean;
+  researchHeadingZh: string;
+  researchHeadingEn: string;
+  researchIntroZh: string;
+  researchIntroEn: string;
+  researchAreasZh: string;
+  researchAreasEn: string;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const r = t.research;
 
+  // 標題/引言:後台覆寫優先(與首頁研究領域共用同一組 Settings 欄位),空值 fallback 研究頁字典。
+  const areasHeading =
+    (lang === "en" ? researchHeadingEn : researchHeadingZh) || r.heading;
+  const areasIntro =
+    (lang === "en" ? researchIntroEn : researchIntroZh) || r.intro;
+
   const navItems = [
-    { id: "areas", label: r.heading },
+    { id: "areas", label: areasHeading },
     ...(showIndustry ? [{ id: "industry", label: r.industryHeading }] : []),
     { id: "publications", label: r.pubHeading },
   ];
@@ -52,21 +73,9 @@ export function ResearchContent({
     <>
       <PageNav items={navItems} />
 
-      {/* 研究領域(寫死) */}
-      <Section id="areas" heading={r.heading} intro={r.intro}>
-        <div className="space-y-px overflow-hidden border border-line bg-line">
-          {r.areas.map((area, i) => (
-            <div key={i} className="flex flex-col gap-3 bg-background p-8 sm:flex-row sm:gap-8">
-              <span className="font-mono text-sm text-muted sm:w-12">0{i + 1}</span>
-              <div className="sm:flex-1">
-                <h3 className="text-lg font-semibold">{area.title}</h3>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-                  {area.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* 研究領域(與首頁共用同一份後台資料與樣式) */}
+      <Section id="areas" heading={areasHeading} intro={areasIntro}>
+        <ResearchAreas areasZh={researchAreasZh} areasEn={researchAreasEn} />
       </Section>
 
       {/* 產學與專利(後台 CMS;可由 Settings 隱藏) */}
@@ -87,9 +96,12 @@ export function ResearchContent({
                   <ul className="mt-3 divide-y divide-line border-y border-line">
                     {items.map((it) => (
                       <li key={it.id} className="py-3">
-                        <p className="text-sm font-medium">{it.title}</p>
+                        <p className="text-sm font-medium">
+                          {(lang === "en" ? it.titleEn : null) || it.title}
+                        </p>
                         <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-muted">
-                          {it.description}
+                          {(lang === "en" ? it.descriptionEn : null) ||
+                            it.description}
                         </p>
                       </li>
                     ))}
