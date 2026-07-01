@@ -6,12 +6,14 @@ import { Section } from "@/components/ui/Section";
 export interface CourseEntry {
   id: string;
   name: string;
+  nameEn: string | null;
   outline: string;
+  outlineEn: string | null;
   handoutUrl: string | null;
 }
 
 export function CoursesContent({ courses }: { courses: CourseEntry[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const c = t.courses;
 
   return (
@@ -22,9 +24,11 @@ export function CoursesContent({ courses }: { courses: CourseEntry[] }) {
         <ul className="divide-y divide-line border-y border-line">
           {courses.map((course) => (
             <li key={course.id} className="py-6">
-              <h3 className="text-lg font-semibold">{course.name}</h3>
+              <h3 className="text-lg font-semibold">
+                {(lang === "en" ? course.nameEn : null) || course.name}
+              </h3>
               <p className="mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-muted">
-                {course.outline}
+                {(lang === "en" ? course.outlineEn : null) || course.outline}
               </p>
               {course.handoutUrl && (
                 <a

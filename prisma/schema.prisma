@@ -301,7 +301,9 @@ model BlogPost {
 model Course {
   id          String        @id @default(uuid())
   name        String
+  nameEn      String?       @map("name_en")
   outline     String
+  outlineEn   String?       @map("outline_en")
   handoutUrl  String?       @map("handout_url")
   sortOrder   Int           @default(0) @map("sort_order")
   status      ContentStatus @default(DRAFT)
@@ -319,10 +321,12 @@ model Course {
 
 // G-8 產學與專利
 model IndustryItem {
-  id          String           @id @default(uuid())
-  category    IndustryCategory
-  title       String
-  description String
+  id            String           @id @default(uuid())
+  category      IndustryCategory
+  title         String
+  titleEn       String?          @map("title_en")
+  description   String
+  descriptionEn String?          @map("description_en")
   sortOrder   Int              @default(0) @map("sort_order")
   status      ContentStatus    @default(DRAFT)
 
@@ -339,9 +343,10 @@ model IndustryItem {
 
 // G-9 給高中生的話(單篇長文;通常只有一筆有效)
 model HighSchoolMessage {
-  id      String        @id @default(uuid())
-  content String
-  status  ContentStatus @default(DRAFT)
+  id        String        @id @default(uuid())
+  content   String
+  contentEn String?       @map("content_en")
+  status    ContentStatus @default(DRAFT)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")

@@ -15,7 +15,9 @@ export interface ActionResult {
 function parse(formData: FormData) {
   return {
     name: String(formData.get("name") ?? "").trim(),
+    nameEn: String(formData.get("nameEn") ?? "").trim() || null,
     outline: String(formData.get("outline") ?? "").trim(),
+    outlineEn: String(formData.get("outlineEn") ?? "").trim() || null,
     handoutUrl: String(formData.get("handoutUrl") ?? "").trim() || null,
     sortOrder: parseInt(String(formData.get("sortOrder") ?? "0"), 10) || 0,
   };
@@ -35,7 +37,9 @@ export async function createCourse(
   await prisma.course.create({
     data: {
       name: f.name,
+      nameEn: f.nameEn,
       outline: f.outline,
+      outlineEn: f.outlineEn,
       handoutUrl: f.handoutUrl,
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
@@ -63,7 +67,9 @@ export async function updateCourse(
     where: { id },
     data: {
       name: f.name,
+      nameEn: f.nameEn,
       outline: f.outline,
+      outlineEn: f.outlineEn,
       handoutUrl: f.handoutUrl,
       updatedBy: me.id,
     },

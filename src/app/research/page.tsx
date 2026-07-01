@@ -29,7 +29,9 @@ export default async function ResearchPage() {
         id: it.id,
         category: it.category,
         title: it.title,
+        titleEn: it.titleEn,
         description: it.description,
+        descriptionEn: it.descriptionEn,
       }))}
       publications={publications.map((p) => ({
         id: p.id,

@@ -11,7 +11,9 @@ export interface IndustryEntry {
   id: string;
   category: "PATENT" | "LICENSABLE" | "COLLABORATION";
   title: string;
+  titleEn: string | null;
   description: string;
+  descriptionEn: string | null;
 }
 
 export interface PublicationEntry {
@@ -39,7 +41,7 @@ export function ResearchContent({
   publications: PublicationEntry[];
   showIndustry: boolean;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const r = t.research;
 
   const navItems = [
@@ -87,9 +89,12 @@ export function ResearchContent({
                   <ul className="mt-3 divide-y divide-line border-y border-line">
                     {items.map((it) => (
                       <li key={it.id} className="py-3">
-                        <p className="text-sm font-medium">{it.title}</p>
+                        <p className="text-sm font-medium">
+                          {(lang === "en" ? it.titleEn : null) || it.title}
+                        </p>
                         <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-muted">
-                          {it.description}
+                          {(lang === "en" ? it.descriptionEn : null) ||
+                            it.description}
                         </p>
                       </li>
                     ))}

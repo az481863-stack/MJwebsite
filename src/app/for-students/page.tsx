@@ -14,5 +14,10 @@ export default async function ForStudentsPage() {
     orderBy: { updatedAt: "desc" },
   });
 
-  return <ForStudentsContent content={msg?.content ?? null} />;
+  return (
+    <ForStudentsContent
+      content={msg?.content ?? null}
+      contentEn={msg?.contentEn ?? null}
+    />
+  );
 }

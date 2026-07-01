@@ -45,6 +45,7 @@
 |---|------|------|------|
 | 4.1 | 聯絡資訊後台維護 | 聯絡頁實驗室名稱/地址/Email/電話/辦公時間改為後台 Settings 可編輯 | ✅ |
 | 4.2 | 全站排序一律拖曳 | 課程/職缺/產學也改拖曳排序;抽通用 `SortableAdminList`;移除各表單手填排序數字 | ✅ |
+| 4.3 | 課程/產學/給高中生的話 英文欄 | 三者加英文欄 + 一鍵 AI 翻譯;前台依語系切換、空值 fallback 中文 | ✅ |
 
 ---
 
@@ -155,3 +156,10 @@
 - courses/jobs/industry 後台頁改用 `SortableAdminList`(取代 `AdminListShell`);industry 以 `CAT_GROUPS` 分組(與前台 CAT_ORDER 一致)。
 - **移除所有手填排序欄位**:6 種表單(team/alumni/jobs/courses/industry/instrument)移除「排序數字」輸入;create/update 不再寫 `sortOrder`(改由拖曳專責),新項目以 schema 預設 0 進場(可再拖曳定位),**編輯不再重置排序**。
 - 既有的 team(分層)/alumni/instrument(限 ADMIN、含分層與權限)維持各自專屬 client 列表;courses/jobs/industry 用新通用元件。Publications(年份排)、Blog/佈告欄(日期排)無手動排序,不適用。
+
+### 4.3 課程/產學/給高中生的話 加英文欄 + 一鍵翻譯(2026-07-01 完成)
+- 沿用 3.1–3.4 的路線 A + `TranslateButton`/`translateFieldsAction` 機制;migration `add_course_industry_highschool_en`。
+- **課程 Course**:加 `nameEn`/`outlineEn`;`course-form` 英文欄 controlled + 翻譯鈕(collect 讀 name/outline);`courses-content` 依語系取、fallback。
+- **產學 IndustryItem**:加 `titleEn`/`descriptionEn`;`industry-form` 同上;`research-content` 依語系取、fallback(分類分組不變)。
+- **給高中生的話 HighSchoolMessage**:加 `contentEn`;單篇長文,`highschool-form` 加英文 textarea(controlled)+ 翻譯鈕(formRef 讀 content);`for-students` 依語系取、fallback。
+- 填法一致:中文填好 → 一鍵翻譯 → 檢查 → 儲存;英文留空前台顯示中文。

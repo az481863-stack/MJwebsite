@@ -3,15 +3,22 @@
 import { useLanguage } from "@/lib/i18n/context";
 import { Section } from "@/components/ui/Section";
 
-export function ForStudentsContent({ content }: { content: string | null }) {
-  const { t } = useLanguage();
+export function ForStudentsContent({
+  content,
+  contentEn,
+}: {
+  content: string | null;
+  contentEn: string | null;
+}) {
+  const { t, lang } = useLanguage();
   const f = t.forStudents;
+  const body = (lang === "en" ? contentEn : null) || content;
 
   return (
     <Section heading={f.heading} intro={f.intro}>
-      {content ? (
+      {body ? (
         <div className="max-w-2xl whitespace-pre-wrap text-base leading-relaxed text-foreground/80">
-          {content}
+          {body}
         </div>
       ) : (
         <p className="text-sm text-muted">{f.empty}</p>

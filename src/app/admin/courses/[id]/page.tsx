@@ -23,7 +23,9 @@ export default async function EditCoursePage({
         initial={{
           id: c.id,
           name: c.name,
+          nameEn: c.nameEn,
           outline: c.outline,
+          outlineEn: c.outlineEn,
           handoutUrl: c.handoutUrl,
           sortOrder: c.sortOrder,
         }}
