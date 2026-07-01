@@ -16,6 +16,7 @@ export interface SiteSettingsData {
   siteAccent: string;
   showChatbot: boolean;
   chatbotKnowledgeZh: string;
+  chatbotSupplementZh: string;
   chatbotKnowledgeEn: string;
   adminGuide: string;
   homeHeroTitleZh: string;
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   siteAccent: DEFAULT_ACCENT,
   showChatbot: false,
   chatbotKnowledgeZh: "",
+  chatbotSupplementZh: "",
   chatbotKnowledgeEn: "",
   adminGuide: "",
   homeHeroTitleZh: "",
@@ -94,6 +96,7 @@ export async function getSettings(): Promise<SiteSettingsData> {
       siteAccent: s.siteAccent,
       showChatbot: s.showChatbot,
       chatbotKnowledgeZh: s.chatbotKnowledgeZh,
+      chatbotSupplementZh: s.chatbotSupplementZh,
       chatbotKnowledgeEn: s.chatbotKnowledgeEn,
       adminGuide: s.adminGuide,
       homeHeroTitleZh: s.homeHeroTitleZh,

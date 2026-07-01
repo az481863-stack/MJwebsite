@@ -409,8 +409,9 @@ model SiteSettings {
 
   // 階段七:AI 聊天機器人
   showChatbot        Boolean @default(false) @map("show_chatbot") // 前台聊天入口顯示開關(預設關)
-  chatbotKnowledgeZh String  @default("") @map("chatbot_knowledge_zh") // 中文知識庫(主來源)
-  chatbotKnowledgeEn String  @default("") @map("chatbot_knowledge_en") // 英文知識庫(維護時譯好存檔)
+  chatbotKnowledgeZh String  @default("") @map("chatbot_knowledge_zh") // 中文知識庫(自動彙整,「更新知識庫」覆蓋)
+  chatbotSupplementZh String @default("") @map("chatbot_supplement_zh") // 中文手動補充(人工維護,不被自動彙整覆蓋)
+  chatbotKnowledgeEn String  @default("") @map("chatbot_knowledge_en") // 英文知識庫(彙整+補充 一併譯好存檔)
 
   // 後台「使用說明」頁內容(Markdown;供新接手的管理員閱讀,並作為管理員小幫手的知識庫)
   adminGuide String @default("") @map("admin_guide")

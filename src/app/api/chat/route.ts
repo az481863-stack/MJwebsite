@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { isAiEnabled } from "@/lib/ai/gemini";
 import { streamChat, type ChatMessage } from "@/lib/ai/chat";
+import { combineKnowledgeZh } from "@/lib/ai/knowledge";
 import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -75,8 +76,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
+  // 中文:自動彙整 + 手動補充 合併;英文:單一欄位(維護時已合併譯好)。
   const knowledge =
-    lang === "en" ? settings.chatbotKnowledgeEn : settings.chatbotKnowledgeZh;
+    lang === "en"
+      ? settings.chatbotKnowledgeEn
+      : combineKnowledgeZh(settings.chatbotKnowledgeZh, settings.chatbotSupplementZh);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({

@@ -12,9 +12,9 @@ import {
   getActiveOverdueCount,
   SUSPEND_THRESHOLD,
 } from "@/lib/instruments";
+import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
-import { InstrumentBooking } from "./instrument-booking";
-import { InstrumentCard } from "./instrument-card";
+import { InstrumentList, type InstrumentItem } from "./instrument-list";
 import { CancelButton } from "./cancel-button";
 
 export const dynamic = "force-dynamic";
@@ -87,6 +87,29 @@ export default async function InstrumentsPage() {
       include: { instrument: { select: { name: true } } },
     });
   }
+
+  // 序列化給 client 清單(含各台的預約 disabled 判斷)。
+  const items: InstrumentItem[] = instruments.map((inst) => ({
+    id: inst.id,
+    name: inst.name,
+    nameEn: inst.nameEn,
+    purpose: inst.purpose,
+    purposeEn: inst.purposeEn,
+    photoUrl: inst.photoUrl,
+    maintenance: inst.status === "MAINTENANCE",
+    busy: inst.reservations.map((r) => ({
+      start: r.startAt.toISOString(),
+      end: r.endAt.toISOString(),
+    })),
+    disabled: !me || suspended || inst.status === "MAINTENANCE",
+    disabledReason: !me
+      ? undefined
+      : inst.status === "MAINTENANCE"
+        ? "此儀器維護中,暫不開放預約。"
+        : suspended
+          ? "預約權暫停中(逾時未簽退達 3 筆)。"
+          : undefined,
+  }));
 
   return (
     <Container className="py-12">
@@ -161,43 +184,10 @@ export default async function InstrumentsPage() {
         </section>
       )}
 
-      {/* 機台清單 */}
-      <section className="mt-10 space-y-8">
-        {instruments.map((inst) => {
-          const disabled = !me || suspended || inst.status === "MAINTENANCE";
-          const disabledReason = !me
-            ? undefined
-            : inst.status === "MAINTENANCE"
-              ? "此儀器維護中,暫不開放預約。"
-              : suspended
-                ? "預約權暫停中(逾時未簽退達 3 筆)。"
-                : undefined;
-          return (
-            <div key={inst.id} className="border border-line p-5">
-              <InstrumentCard
-                name={inst.name}
-                nameEn={inst.nameEn}
-                maintenance={inst.status === "MAINTENANCE"}
-                photoUrl={inst.photoUrl}
-                purpose={inst.purpose}
-                purposeEn={inst.purposeEn}
-              />
-              <InstrumentBooking
-                instrumentId={inst.id}
-                busy={inst.reservations.map((r) => ({
-                  start: r.startAt.toISOString(),
-                  end: r.endAt.toISOString(),
-                }))}
-                disabled={disabled}
-                disabledReason={disabledReason}
-              />
-            </div>
-          );
-        })}
-        {instruments.length === 0 && (
-          <p className="text-sm text-muted">目前尚無可預約的儀器。</p>
-        )}
-      </section>
+      {/* 機台清單 + 搜尋(client 篩選,搜尋框讀 ?q= 供小幫手深連結) */}
+      <Suspense fallback={null}>
+        <InstrumentList instruments={items} />
+      </Suspense>
     </Container>
   );
 }

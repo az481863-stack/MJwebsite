@@ -14,14 +14,17 @@ import {
 
 export function KnowledgeForm({
   initialZh,
+  initialSupplement,
   initialEn,
   aiEnabled,
 }: {
   initialZh: string;
+  initialSupplement: string;
   initialEn: string;
   aiEnabled: boolean;
 }) {
   const [zh, setZh] = useState(initialZh);
+  const [supplement, setSupplement] = useState(initialSupplement);
   const [en, setEn] = useState(initialEn);
   const [dirty, setDirty] = useState(false);
   const [msg, setMsg] = useState<TextResult | null>(null);
@@ -70,7 +73,8 @@ export function KnowledgeForm({
           </button>
         </div>
         <p className="mt-1 text-sm text-muted">
-          「更新知識庫」會彙整全站已發布內容,經 AI 濃縮後<strong>整份覆蓋</strong>下方欄位(草稿/隱藏不納入)。
+          「更新知識庫」會彙整全站已發布內容,經 AI 濃縮後<strong>整份覆蓋</strong>此欄(草稿/隱藏不納入)。
+          你自己想補充的內容請寫在下方「手動補充」欄,更新時不會被蓋掉。
         </p>
         <textarea
           value={zh}
@@ -78,8 +82,27 @@ export function KnowledgeForm({
             setZh(e.target.value);
             setDirty(true);
           }}
-          rows={16}
-          placeholder="尚無內容。可點「更新知識庫」自動產生,或直接手動輸入。"
+          rows={14}
+          placeholder="尚無內容。可點「更新知識庫」自動產生。"
+          className="mt-3 w-full border border-line px-3 py-2.5 font-mono text-sm leading-relaxed outline-none focus:border-line-strong"
+        />
+      </section>
+
+      {/* 手動補充(不被自動彙整覆蓋) */}
+      <section className="border-t border-line pt-6">
+        <h2 className="text-lg font-semibold">手動補充(中文)</h2>
+        <p className="mt-1 text-sm text-muted">
+          你自己維護的補充說明(常見問答、注意事項等)。<strong>「更新知識庫」不會動到此欄</strong>;
+          聊天時會與上方「自動彙整」合併使用。
+        </p>
+        <textarea
+          value={supplement}
+          onChange={(e) => {
+            setSupplement(e.target.value);
+            setDirty(true);
+          }}
+          rows={10}
+          placeholder="在此輸入你想額外補充給聊天機器人的內容。"
           className="mt-3 w-full border border-line px-3 py-2.5 font-mono text-sm leading-relaxed outline-none focus:border-line-strong"
         />
       </section>
@@ -90,7 +113,7 @@ export function KnowledgeForm({
           <h2 className="text-lg font-semibold">英文知識庫</h2>
           <button
             type="button"
-            onClick={() => run("translate", () => translateToEnglish(zh))}
+            onClick={() => run("translate", () => translateToEnglish(zh, supplement))}
             disabled={pending || !aiEnabled}
             className={`${btn} border border-line hover:bg-foreground/[0.04]`}
           >
@@ -98,7 +121,7 @@ export function KnowledgeForm({
           </button>
         </div>
         <p className="mt-1 text-sm text-muted">
-          「由中文翻譯」會把<strong>目前中文欄位</strong>內容翻成英文並<strong>整份覆蓋</strong>下方欄位;也可手動編輯。英文提問時聊天取用此版本。
+          「由中文翻譯」會把<strong>「自動彙整 + 手動補充」合併後</strong>的中文翻成英文並<strong>整份覆蓋</strong>下方欄位;也可手動編輯。英文提問時聊天取用此版本。
         </p>
         <textarea
           value={en}
@@ -121,7 +144,7 @@ export function KnowledgeForm({
       <div className="flex items-center gap-4 border-t border-line pt-6">
         <button
           type="button"
-          onClick={() => run("save", () => saveKnowledge(zh, en))}
+          onClick={() => run("save", () => saveKnowledge(zh, supplement, en))}
           disabled={pending}
           className={`${btn} bg-foreground text-background hover:opacity-85`}
         >

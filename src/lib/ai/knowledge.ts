@@ -23,6 +23,7 @@ export async function aggregateSiteContent(): Promise<string> {
     courses,
     industryItems,
     highschool,
+    instruments,
   ] = await Promise.all([
     prisma.dashboardPost.findMany({ where: PUBLISHED, orderBy: { publishedDate: "desc" } }),
     prisma.publication.findMany({ where: PUBLISHED, orderBy: { year: "desc" } }),
@@ -33,6 +34,11 @@ export async function aggregateSiteContent(): Promise<string> {
     prisma.course.findMany({ where: PUBLISHED, orderBy: { sortOrder: "asc" } }),
     prisma.industryItem.findMany({ where: PUBLISHED, orderBy: { sortOrder: "asc" } }),
     prisma.highSchoolMessage.findFirst({ where: PUBLISHED, orderBy: { updatedAt: "desc" } }),
+    // 儀器非草稿/審核內容,以 deletedAt 軟刪除(無 status 欄位)。
+    prisma.instrument.findMany({
+      where: { deletedAt: null },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
   ]);
 
   const zh = dictionaries.zh;
@@ -81,6 +87,18 @@ export async function aggregateSiteContent(): Promise<string> {
         "某台儀器「現在」是否可約,請至儀器頁查看,聊天機器人不提供即時狀態。",
       ].join("\n"),
   );
+
+  // ── 儀器清單(供機器人回答「有沒有某台儀器」並給深連結)──
+  // 深連結格式:/instruments?q=<儀器名稱>,儀器頁會自動篩選並捲到該台。
+  // ⚠️ 只有清單內真的有的儀器才可給連結;清單沒有的要說「目前沒有」並引導聯絡頁,不可杜撰。
+  if (instruments.length) {
+    parts.push(
+      `# 儀器清單(可線上預約的儀器;問到某台請給連結 /instruments?q=儀器名稱)\n` +
+        instruments
+          .map((i) => `- ${i.name}:${i.purpose}(連結:/instruments?q=${encodeURIComponent(i.name)})`)
+          .join("\n"),
+    );
+  }
 
   // ── DB 已發布內容 ──
   if (dashboardPosts.length) {
@@ -151,6 +169,16 @@ export async function aggregateSiteContent(): Promise<string> {
   }
 
   return parts.join("\n\n");
+}
+
+// 把「自動彙整」與「手動補充」兩份中文知識合併成一份給模型的知識庫。
+// 聊天與翻譯皆以此合併結果為輸入,兩者留空時自然略過。
+export function combineKnowledgeZh(auto: string, supplement: string): string {
+  const a = (auto ?? "").trim();
+  const s = (supplement ?? "").trim();
+  if (!s) return a;
+  if (!a) return s;
+  return `${a}\n\n# 額外補充(人工維護)\n${s}`;
 }
 
 // 從 Tiptap doc JSON 遞迴抽出純文字(段落間以換行分隔)。

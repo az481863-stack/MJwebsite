@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAiEnabled } from "@/lib/ai/gemini";
-import { condenseKnowledge, translateKnowledge } from "@/lib/ai/knowledge";
+import { condenseKnowledge, translateKnowledge, combineKnowledgeZh } from "@/lib/ai/knowledge";
 
 export interface TextResult {
   ok: boolean;
@@ -34,12 +34,17 @@ export async function regenerateKnowledge(): Promise<TextResult> {
   }
 }
 
-export async function translateToEnglish(zhText: string): Promise<TextResult> {
+// 翻譯:把「自動彙整 + 手動補充」合併後的中文譯成英文(英文維持單欄)。
+export async function translateToEnglish(
+  zhText: string,
+  supplementZh: string,
+): Promise<TextResult> {
   if (!(await requireAdmin())) return { ok: false, message: "權限不足。" };
   if (!isAiEnabled()) return { ok: false, message: "AI 未啟用(未設定 GEMINI_API_KEY)。" };
-  if (!zhText.trim()) return { ok: false, message: "中文知識庫為空,無法翻譯。" };
+  const combined = combineKnowledgeZh(zhText, supplementZh);
+  if (!combined.trim()) return { ok: false, message: "中文知識庫為空,無法翻譯。" };
   try {
-    const text = await translateKnowledge(zhText);
+    const text = await translateKnowledge(combined);
     return { ok: true, message: "已翻譯為英文,請檢視後按「儲存」。", text };
   } catch {
     return { ok: false, message: "翻譯失敗,請稍後再試。" };
@@ -48,12 +53,14 @@ export async function translateToEnglish(zhText: string): Promise<TextResult> {
 
 export async function saveKnowledge(
   zhText: string,
+  supplementZh: string,
   enText: string,
 ): Promise<TextResult> {
   const me = await getCurrentMember();
   if (!me || !roleAtLeast(me.role, "ADMIN")) return { ok: false, message: "權限不足。" };
   const data = {
     chatbotKnowledgeZh: zhText,
+    chatbotSupplementZh: supplementZh,
     chatbotKnowledgeEn: enText,
     updatedBy: me.id,
   };
