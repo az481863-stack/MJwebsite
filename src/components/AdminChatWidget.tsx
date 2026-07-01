@@ -1,22 +1,22 @@
 "use client";
 
-// 階段七:前台 AI 聊天機器人浮動視窗。
-// 多輪對話 + 串流逐字顯示;對話僅存當次工作階段(state),不存 DB。
-// 語言跟隨前台 [EN/中文] 切換;送 lang 給 API 以取對應知識庫。
-// 僅在 layout 依 showChatbot + isAiEnabled() 掛載。
+// 後台「管理員小幫手」浮動視窗(僅掛載於 /admin/guide 使用說明頁)。
+// 與前台「實驗室小幫手」區隔:Emerald 綠色、後台淺色介面、打 /api/admin-chat、繁中固定。
+// 依「使用說明」內容回答後台操作問題;多輪對話 + 串流,僅存當次工作階段。
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { useLanguage } from "@/lib/i18n/context";
+
+const ACCENT = "#059669"; // emerald-600
+const ON_ACCENT = "#ffffff";
 
 interface Msg {
   role: "user" | "model";
   text: string;
 }
 
-export function ChatWidget() {
-  const { lang, t } = useLanguage();
-  const pathname = usePathname();
+const GREETING = "嗨,我是管理員小幫手。你可以問我後台怎麼操作(發布內容、審核草稿、邀請會員、管理儀器等),我會依「使用說明」回答。";
+
+export function AdminChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -36,18 +36,18 @@ export function ChatWidget() {
     setBusy(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/admin-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, lang }),
+        body: JSON.stringify({ messages: history }),
       });
 
       if (res.status === 429) {
-        appendToLast(t.chat.rateLimited);
+        appendToLast("訊息太頻繁,請稍後再試。");
         return;
       }
       if (!res.ok || !res.body) {
-        appendToLast(t.chat.error);
+        appendToLast("抱歉,暫時無法回應。");
         return;
       }
 
@@ -59,13 +59,12 @@ export function ChatWidget() {
         appendToLast(decoder.decode(value, { stream: true }));
       }
     } catch {
-      appendToLast(t.chat.error);
+      appendToLast("抱歉,暫時無法回應。");
     } finally {
       setBusy(false);
     }
   }
 
-  // 把串流文字接到最後一則(model)訊息。
   function appendToLast(delta: string) {
     setMessages((prev) => {
       const next = [...prev];
@@ -78,31 +77,21 @@ export function ChatWidget() {
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // 正在用輸入法組字(中文/日文等)時的 Enter 是「確認選字」,不可當送出,
-    // 否則會送出又把剛確認的字補回輸入框(看起來像沒清空)。
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       send();
     }
   }
 
-  // 實驗室小幫手只出現在前台公開頁;後台/會員/登入等頁面不顯示
-  // (後台改由「管理員小幫手」負責,見 admin/layout.tsx)。
-  const BACKEND_PREFIXES = ["/admin", "/account", "/login", "/setup", "/invite", "/auth"];
-  if (BACKEND_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return null;
-  }
-
   return (
     <>
-      {/* 浮動開關按鈕 */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={t.chat.open}
+          aria-label="開啟管理員小幫手"
           className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105"
-          style={{ background: "var(--accent)", color: "#06121a" }}
+          style={{ background: ACCENT, color: ON_ACCENT }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
@@ -110,26 +99,28 @@ export function ChatWidget() {
         </button>
       )}
 
-      {/* 聊天面板 */}
       {open && (
-        <div className="band-dark fixed bottom-5 right-5 z-50 flex h-[32rem] max-h-[80vh] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col rounded-lg border border-line bg-background text-foreground shadow-2xl">
-          <header className="flex items-center justify-between border-b border-line px-4 py-3">
+        <div className="fixed bottom-5 right-5 z-50 flex h-[32rem] max-h-[80vh] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col rounded-lg border border-line bg-background text-foreground shadow-2xl">
+          <header
+            className="flex items-center justify-between rounded-t-lg px-4 py-3 text-white"
+            style={{ background: ACCENT }}
+          >
             <span className="flex items-center gap-2 text-sm font-semibold">
-              <span className="h-2 w-2 rounded-full" style={{ background: "var(--accent)" }} />
-              {t.chat.title}
+              <span className="h-2 w-2 rounded-full bg-white" />
+              管理員小幫手
             </span>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              aria-label={t.chat.close}
-              className="text-muted hover:text-foreground"
+              aria-label="關閉"
+              className="text-white/80 hover:text-white"
             >
               ✕
             </button>
           </header>
 
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
-            <Bubble role="model" text={t.chat.greeting} />
+            <Bubble role="model" text={GREETING} />
             {messages.map((m, i) => (
               <Bubble key={i} role={m.role} text={m.text} />
             ))}
@@ -145,17 +136,17 @@ export function ChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
                 rows={1}
-                placeholder={t.chat.placeholder}
+                placeholder="詢問後台操作…"
                 className="max-h-28 min-h-[2.5rem] flex-1 resize-none border border-line bg-transparent px-3 py-2 text-sm outline-none focus:border-line-strong"
               />
               <button
                 type="button"
                 onClick={send}
                 disabled={busy || !input.trim()}
-                className="shrink-0 px-3 py-2 text-sm font-medium disabled:opacity-50"
-                style={{ background: "var(--accent)", color: "#06121a" }}
+                className="shrink-0 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                style={{ background: ACCENT }}
               >
-                {t.chat.send}
+                送出
               </button>
             </div>
           </div>
@@ -171,9 +162,9 @@ function Bubble({ role, text }: { role: "user" | "model"; text: string }) {
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-relaxed ${
-          isUser ? "text-[#06121a]" : "border border-line bg-foreground/[0.04]"
+          isUser ? "text-white" : "border border-line bg-foreground/[0.04]"
         }`}
-        style={isUser ? { background: "var(--accent)" } : undefined}
+        style={isUser ? { background: ACCENT } : undefined}
       >
         {isUser ? text : renderRich(text)}
       </div>
@@ -181,8 +172,7 @@ function Bubble({ role, text }: { role: "user" | "model"; text: string }) {
   );
 }
 
-// 將模型輸出裡的 Markdown 連結 [文字](網址) 與裸 http(s) 連結渲染成可點擊。
-// 其餘維持純文字(外層 whitespace-pre-wrap 保留換行)。
+// 將模型輸出裡的 Markdown 連結與裸連結渲染成可點擊(其餘純文字)。
 function renderRich(text: string): React.ReactNode[] {
   const re = /\[([^\]]+)\]\(([^)\s]+)\)|(https?:\/\/[^\s]+)/g;
   const nodes: React.ReactNode[] = [];
@@ -200,7 +190,7 @@ function renderRich(text: string): React.ReactNode[] {
         href={href}
         {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         className="underline underline-offset-2"
-        style={{ color: "var(--accent)" }}
+        style={{ color: ACCENT }}
       >
         {label}
       </a>,

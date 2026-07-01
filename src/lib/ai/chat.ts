@@ -75,6 +75,56 @@ function buildSystemPrompt(lang: "zh" | "en", knowledge: string): string {
   ].join("\n");
 }
 
+// ── 管理員小幫手(後台「使用說明」頁專用) ──────────────────────
+// 定位:協助管理員/助教操作後台。只依「使用說明」內容回答,不代操作、不查即時 DB。
+// 後台一律中文;無 function calling、無工具(知識即說明頁全文,量小可直接放入)。
+
+function buildAdminSystemPrompt(guide: string): string {
+  const kb = guide.trim() || "(尚無使用說明內容)";
+  return [
+    "你是本網站「後台管理系統」的管理員小幫手,協助管理員/助教操作後台",
+    "(例如:發布內容、審核學生草稿、邀請會員、管理儀器、調整網站設定、維護聊天機器人知識庫等)。",
+    "規則:",
+    "- 只依據下方「使用說明」內容回答後台操作問題。",
+    "- 使用說明沒有寫到的,坦白說不確定,建議查看完整說明或詢問系統開發者;絕不杜撰功能、步驟或選單位置。",
+    "- 你只提供操作指引,不代替使用者執行任何動作,也不查詢即時資料。",
+    "- 與後台操作、本網站無關的問題,禮貌婉拒並把話題引回。",
+    "- 以繁體中文回答,簡潔、條列清楚、友善。",
+    "",
+    "=== 使用說明 ===",
+    kb,
+  ].join("\n");
+}
+
+// 串流回應(管理員小幫手):無工具,單輪串流。
+export async function* streamAdminChat(
+  messages: ChatMessage[],
+  guide: string,
+): AsyncGenerator<string> {
+  const ai = getClient();
+  const systemInstruction = buildAdminSystemPrompt(guide);
+  const contents = messages.map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
+
+  let yieldedAny = false;
+  const stream = await ai.models.generateContentStream({
+    model: MODEL,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    contents: contents as any,
+    config: { systemInstruction, temperature: 0.3 },
+  });
+  for await (const chunk of stream) {
+    const t = chunk.text;
+    if (t) {
+      yieldedAny = true;
+      yield t;
+    }
+  }
+  if (!yieldedAny) {
+    console.error("[admin-chat] model returned no text (possible safety block).");
+    yield "抱歉,我這次沒能產生回答,請重新描述問題,或查看上方完整使用說明。";
+  }
+}
+
 // 執行模型要求的工具呼叫。
 async function runTool(call: FunctionCall, lang: "zh" | "en"): Promise<string> {
   if (call.name === "getBlogContent") {
