@@ -50,7 +50,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
       <section className="border-t border-line pt-6">
         <h2 className="text-lg font-semibold">全站參數</h2>
         <label className="mt-4 block text-sm font-medium" htmlFor="instrumentMaxHours">
-          儀器預約總時數上限(小時,供階段五使用)
+          儀器預約總時數上限(小時)
         </label>
         <input
           id="instrumentMaxHours"
@@ -60,6 +60,32 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
           defaultValue={initial.instrumentMaxHours}
           className="mt-1.5 w-32 border border-line px-3 py-2.5 text-sm outline-none focus:border-line-strong"
         />
+
+        <p className="mt-6 text-sm font-medium">小幫手速率上限(同一 IP 的提問次數)</p>
+        <p className="mt-1 text-sm text-muted">
+          超過任一項即暫時擋下並隱藏小幫手;時間一過自動恢復。防止濫用與 AI 費用暴衝。
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {(
+            [
+              ["chatRateHour", "每小時", initial.chatRateHour],
+              ["chatRate6h", "每 6 小時", initial.chatRate6h],
+              ["chatRateDay", "每日", initial.chatRateDay],
+              ["chatRateMonth", "每月", initial.chatRateMonth],
+            ] as const
+          ).map(([name, label, value]) => (
+            <label key={name} className="block text-sm">
+              <span className="text-muted">{label}</span>
+              <input
+                name={name}
+                type="number"
+                min={1}
+                defaultValue={value}
+                className="mt-1 w-full border border-line px-3 py-2.5 text-sm outline-none focus:border-line-strong"
+              />
+            </label>
+          ))}
+        </div>
       </section>
 
       <section className="border-t border-line pt-6">

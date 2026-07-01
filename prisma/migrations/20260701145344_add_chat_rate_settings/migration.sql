@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "site_settings" ADD COLUMN     "chat_rate_6h" INTEGER NOT NULL DEFAULT 100,
+ADD COLUMN     "chat_rate_day" INTEGER NOT NULL DEFAULT 150,
+ADD COLUMN     "chat_rate_hour" INTEGER NOT NULL DEFAULT 50,
+ADD COLUMN     "chat_rate_month" INTEGER NOT NULL DEFAULT 500;

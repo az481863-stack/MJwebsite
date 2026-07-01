@@ -22,8 +22,12 @@ export async function saveSettings(
   }
 
   const bool = (k: string) => formData.get(k) === "on";
-  const hours = parseInt(String(formData.get("instrumentMaxHours") ?? "24"), 10);
-  const instrumentMaxHours = Number.isFinite(hours) && hours > 0 ? hours : 24;
+  // 正整數(≥1),非法則回預設值。
+  const posInt = (k: string, def: number) => {
+    const n = parseInt(String(formData.get(k) ?? ""), 10);
+    return Number.isFinite(n) && n > 0 ? n : def;
+  };
+  const instrumentMaxHours = posInt("instrumentMaxHours", 24);
 
   const accentRaw = String(formData.get("siteAccent") ?? "");
   const siteAccent = isAccentKey(accentRaw) ? accentRaw : DEFAULT_ACCENT;
@@ -40,6 +44,10 @@ export async function saveSettings(
     showHighschool: bool("showHighschool"),
     showChatbot: bool("showChatbot"),
     instrumentMaxHours,
+    chatRateHour: posInt("chatRateHour", 50),
+    chatRate6h: posInt("chatRate6h", 100),
+    chatRateDay: posInt("chatRateDay", 150),
+    chatRateMonth: posInt("chatRateMonth", 500),
     siteAccent,
     homeHeroTitleZh: text("homeHeroTitleZh"),
     homeHeroTitleEn: text("homeHeroTitleEn"),

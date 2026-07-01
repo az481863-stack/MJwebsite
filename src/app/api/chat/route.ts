@@ -9,7 +9,7 @@ import { isAiEnabled } from "@/lib/ai/gemini";
 import { streamChat, type ChatMessage } from "@/lib/ai/chat";
 import { combineKnowledgeZh } from "@/lib/ai/knowledge";
 import { getSettings } from "@/lib/settings";
-import { checkRateLimit } from "@/lib/ratelimit";
+import { checkRateLimit, chatRateWindows } from "@/lib/ratelimit";
 import { isIpBlocked, logChatMessage } from "@/lib/chatlog";
 import { hashIp } from "@/lib/iphash";
 
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "blocked" }, { status: 403 });
   }
 
-  const rate = await checkRateLimit("chat", ipHash);
+  const rate = await checkRateLimit("chat", ipHash, chatRateWindows(settings));
   if (!rate.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

@@ -13,13 +13,31 @@ export interface RateWindow {
   label: string; // 供錯誤訊息/log 辨識
 }
 
+const HOUR = 60 * 60 * 1000;
+
 // 前台聊天預設:同一 IP 每小時 50、每 6 小時 100、每日 150、每月 500。
+// 上限值可於後台「網站設定」調整(見 chatRateWindows);此常數為 fallback 預設。
 export const CHAT_RATE_WINDOWS: RateWindow[] = [
-  { ms: 60 * 60 * 1000, max: 50, label: "hour" },
-  { ms: 6 * 60 * 60 * 1000, max: 100, label: "6h" },
-  { ms: 24 * 60 * 60 * 1000, max: 150, label: "day" },
-  { ms: 30 * 24 * 60 * 60 * 1000, max: 500, label: "month" },
+  { ms: HOUR, max: 50, label: "hour" },
+  { ms: 6 * HOUR, max: 100, label: "6h" },
+  { ms: 24 * HOUR, max: 150, label: "day" },
+  { ms: 30 * 24 * HOUR, max: 500, label: "month" },
 ];
+
+// 依後台設定的上限值組出各時間窗(供 /api/chat 與 layout 使用)。
+export function chatRateWindows(s: {
+  chatRateHour: number;
+  chatRate6h: number;
+  chatRateDay: number;
+  chatRateMonth: number;
+}): RateWindow[] {
+  return [
+    { ms: HOUR, max: s.chatRateHour, label: "hour" },
+    { ms: 6 * HOUR, max: s.chatRate6h, label: "6h" },
+    { ms: 24 * HOUR, max: s.chatRateDay, label: "day" },
+    { ms: 30 * 24 * HOUR, max: s.chatRateMonth, label: "month" },
+  ];
+}
 
 export interface RateResult {
   ok: boolean;

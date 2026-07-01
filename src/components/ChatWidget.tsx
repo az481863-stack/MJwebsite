@@ -139,6 +139,10 @@ export function ChatWidget() {
           </div>
 
           <div className="border-t border-line p-3">
+            <p className="mb-2 flex items-start gap-1 text-[11px] leading-snug text-muted">
+              <span aria-hidden>⚠️</span>
+              <span>{t.chat.privacyNotice}</span>
+            </p>
             <div className="flex items-end gap-2">
               <textarea
                 value={input}

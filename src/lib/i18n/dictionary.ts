@@ -140,6 +140,7 @@ export interface Dictionary {
     greeting: string;
     error: string;
     rateLimited: string;
+    privacyNotice: string;
   };
 }
 
@@ -403,6 +404,7 @@ Email:____`,
     greeting: "你好!我是實驗室客服小幫手,可以回答研究方向、如何應徵、儀器預約規則、聯絡方式等問題。",
     error: "抱歉,暫時無法回應,請稍後再試。",
     rateLimited: "詢問太頻繁了,請稍後再試。",
+    privacyNotice: "請勿輸入身分證字號、信用卡、密碼等敏感個資。",
   },
 };
 
@@ -668,6 +670,8 @@ Email: ____`,
     greeting: "Hi! I'm the lab's assistant. I can answer questions about our research, how to apply, instrument booking rules, contact info, and more.",
     error: "Sorry, I can't respond right now. Please try again later.",
     rateLimited: "Too many messages — please try again later.",
+    privacyNotice:
+      "Please do not enter sensitive personal data such as ID numbers, credit cards, or passwords.",
   },
 };
 

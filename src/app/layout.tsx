@@ -9,7 +9,7 @@ import { getSettings } from "@/lib/settings";
 import { accentHex } from "@/lib/accent";
 import { isAiEnabled } from "@/lib/ai/gemini";
 import { isIpBlocked } from "@/lib/chatlog";
-import { isRateLimited } from "@/lib/ratelimit";
+import { isRateLimited, chatRateWindows } from "@/lib/ratelimit";
 import { hashIp } from "@/lib/iphash";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -58,7 +58,7 @@ export default async function RootLayout({
   const chatbotEnabled =
     baseChatbotEnabled &&
     !(await isIpBlocked(visitorHash)) &&
-    !(await isRateLimited("chat", visitorHash));
+    !(await isRateLimited("chat", visitorHash, chatRateWindows(settings)));
 
   return (
     <html
