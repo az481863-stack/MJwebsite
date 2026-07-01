@@ -174,6 +174,8 @@ model DashboardPost {
   linkText      String?           @map("link_text")
   linkTextEn    String?           @map("link_text_en")
   publishedDate DateTime          @map("published_date")
+  expiresAt     DateTime?         @map("expires_at") // 過期日(預設發布日 +7 天);過期後前台不顯示、後台入過期區
+  sortOrder     Int               @default(0) @map("sort_order")
   status        ContentStatus     @default(DRAFT)
 
   createdAt DateTime  @default(now()) @map("created_at")

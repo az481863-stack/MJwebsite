@@ -11,8 +11,13 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const [posts, settings] = await Promise.all([
     prisma.dashboardPost.findMany({
-      where: { status: "PUBLISHED", deletedAt: null },
-      orderBy: { publishedDate: "desc" },
+      where: {
+        status: "PUBLISHED",
+        deletedAt: null,
+        // 未過期(null 視為未過期)才顯示。
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      orderBy: [{ sortOrder: "asc" }, { publishedDate: "desc" }],
       take: 5,
     }),
     getSettings(),

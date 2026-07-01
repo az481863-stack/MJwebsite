@@ -46,7 +46,8 @@
 | 4.1 | 聯絡資訊後台維護 | 聯絡頁實驗室名稱/地址/Email/電話/辦公時間改為後台 Settings 可編輯 | ✅ |
 | 4.2 | 全站排序一律拖曳 | 課程/職缺/產學也改拖曳排序;抽通用 `SortableAdminList`;移除各表單手填排序數字 | ✅ |
 | 4.3 | 課程/產學/給高中生的話 英文欄 | 三者加英文欄 + 一鍵 AI 翻譯;前台依語系切換、空值 fallback 中文 | ✅ |
-| 4.4 | 研究領域首頁/研究頁一致 | 兩頁研究領域(標題/引言/卡片)改用同一份後台資料 + 共用直式清單元件(padding 減半、間距縮小) | ✅ |
+| 4.4 | 研究領域首頁/研究頁一致 | 兩頁研究領域(標題/引言/卡片)改用同一份後台資料 + 共用直式清單元件(padding 減半、間距縮小);研究領域列加 hover 動效 | ✅ |
+| 4.5 | 動態佈告欄過期 + 拖曳 | 加過期日(預設發布日 +7 天),過期入過期區;未過期未刪除可拖曳排序 | ✅ |
 
 ---
 
@@ -170,3 +171,10 @@
 - 作法:抽共用元件 `src/components/ResearchAreas.tsx`(直式編號清單,`p-4` 半 padding、`space-y-px` 緊湊),吃 Settings 的 `homeResearchAreasZh/En`(留空 fallback 首頁字典)。
 - 首頁 `home-content.tsx` 移除原 3 欄 grid、改用 `ResearchAreas`;研究頁 `research-content.tsx` 原本吃 `t.research.areas`(不同內容)改為吃同一份 Settings 資料(`research/page.tsx` 傳入)。兩頁自此完全一致、單一維護點(後台 → 設定 → 首頁文字 → 研究領域)。
 - 附帶:直式清單無空格,首頁不再出現奇數灰色空框。
+
+### 4.5 動態佈告欄:過期日 + 拖曳排序(2026-07-01 完成)
+- `DashboardPost` 加 `expiresAt DateTime?` 與 `sortOrder Int`,migration `add_dashboard_expiry_sort`(並回填既有資料 expires_at = published_date + 7 天)。
+- 過期日:表單新增「過期日」欄位,**留空則預設發布日 +7 天**(`computeExpiry`);actions create/update 一併存。
+- 後台三區:有效(未過期未刪除,**可拖曳排序**)/ 已過期(可編輯延長或刪除,不可拖曳)/ 已刪除。`SortableAdminList` 新增可選 `expired` 區塊。拖曳沿用通用 `reorderContent("dashboardPost", ids)`。
+- 前台首頁:只顯示**未過期**(null 視為未過期)且已發布,排序改 `sortOrder asc`(拖曳結果)→ `publishedDate desc`,取前 5。
+- 檔案:`prisma/schema.prisma`、`src/app/admin/dashboard-posts/{page,actions,dashboard-post-form,[id]/page}.tsx`、`src/app/admin/sortable-admin-list.tsx`、`src/app/page.tsx`。

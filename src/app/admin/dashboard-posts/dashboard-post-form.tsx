@@ -19,6 +19,7 @@ export interface DashboardPostInitial {
   linkText: string | null;
   linkTextEn: string | null;
   publishedDate: string; // YYYY-MM-DD
+  expiresAt: string; // YYYY-MM-DD;空字串 = 用預設(發布日 +7 天)
 }
 
 const field =
@@ -158,6 +159,22 @@ export function DashboardPostForm({
           defaultValue={initial?.publishedDate}
           className={field}
         />
+      </div>
+
+      <div>
+        <label className={label} htmlFor="expiresAt">
+          過期日
+        </label>
+        <input
+          id="expiresAt"
+          name="expiresAt"
+          type="date"
+          defaultValue={initial?.expiresAt}
+          className={field}
+        />
+        <p className="mt-1 text-xs text-muted">
+          留空則預設為發布日 7 天後。過期後前台不再顯示,後台移入「已過期」區。
+        </p>
       </div>
 
       <ImageUpload name="imageUrl" folder="dashboard" defaultUrl={initial?.imageUrl} />
