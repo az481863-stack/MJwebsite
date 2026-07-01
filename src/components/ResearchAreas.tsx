@@ -31,7 +31,7 @@ export function ResearchAreas({
       {areas.map((area, i) => (
         <div
           key={i}
-          className="flex flex-col gap-1 bg-background p-4 sm:flex-row sm:gap-6"
+          className="flex flex-col gap-1 bg-background p-4 transition-[padding,background] hover:bg-accent/[0.06] hover:pl-6 sm:flex-row sm:gap-6"
         >
           <span className="font-mono text-sm text-accent sm:w-12">
             {String(i + 1).padStart(2, "0")}
