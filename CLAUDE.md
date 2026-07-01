@@ -620,6 +620,11 @@
   - 改動:(1) [route.ts](src/app/api/chat/route.ts) 的 catch 改 `console.error("[chat] streamChat failed:", err)`;(2) [chat.ts](src/lib/ai/chat.ts) `streamChat` 追蹤是否吐過文字,**模型全程無文字(多為 safety filter 擋掉)或工具迴圈跑滿 3 輪仍無答案時**,回一句 fallback(引導聯絡頁)並記 log,取代原本的「靜默空白回覆」。
   - 除錯心法:下次出現無法回覆,到 Vercel → Functions/Logs 找 `[chat]` 開頭訊息即可定位真兇(逾時 / safety / 工具例外 / 金鑰),不必再猜。付費層下的間歇失敗最可能為串流逾時或 safety 擋回應,與用量無關。
   - 提醒:AI 相關 server 端錯誤一律**至少 `console.error` 保留**,勿再用空 catch 吞掉(否則正式站問題無從追查)。
+  - **真兇確認(同日,本機重現)**:log 明確吐出 `429 RESOURCE_EXHAUSTED`,`quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier`、`limit: 20`。即這支 `GEMINI_API_KEY` 所屬的 Google Cloud 專案**未啟用 API billing,仍在免費層(gemini-2.5-flash 每天 20 次)**,用完整天 429、隔天重置 → 正是「有時無法回覆」的間歇現象。
+    - ⚠️ **關鍵誤區**:吳教授帳號綁的是 **Gemini App 消費端訂閱(AI Pro / Plus,每月固定費)**,與 **Gemini API(按 token 計費、綁 Google Cloud billing)是兩套完全獨立的計費**,App 訂閱對 API 金鑰額度**毫無幫助**。
+    - **解法(不改程式)**:到 Google AI Studio 找這支金鑰所屬專案 → Google Cloud Console 幫**該專案**啟用 billing(綁卡),金鑰即自動升付費層。務必確認「綁 billing 的專案」與「金鑰所屬專案」是同一個(AI Studio 常自動建無 billing 的新專案)。
+    - **成本評估**:以一天 200 次估,gemini-2.5-flash 付費層月費約 US$8–28(典型 ~NT$500);訪客少實際多半遠低於此。這是**獨立於 App 訂閱、需綁教授名下的另一筆帳單**(交接時與 Resend/Supabase 並列說明)。
+  - **快取(context caching)評估:暫不做**。知識庫每次請求都隨 system prompt 重送(無狀態 API 本質),是主要 input 成本。但:(1) **Gemini 2.5 隱式快取預設開啟、零程式碼、無儲存費**,穩定前綴(護欄+知識庫)已自動享折扣;三個獨立快取桶(前台中/前台英/後台 adminGuide)各自快取、本就不需共用。(2) **顯式快取**在本專案量級「快取獎金」天花板僅個位數美元/月,且該折扣隱式已免費拿走,顯式反而多付儲存費(~$1/1M/hr),淨差幾乎打平或更貴,又要多維護快取生命週期 → 不划算,違反「AI 為加分項、別過度工程」。日後量真的大、帳單有感再議。
 
 ### 後台「使用說明」頁 + 管理員小幫手(2026-07-01)
 > 需求:後台新增一個「使用說明」頁,供未來接手的管理員閱讀後台操作指引;並在該頁提供**專用的 AI 管理員小幫手**(與前台「實驗室小幫手」區隔、顏色不同),該頁**不顯示**前台實驗室小幫手。
