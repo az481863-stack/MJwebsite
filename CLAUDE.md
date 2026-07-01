@@ -615,6 +615,12 @@
 - 共新增 migration:home_editable_text、home_research_editable、alumnus_photo、dashboard_en、instrument_job_blog_en、team_tiers、contact_settings。
 - 提醒:本輪大量改 schema,**每次 migrate/generate 後務必重啟 dev server**(Turbopack 不熱重載 Prisma client,否則儲存報 Unknown argument,見階段零提醒)。
 
+- **後記(2026-07-01):聊天機器人「無法回覆」除錯性強化**(commit `abcad52`)
+  - 緣由:教授回報 AI 小幫手有時無法回覆;用的是 Gemini 付費金鑰、用量未達上限,故排除免費層速率限制。查程式發現 `/api/chat` 的 catch 是 `catch {}`,**把真正錯誤整個吞掉、連 log 都沒有**,無從判斷是逾時 / safety filter / 工具例外 / 金鑰。
+  - 改動:(1) [route.ts](src/app/api/chat/route.ts) 的 catch 改 `console.error("[chat] streamChat failed:", err)`;(2) [chat.ts](src/lib/ai/chat.ts) `streamChat` 追蹤是否吐過文字,**模型全程無文字(多為 safety filter 擋掉)或工具迴圈跑滿 3 輪仍無答案時**,回一句 fallback(引導聯絡頁)並記 log,取代原本的「靜默空白回覆」。
+  - 除錯心法:下次出現無法回覆,到 Vercel → Functions/Logs 找 `[chat]` 開頭訊息即可定位真兇(逾時 / safety / 工具例外 / 金鑰),不必再猜。付費層下的間歇失敗最可能為串流逾時或 safety 擋回應,與用量無關。
+  - 提醒:AI 相關 server 端錯誤一律**至少 `console.error` 保留**,勿再用空 catch 吞掉(否則正式站問題無從追查)。
+
 ### 交付與交接
 - 完成日期:
 - 實際與規格的偏差:
