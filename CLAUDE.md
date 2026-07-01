@@ -227,7 +227,7 @@
 - 動態佈告欄、Publications、現役成員、校友、職缺管理、Blog、課程紀錄、**產學與專利**、**給高中生的話**。
 - **Blog 內文**採用 **Tiptap**(富文本編輯器,中英雙版)。**Publications 為結構化欄位**(作者/標題/期刊/年份/DOI/精選),無內文 body,故不使用 Tiptap(原規格「Blog 與 Publications 採 Tiptap」已依實作修正:Publications 無 body 可富文本化)。
 - 學生建草稿 → 管理員以上審核發布。
-- **設定頁(Settings)**:管理頁面層級的雜項與**通用「顯示/隱藏」開關**——任一頁面(如產學與專利、給高中生的話,乃至未上線的儀器頁)皆可由開關控制是否於前台顯示。亦含**儀器預約總時數上限**(預設 24 小時,供階段五使用)等全站參數。
+- **設定頁(Settings)**:管理頁面層級的雜項與**通用「顯示/隱藏」開關**——任一頁面(如產學與專利、給高中生的話,乃至未上線的儀器頁)皆可由開關控制是否於前台顯示。亦含**儀器預約總時數上限**(預設 24 小時)與**小幫手速率上限**(每小時/6 小時/日/月)等全站參數。
   - 〔adjustment 輪追加:Settings 另含**首頁文字**(Hero 標題/副標、PI 理念、研究領域標題/引言/卡片)與**聯絡資訊**(名稱/地址/Email/電話/辦公時間)的可編輯欄位,中英分填、留空 fallback 字典。沿革見開發日誌。〕
 
 **測試通過條件**
@@ -326,7 +326,7 @@
 - **護欄**:system prompt 限定「只依知識庫回答與本實驗室/網站相關問題;知識庫沒有的就說不知道並引導至聯絡頁,不得杜撰人名/論文/數據;涉及即時資料(如某儀器現在是否可約)一律引導至對應頁面,不臆測」。
 - **語系**:回答語言跟隨使用者提問語言(中文知識庫 → 英文問則翻譯作答);介面文案跟隨前台 [EN/中文] 切換。
 - **開關**:`isAiEnabled()`(未設 `GEMINI_API_KEY` 即不渲染聊天入口)+ Settings 的 `showChatbot` 顯示/隱藏開關(沿用階段三「頁面顯示/隱藏」範式)。
-- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):**多段 IP 速率限制(DB 持久化)** + 單則訊息長度上限 + 單輪對話則數上限。限流為同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500,任一窗超限即擋;存 DB 故跨 serverless 實例與冷啟動皆準(取代原記憶體版,見 `src/lib/ratelimit.ts`)。搭配 Google AI Studio 端「月花費上限」兜底燒錢攻擊。
+- **防濫用**(聊天為公開、訪客可用,暴露面比階段六大):**多段 IP 速率限制(DB 持久化)** + 單則訊息長度上限 + 單輪對話則數上限。限流為同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500(**四個上限值皆於後台「網站設定 → 全站參數」可調**,預設如前),任一窗超限即擋並隱藏小幫手;存 DB 故跨 serverless 實例與冷啟動皆準(見 `src/lib/ratelimit.ts`)。搭配 Google AI Studio 端「月花費上限」兜底燒錢攻擊。
 
 ### 模組與檔案
 - AI 程式集中 `src/lib/ai/chat.ts`(Gemini streaming + function calling + 組 system prompt)與 `src/lib/ai/knowledge.ts`(彙整全站內容 + 呼叫 Gemini 濃縮 + `getBlogContentByQuery` 供工具呼叫);與階段六 `gemini.ts` 同風格,換模型只動 AI 模組。
@@ -630,6 +630,7 @@
     - **封鎖生效 + 到量隱藏**:root `layout.tsx` 讀訪客 IP,`isIpBlocked` 命中**或** `isRateLimited("chat")` 已達任一窗上限,即不掛 `ChatWidget`(「到達上限直接隱藏小幫手」);`/api/chat` 亦擋(封鎖 403、限流 429,雙保險)。留存於 `/api/chat`:記使用者訊息 + 串流結束後記完整回覆(fire-and-forget、內建 try/catch,不影響聊天)。`isRateLimited` 為 `ratelimit.ts` 新增的**唯讀**檢查(不記錄),供 layout 用。
     - **🔒 只存雜湊 IP(隱私,後續加強)**:教授查得「IP↔對話」屬個資,故 `ChatLog`/`IpBlock`/`RateHit` 一律存**帶密鑰(pepper)的 SHA-256 雜湊**,不存原始 IP(`src/lib/iphash.ts` 的 `hashIp`,密鑰 `IP_HASH_SECRET`)。**關鍵**:單純雜湊 IPv4(2^32)可暴力還原,故必須加只有伺服器知道的密鑰才真正不可逆。Prisma 欄位改名 `ipHash` 但 `@map("ip")` 保留原 DB 欄位 → **無需 migration**。代價:後台看不到真實 IP,只見雜湊前綴(分組/封鎖照常)。換 `IP_HASH_SECRET` 會使既有雜湊全部失聯(封鎖/分組重置)。**Vercel 需新增 `IP_HASH_SECRET`**(見 `docs/env-vars.md`)。
     - **隱私/保留**:對話為個資,**90 天由 `/api/cron` 自動清理**(`purgeOldChatLogs`);雜湊後仍是弱識別(同一 IP 常多人共用且會變動),封鎖屬**軟性勸退**非可靠存取控制,後台頁已明示此限制。日期運算一律以台灣 UTC+8 當地日計(`taiwanDayRangeUtc`)。
+  - **小幫手速率上限改後台可調(同日)**:原四段窗上限(50/100/150/500)寫死於 `ratelimit.ts`;應教授要求改為 `SiteSettings` 的 `chatRateHour/6h/Day/Month` 四欄(migration `add_chat_rate_settings`),於「網站設定 → 全站參數」可編輯。`ratelimit.ts` 新增 `chatRateWindows(settings)` 依設定組窗;`/api/chat` 與 `layout` 皆改傳此動態窗(`CHAT_RATE_WINDOWS` 常數保留為 fallback 預設)。同時把設定頁「儀器預約總時數上限」label 的「(供階段五使用)」字樣移除。
   - **快取(context caching)評估:暫不做**。知識庫每次請求都隨 system prompt 重送(無狀態 API 本質),是主要 input 成本。但:(1) **Gemini 2.5 隱式快取預設開啟、零程式碼、無儲存費**,穩定前綴(護欄+知識庫)已自動享折扣;三個獨立快取桶(前台中/前台英/後台 adminGuide)各自快取、本就不需共用。(2) **顯式快取**在本專案量級「快取獎金」天花板僅個位數美元/月,且該折扣隱式已免費拿走,顯式反而多付儲存費(~$1/1M/hr),淨差幾乎打平或更貴,又要多維護快取生命週期 → 不划算,違反「AI 為加分項、別過度工程」。日後量真的大、帳單有感再議。
 
 ### 後台「使用說明」頁 + 管理員小幫手(2026-07-01)

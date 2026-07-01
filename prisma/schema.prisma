@@ -402,7 +402,13 @@ model SiteSettings {
   contactOfficeHoursEn  String @default("") @map("contact_office_hours_en")
 
   // 全站參數
-  instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 階段五:預約總時數上限
+  instrumentMaxHours Int @default(24) @map("instrument_max_hours") // 儀器預約總時數上限
+
+  // 前台小幫手多段 IP 速率上限(同一 IP)。0/未設沿用預設。見 src/lib/ratelimit.ts。
+  chatRateHour  Int @default(50) @map("chat_rate_hour") // 每小時
+  chatRate6h    Int @default(100) @map("chat_rate_6h") // 每 6 小時
+  chatRateDay   Int @default(150) @map("chat_rate_day") // 每日
+  chatRateMonth Int @default(500) @map("chat_rate_month") // 每月
 
   // 前台 Dark Optics 主題的重點色(存色票 key,見 src/lib/accent.ts)
   siteAccent String @default("cyan") @map("site_accent")

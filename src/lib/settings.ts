@@ -13,6 +13,10 @@ export interface SiteSettingsData {
   showIndustry: boolean;
   showHighschool: boolean;
   instrumentMaxHours: number;
+  chatRateHour: number;
+  chatRate6h: number;
+  chatRateDay: number;
+  chatRateMonth: number;
   siteAccent: string;
   showChatbot: boolean;
   chatbotKnowledgeZh: string;
@@ -50,6 +54,10 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   showIndustry: true,
   showHighschool: true,
   instrumentMaxHours: 24,
+  chatRateHour: 50,
+  chatRate6h: 100,
+  chatRateDay: 150,
+  chatRateMonth: 500,
   siteAccent: DEFAULT_ACCENT,
   showChatbot: false,
   chatbotKnowledgeZh: "",
@@ -93,6 +101,10 @@ export async function getSettings(): Promise<SiteSettingsData> {
       showIndustry: s.showIndustry,
       showHighschool: s.showHighschool,
       instrumentMaxHours: s.instrumentMaxHours,
+      chatRateHour: s.chatRateHour,
+      chatRate6h: s.chatRate6h,
+      chatRateDay: s.chatRateDay,
+      chatRateMonth: s.chatRateMonth,
       siteAccent: s.siteAccent,
       showChatbot: s.showChatbot,
       chatbotKnowledgeZh: s.chatbotKnowledgeZh,
