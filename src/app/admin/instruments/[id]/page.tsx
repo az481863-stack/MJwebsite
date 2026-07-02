@@ -45,7 +45,9 @@ export default async function InstrumentDetailPage({
   await reconcile();
 
   const isAdmin = roleAtLeast(me.role, "ADMIN");
-  const allowed = isAdmin || (await isManagerOf(me.id, id));
+  // 綜覽頁僅「該儀器負責人」與「最高權限者」可進;一般管理員(助教)若非該台負責人不可。
+  const allowed =
+    roleAtLeast(me.role, "SUPERADMIN") || (await isManagerOf(me.id, id));
   if (!allowed) redirect("/admin/instruments");
 
   const inst = await prisma.instrument.findFirst({

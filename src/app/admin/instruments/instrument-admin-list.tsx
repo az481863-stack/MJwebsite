@@ -32,6 +32,7 @@ export interface InstrumentRow {
   id: string;
   name: string;
   maintenance: boolean;
+  canView: boolean; // 是否可進該儀器綜覽頁(該台負責人或最高權限者)
   anomaly: string | null; // 最新機況回報異常時的燈號(🟡/🔴),正常則 null
   photoUrl: string | null;
   inUse: number;
@@ -78,17 +79,28 @@ function Row({ item }: { item: InstrumentRow }) {
             </div>
           )}
           <div className="min-w-0">
-            <Link
-              href={`/admin/instruments/${item.id}`}
-              className="font-medium underline-offset-4 hover:underline"
-            >
-              {item.maintenance ? "🟡" : "🟢"} {item.name}
-              {item.anomaly && (
-                <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
-                  ❗{item.anomaly}
-                </span>
-              )}
-            </Link>
+            {item.canView ? (
+              <Link
+                href={`/admin/instruments/${item.id}`}
+                className="font-medium underline-offset-4 hover:underline"
+              >
+                {item.maintenance ? "🟡" : "🟢"} {item.name}
+                {item.anomaly && (
+                  <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                    ❗{item.anomaly}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <span className="font-medium">
+                {item.maintenance ? "🟡" : "🟢"} {item.name}
+                {item.anomaly && (
+                  <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                    ❗{item.anomaly}
+                  </span>
+                )}
+              </span>
+            )}
             <p className="mt-1 text-sm text-muted">
               使用中 {item.inUse} · 逾時未簽退 {item.overdue}
             </p>
@@ -102,12 +114,14 @@ function Row({ item }: { item: InstrumentRow }) {
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-sm">
-          <Link
-            href={`/admin/instruments/${item.id}`}
-            className="text-muted underline-offset-4 hover:text-foreground hover:underline"
-          >
-            綜覽
-          </Link>
+          {item.canView && (
+            <Link
+              href={`/admin/instruments/${item.id}`}
+              className="text-muted underline-offset-4 hover:text-foreground hover:underline"
+            >
+              綜覽
+            </Link>
+          )}
           <Link
             href={`/admin/instruments/${item.id}/edit`}
             className="text-muted underline-offset-4 hover:text-foreground hover:underline"

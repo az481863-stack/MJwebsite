@@ -29,8 +29,13 @@ export default async function InstrumentsAdminPage() {
 
   const nowMs = new Date().getTime();
   const isAdmin = roleAtLeast(me.role, "ADMIN");
-  const managedIds = isAdmin ? [] : await managedInstrumentIds(me.id);
+  const isSuper = roleAtLeast(me.role, "SUPERADMIN");
+  const managedIds = await managedInstrumentIds(me.id);
   if (!isAdmin && managedIds.length === 0) redirect("/admin");
+
+  // 綜覽頁僅該台負責人與最高權限者可進;據此決定列表上「綜覽/名稱」是否為可點連結。
+  const managedSet = new Set(managedIds);
+  const canView = (iid: string) => isSuper || managedSet.has(iid);
 
   const instruments = await prisma.instrument.findMany({
     where: {
@@ -121,6 +126,7 @@ export default async function InstrumentsAdminPage() {
             id: inst.id,
             name: inst.name,
             maintenance: inst.status === "MAINTENANCE",
+            canView: canView(inst.id),
             anomaly: anomalyEmoji(inst.id),
             photoUrl: inst.photoUrl,
             inUse: inst.reservations.filter((r) => r.status === "IN_USE").length,
@@ -157,17 +163,28 @@ export default async function InstrumentsAdminPage() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <Link
-                      href={`/admin/instruments/${inst.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {inst.status === "MAINTENANCE" ? "🟡" : "🟢"} {inst.name}
-                      {anomalyEmoji(inst.id) && (
-                        <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
-                          ❗{anomalyEmoji(inst.id)}
-                        </span>
-                      )}
-                    </Link>
+                    {canView(inst.id) ? (
+                      <Link
+                        href={`/admin/instruments/${inst.id}`}
+                        className="font-medium underline-offset-4 hover:underline"
+                      >
+                        {inst.status === "MAINTENANCE" ? "🟡" : "🟢"} {inst.name}
+                        {anomalyEmoji(inst.id) && (
+                          <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                            ❗{anomalyEmoji(inst.id)}
+                          </span>
+                        )}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">
+                        {inst.status === "MAINTENANCE" ? "🟡" : "🟢"} {inst.name}
+                        {anomalyEmoji(inst.id) && (
+                          <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                            ❗{anomalyEmoji(inst.id)}
+                          </span>
+                        )}
+                      </span>
+                    )}
                     <p className="mt-1 text-sm text-muted">
                       使用中 {inUse} · 逾時未簽退 {overdue}
                     </p>
@@ -181,12 +198,14 @@ export default async function InstrumentsAdminPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1 text-sm">
-                  <Link
-                    href={`/admin/instruments/${inst.id}`}
-                    className="text-muted underline-offset-4 hover:text-foreground hover:underline"
-                  >
-                    綜覽
-                  </Link>
+                  {canView(inst.id) && (
+                    <Link
+                      href={`/admin/instruments/${inst.id}`}
+                      className="text-muted underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                      綜覽
+                    </Link>
+                  )}
                   {isAdmin && (
                     <>
                       <Link

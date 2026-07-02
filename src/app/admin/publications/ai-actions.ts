@@ -5,7 +5,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getCurrentMember } from "@/lib/auth";
+import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAiEnabled, extractPublication } from "@/lib/ai/gemini";
 import { extractDocxText } from "@/lib/ai/docx";
@@ -20,7 +20,8 @@ export async function quickAddPublicationFromWord(
   formData: FormData,
 ): Promise<ActionResult> {
   const me = await getCurrentMember();
-  if (!me) return { ok: false, message: "請先登入。" };
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
   if (!isAiEnabled()) return { ok: false, message: "AI 功能未啟用。" };
 
   const file = formData.get("file");

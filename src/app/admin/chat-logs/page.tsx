@@ -1,4 +1,4 @@
-// 前台小幫手對話管理頁(ADMIN 以上):日期 filter(預設今日)→ 列出當天
+// 前台小幫手對話管理頁(僅最高權限者):日期 filter(預設今日)→ 列出當天
 // 與小幫手對話過的所有 IP;點 IP 進對話頁。每個 IP 旁有封鎖 switch。
 
 import Link from "next/link";
@@ -25,7 +25,7 @@ export default async function ChatLogsPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const me = await getCurrentMember();
-  if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
+  if (!me || !roleAtLeast(me.role, "SUPERADMIN")) redirect("/account");
 
   const date = normalizeDate((await searchParams).date);
   const rows = await listChatIpsForDate(date);

@@ -1,4 +1,4 @@
-// 某 IP 的對話頁(ADMIN 以上):日期 filter(預設帶入點進來的日期)→ 顯示
+// 某 IP 的對話頁(僅最高權限者):日期 filter(預設帶入點進來的日期)→ 顯示
 // 該 IP 當天與小幫手的完整對話。頁首有封鎖 switch。
 
 import Link from "next/link";
@@ -31,7 +31,7 @@ export default async function IpConversationPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const me = await getCurrentMember();
-  if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
+  if (!me || !roleAtLeast(me.role, "SUPERADMIN")) redirect("/account");
 
   const ipHash = decodeURIComponent((await params).ip);
   const date = normalizeDate((await searchParams).date);
