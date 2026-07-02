@@ -14,6 +14,7 @@ const HOURS_PER_DAY = 24; // 全天 24 個整點時段
 interface Busy {
   start: string;
   end: string;
+  mine?: boolean; // 是否為目前使用者本人的預約
 }
 
 // 以本地時間組出某日某整點的 Date。
@@ -59,7 +60,12 @@ export function InstrumentBooking({
   }, [state, router]);
 
   const busyMs = useMemo(
-    () => busy.map((b) => ({ s: new Date(b.start).getTime(), e: new Date(b.end).getTime() })),
+    () =>
+      busy.map((b) => ({
+        s: new Date(b.start).getTime(),
+        e: new Date(b.end).getTime(),
+        mine: !!b.mine,
+      })),
     [busy],
   );
 
@@ -69,6 +75,12 @@ export function InstrumentBooking({
     const s = slotStartDate(hour).getTime();
     const e = s + 60 * 60 * 1000;
     return busyMs.some((b) => b.s < e && b.e > s);
+  };
+  // 該整點是否落在本人的預約內(用於以不同顏色標示)。
+  const isMine = (hour: number) => {
+    const s = slotStartDate(hour).getTime();
+    const e = s + 60 * 60 * 1000;
+    return busyMs.some((b) => b.mine && b.s < e && b.e > s);
   };
   const isPast = (hour: number) => slotStartDate(hour).getTime() <= now;
   const isFree = (hour: number) => !isBusy(hour) && !isPast(hour);
@@ -164,6 +176,10 @@ export function InstrumentBooking({
       {/* 整點空檔(全天 24 小時):點起點 → 移到終點 → 再點一下即選定連續範圍 */}
       <p className="mt-3 text-xs text-muted">
         點選起始整點,移動滑鼠預覽範圍,再點終點即選定連續時段。
+        <span className="ml-1 inline-flex items-center gap-1">
+          <span className="inline-block h-3 w-3 border border-green-600 bg-green-100 align-middle" />
+          為您的預約。
+        </span>
       </p>
       <div
         className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8"
@@ -171,16 +187,19 @@ export function InstrumentBooking({
       >
         {Array.from({ length: HOURS_PER_DAY }, (_, h) => h).map((h) => {
           const busyOrPast = isBusy(h) || isPast(h);
+          const mine = isBusy(h) && isMine(h);
           const inRange = range != null && h >= range[0] && h <= range[1];
           const isEnd = range != null && (h === range[0] || h === range[1]);
-          // 色1(端點)= accent 實色;色2(範圍中間)= accent 淡色。
-          const cls = busyOrPast
-            ? "cursor-not-allowed border-line bg-foreground/[0.04] text-muted line-through"
-            : inRange && isEnd
-              ? "border-accent bg-accent/25 font-semibold text-foreground"
-              : inRange
-                ? "border-accent/60 bg-accent/10 text-foreground"
-                : "border-line hover:border-line-strong";
+          // 本人預約:綠色標示;其他占用/過去:灰;選取範圍端點=accent 實色、中間=淡色。
+          const cls = mine
+            ? "cursor-not-allowed border-green-600 bg-green-100 text-green-800"
+            : busyOrPast
+              ? "cursor-not-allowed border-line bg-foreground/[0.04] text-muted line-through"
+              : inRange && isEnd
+                ? "border-accent bg-accent/25 font-semibold text-foreground"
+                : inRange
+                  ? "border-accent/60 bg-accent/10 text-foreground"
+                  : "border-line hover:border-line-strong";
           return (
             <button
               key={h}

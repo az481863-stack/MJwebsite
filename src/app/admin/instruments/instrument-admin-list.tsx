@@ -26,6 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { DeleteInstrumentButton } from "./row-actions";
 import { reorderInstruments } from "./actions";
+import { UsageSummary, type UserSlot } from "./usage-summary";
 
 export interface InstrumentRow {
   id: string;
@@ -36,6 +37,8 @@ export interface InstrumentRow {
   inUse: number;
   overdue: number;
   managerEmails: string[];
+  current: UserSlot | null; // 目前使用者
+  next: UserSlot | null; // 下一位使用者
 }
 
 function Row({ item }: { item: InstrumentRow }) {
@@ -95,6 +98,7 @@ function Row({ item }: { item: InstrumentRow }) {
                 ? item.managerEmails.join("、")
                 : "(未指派)"}
             </p>
+            <UsageSummary current={item.current} next={item.next} />
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-sm">

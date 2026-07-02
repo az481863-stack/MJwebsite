@@ -13,6 +13,7 @@ import {
   getAnomalyRecipients,
 } from "@/lib/instruments";
 import { sendAnomalyAlert } from "@/lib/email";
+import { displayName } from "@/lib/display-name";
 import { ConditionReport } from "@/generated/prisma/client";
 
 export interface ActionResult {
@@ -166,7 +167,7 @@ export async function selfCheckout(
     await sendAnomalyAlert({
       recipients,
       instrumentName: r.instrument.name,
-      reporterName: me.loginEmail,
+      reporterName: displayName(me),
       condition,
       note: anomalyNote ?? undefined,
     });
