@@ -19,6 +19,7 @@ export function AdminSidebar({
 }) {
   const pathname = usePathname();
   const isAdmin = roleAtLeast(role, "ADMIN");
+  const isSuper = roleAtLeast(role, "SUPERADMIN");
 
   const contentItems = CMS_TYPES.filter((t) => roleAtLeast(role, t.minRole));
 
@@ -72,11 +73,13 @@ export function AdminSidebar({
                       聊天機器人知識庫
                     </Link>
                   </li>
-                  <li>
-                    <Link href="/admin/chat-logs" className={itemCls("/admin/chat-logs")}>
-                      小幫手對話紀錄
-                    </Link>
-                  </li>
+                  {isSuper && (
+                    <li>
+                      <Link href="/admin/chat-logs" className={itemCls("/admin/chat-logs")}>
+                        小幫手對話紀錄
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <Link href="/admin/settings" className={itemCls("/admin/settings")}>
                       網站設定

@@ -86,13 +86,13 @@
 |---|---|---|
 | 第一層 | **最高權限者**(教授/大助教) | 管理員全部能力 + **唯一能**:修改其他會員權限、移除會員、邀請時指定角色 |
 | 第二層 | **管理員**(助教) | 內容增刪改、**發布**、**審核草稿**、軟刪除;儀器管理頁;邀請會員(但一律為學生) |
-| 第三層 | **學生**(= 投稿者) | 建內容草稿(Blog/論文)、上傳 Word 生草稿(不可發布);使用儀器預約頁 |
+| 第三層 | **學生**(= 投稿者) | 建 **Blog** 草稿、上傳 Word 生 Blog 草稿(不可發布);使用儀器預約頁。〔**Publications 已收回學生權限**——連建草稿都不行,僅管理員以上可操作,見開發日誌 2026-07-02〕 |
 
 ### 關鍵規則
 - **邀請指定角色**:僅最高權限者可於邀請時指定對方為「學生或管理員」;管理員邀請的人**一律為學生**。
 - **最高權限者**不從邀請產生,由現任最高權限者事後手動升級。
 - **防呆**:不可刪除或降級「最後一位最高權限者」。
-- **審核權**:學生草稿(含論文、Blog)由「管理員以上」審核發布。(已定案,不需教授親審。)
+- **審核權**:學生 Blog 草稿由「管理員以上」審核發布。(已定案,不需教授親審。)〔Publications 已非學生可投稿類型,見上表與開發日誌 2026-07-02〕
 - **無永久刪除**:刪除一律為軟刪除/停用;管理員以上可檢視已刪除、可還原。
 
 ### B-2. 儀器層級的負責人權限(獨立於三層角色)
@@ -501,7 +501,7 @@
   - `media` storage bucket 於首次上傳自動建立(public);交接時記得此 bucket 屬資料的一部分。
 - 給後續階段的提醒:
   - 新增內容類型的範式:`prisma model` → `actions.ts`(create/update + 權限)→ 沿用通用 `content-actions`(發布/軟刪除)→ `form-kit` 表單 → `AdminListShell` 列表 → `registry.ts` 加側邊欄項 → 前台 server 頁(force-dynamic)抓 `status=PUBLISHED, deletedAt=null`。
-  - 學生可投稿的類型在 `registry.ts` 設 `minRole: "STUDENT"`,並於 list/new/edit 與 action 內做 owner/draft 限制。
+  - 學生可投稿的類型在 `registry.ts` 設 `minRole: "STUDENT"`,並於 list/new/edit 與 action 內做 owner/draft 限制。〔目前僅 Blog;Publications 已改 `minRole: "ADMIN"`,見開發日誌 2026-07-02〕
   - 階段五(儀器)可讀 `getSettings().instrumentMaxHours`(預設 24)作預約總時數上限;`showInstruments` 控制導覽入口。
   - 階段六 AI 預填寫入 Blog 的 Tiptap JSON 格式(`bodyZh`/`bodyEn`),與此處編輯器一致。
 
@@ -674,6 +674,12 @@
   - **未簽退提醒**:結束後滿 24 小時仍 `IN_USE`、未寄過 → 寄提醒 → 標記 `checkoutReminderSentAt`。**只鎖定 IN_USE**(此時本人仍可自簽退;逾時 OVERDUE 要滿 3 天才轉,hourly cron 早已在 24h 點掃到)。
   - 集中於 `src/lib/instruments.ts` 的 `sendDueReminders()`,**只由 `/api/cron` 在 `reconcile()` 之後呼叫**(先簽到才判 BOOKED/IN_USE);**勿放頁面載入**以免瀏覽即寄。每筆 try/catch,**寄成功才標記**,失敗只 `console.error`、留待下小時重試。信件樣板 `sendReservationReminder`/`sendCheckoutReminder` 於 `src/lib/email.ts`,沿用既有 `RESEND_API_KEY`(未設則 console)、`SITE_URL` 組連結,**無新環境變數**。
 - 給後續的提醒:任何「寄信給預約人/使用者」的排程,沿用 `sendDueReminders()` 的「cron-only + 時間戳防重寄 + 寄成功才標記」範式,勿在頁面載入觸發副作用。
+
+- **後記(2026-07-02):權限收緊三則**(教授要求)
+  - **儀器綜覽頁改「該台負責人 + 最高權限者」才可進**:原為「ADMIN 以上 或 該台負責人」→ 一般管理員(助教)若非該台負責人不能看該儀器綜覽。守衛在 `admin/instruments/[id]/page.tsx`(`roleAtLeast(SUPERADMIN) || isManagerOf`);列表頁([page.tsx]/[instrument-admin-list.tsx])依 `canView`(最高權限者或該台負責人)決定「儀器名稱/綜覽」是否為可點連結,不可看者顯示純文字,避免點了被導走。編輯/刪除仍為 ADMIN。
+  - **小幫手對話紀錄頁改「僅最高權限者」**:`admin/chat-logs` 列表頁、`[ip]` 對話頁、封鎖 IP 的 `toggleIpBlock` action 一律由 ADMIN 改 **SUPERADMIN**;側邊欄「小幫手對話紀錄」連結亦只對最高權限者顯示(對話含個資,收斂檢視面)。
+  - **Publications 收回學生權限(連草稿都不行)**:`registry.ts` 的 publications `minRole` 由 `STUDENT` 改 **ADMIN**(側欄對學生隱藏);且 list/new/[id]/`actions.ts`(create/update)/`ai-actions.ts`(Word 快速新增)全部改「非 ADMIN 一律 `權限不足`/導回 `/account`」,移除原本學生「建/改自己草稿」的分支。**Blog 仍維持學生可投稿**(唯一 `minRole=STUDENT` 的類型)。規格已更新 §B 角色表、§階段三提醒。
+  - 提醒:後台頁與 server action **都要各自守衛**(勿只靠側欄隱藏);沿用「`getCurrentMember` + `roleAtLeast` 不足則 redirect/回 ActionResult」範式。
 
 ### 交付與交接
 - 完成日期:

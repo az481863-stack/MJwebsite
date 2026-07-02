@@ -1,7 +1,6 @@
 "use server";
 
-// Publications(G-2)建立/編輯。學生可建草稿(不可發布);管理員可發布。
-// 學生僅能編輯自己且仍為草稿的項目。
+// Publications(G-2)建立/編輯。僅管理員以上(學生無 Publications 權限)。
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -30,12 +29,12 @@ export async function createPublication(
   formData: FormData,
 ): Promise<ActionResult> {
   const me = await getCurrentMember();
-  if (!me) return { ok: false, message: "請先登入。" };
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
   const f = parse(formData);
   if (!f.authors || !f.title || !f.venue || !f.year)
     return { ok: false, message: "請填寫作者、標題、期刊與年份。" };
 
-  const isAdmin = roleAtLeast(me.role, "ADMIN");
   await prisma.publication.create({
     data: {
       authors: f.authors,
@@ -45,8 +44,8 @@ export async function createPublication(
       doiUrl: f.doiUrl,
       abstract: f.abstract,
       highlight: f.highlight,
-      // 學生一律草稿;管理員可選擇立即發布。
-      status: isAdmin && formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
+      // 管理員可選擇立即發布,否則存為草稿。
+      status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
       createdBy: me.id,
       updatedBy: me.id,
     },
@@ -61,18 +60,13 @@ export async function updatePublication(
   formData: FormData,
 ): Promise<ActionResult> {
   const me = await getCurrentMember();
-  if (!me) return { ok: false, message: "請先登入。" };
+  if (!me || !roleAtLeast(me.role, "ADMIN"))
+    return { ok: false, message: "權限不足。" };
   const id = String(formData.get("id") ?? "");
   const existing = await prisma.publication.findFirst({
     where: { id, deletedAt: null },
   });
   if (!existing) return { ok: false, message: "找不到該項目。" };
-
-  const isAdmin = roleAtLeast(me.role, "ADMIN");
-  // 學生只能改自己且仍為草稿的項目。
-  if (!isAdmin && (existing.createdBy !== me.id || existing.status !== "DRAFT")) {
-    return { ok: false, message: "僅能編輯自己尚未發布的草稿。" };
-  }
 
   const f = parse(formData);
   if (!f.authors || !f.title || !f.venue || !f.year)

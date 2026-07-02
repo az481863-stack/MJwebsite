@@ -1,7 +1,7 @@
 "use server";
 
 // 前台小幫手對話管理頁的 server action:切換 IP 封鎖(switch)。
-// 權限:ADMIN 以上(server 端自行檢查,不只靠 UI)。
+// 權限:僅最高權限者(server 端自行檢查,不只靠 UI)。
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
@@ -19,7 +19,7 @@ export async function toggleIpBlock(
   blocked: boolean,
 ): Promise<ToggleResult> {
   const me = await getCurrentMember();
-  if (!me || !roleAtLeast(me.role, "ADMIN")) {
+  if (!me || !roleAtLeast(me.role, "SUPERADMIN")) {
     return { ok: false, message: "權限不足" };
   }
   if (!ipHash || ipHash === "unknown") {

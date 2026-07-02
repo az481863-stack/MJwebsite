@@ -1,4 +1,4 @@
-// Publications 列表。管理員看全部;學生只看自己的(可建草稿)。
+// Publications 列表(僅管理員以上;學生無 Publications 權限)。
 
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
@@ -10,21 +10,18 @@ import { quickAddPublicationFromWord } from "./ai-actions";
 
 export default async function PublicationsAdminPage() {
   const me = await getCurrentMember();
-  if (!me) redirect("/login");
-  const isAdmin = roleAtLeast(me.role, "ADMIN");
+  if (!me || !roleAtLeast(me.role, "ADMIN")) redirect("/account");
   const aiEnabled = isAiEnabled();
 
   const [items, deleted] = await Promise.all([
     prisma.publication.findMany({
-      where: { deletedAt: null, ...(isAdmin ? {} : { createdBy: me.id }) },
+      where: { deletedAt: null },
       orderBy: [{ year: "desc" }, { createdAt: "desc" }],
     }),
-    isAdmin
-      ? prisma.publication.findMany({
-          where: { deletedAt: { not: null } },
-          orderBy: { deletedAt: "desc" },
-        })
-      : Promise.resolve([]),
+    prisma.publication.findMany({
+      where: { deletedAt: { not: null } },
+      orderBy: { deletedAt: "desc" },
+    }),
   ]);
 
   return (
@@ -39,7 +36,7 @@ export default async function PublicationsAdminPage() {
         title="Publications"
         basePath="/admin/publications"
         model="publication"
-        canManage={isAdmin}
+        canManage={true}
         items={items}
         deleted={deleted}
         renderRow={(p) => (

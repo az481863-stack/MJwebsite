@@ -1,6 +1,6 @@
 // 內容類型登錄表(驅動後台側邊導覽與各列表頁的共用設定)。
 // minRole:可在後台看到/操作此類型的最低角色。
-// 學生(投稿者)僅能建 Blog 與 Publications 草稿,故只有這兩類 minRole=STUDENT。
+// 學生(投稿者)僅能建 Blog 草稿(minRole=STUDENT);Publications 已收回學生權限(minRole=ADMIN)。
 
 import { Role } from "@/generated/prisma/client";
 
@@ -13,7 +13,7 @@ export interface CmsTypeMeta {
 
 export const CMS_TYPES: CmsTypeMeta[] = [
   { key: "dashboard-posts", label: "動態佈告欄", path: "/admin/dashboard-posts", minRole: "ADMIN" },
-  { key: "publications", label: "Publications", path: "/admin/publications", minRole: "STUDENT" },
+  { key: "publications", label: "Publications", path: "/admin/publications", minRole: "ADMIN" },
   { key: "team", label: "現役成員", path: "/admin/team", minRole: "ADMIN" },
   { key: "alumni", label: "歷屆成員去向", path: "/admin/alumni", minRole: "ADMIN" },
   { key: "jobs", label: "職缺管理", path: "/admin/jobs", minRole: "ADMIN" },
