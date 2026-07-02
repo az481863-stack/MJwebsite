@@ -9,6 +9,7 @@ import {
   addContactEmail,
   changePassword,
   removeContactEmail,
+  updateName,
   type ActionResult,
 } from "./actions";
 
@@ -23,17 +24,23 @@ function Msg({ state }: { state: ActionResult | null }) {
 
 export function AccountView({
   loginEmail,
+  name,
   roleLabel,
   contactEmails,
   hasGoogle,
   welcome,
 }: {
   loginEmail: string;
+  name: string;
   roleLabel: string;
   contactEmails: { id: string; email: string }[];
   hasGoogle: boolean;
   welcome: boolean;
 }) {
+  const [nameState, nameAction, namePending] = useActionState<
+    ActionResult | null,
+    FormData
+  >(updateName, null);
   const [pwState, pwAction, pwPending] = useActionState<
     ActionResult | null,
     FormData
@@ -81,7 +88,7 @@ export function AccountView({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">會員資料</h1>
           <p className="mt-1 text-sm text-muted">
-            {loginEmail} · {roleLabel}
+            {name.trim() ? `${name.trim()}(${loginEmail})` : loginEmail} · {roleLabel}
           </p>
         </div>
         <form action={signOut}>
@@ -99,6 +106,31 @@ export function AccountView({
           帳號已啟用!你可以在下方連結 Google 帳號,之後即可用 Google 登入(也可略過,維持密碼登入)。
         </p>
       )}
+
+      {/* 顯示名稱 */}
+      <section className="border-t border-line pt-8">
+        <h2 className="text-lg font-semibold">名稱</h2>
+        <form action={nameAction} className="mt-4 flex max-w-sm gap-2">
+          <input
+            name="name"
+            type="text"
+            maxLength={60}
+            defaultValue={name}
+            placeholder="你的名稱(如:王小明)"
+            className="flex-1 border border-line px-3 py-2.5 text-sm outline-none focus:border-line-strong"
+          />
+          <button
+            type="submit"
+            disabled={namePending}
+            className="shrink-0 bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85 disabled:opacity-50"
+          >
+            {namePending ? "儲存中…" : "儲存"}
+          </button>
+        </form>
+        <div className="mt-2">
+          <Msg state={nameState} />
+        </div>
+      </section>
 
       {/* 變更密碼 */}
       <section className="border-t border-line pt-8">

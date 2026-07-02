@@ -131,10 +131,11 @@
 | 密碼 | 加密 | 可更改 |
 | Google 連結 | 關聯 | 可連結/解除 |
 | 常用 email | **一對多** | 可新增多筆(資料層為「會員 1 ─ N email」,非單欄) |
+| 名稱 | 文字(選) | 顯示名稱(`Member.name`);**全站顯示會員身分處一律優先顯示名稱,留空才顯示登入 email**(共用 helper `src/lib/display-name.ts` 的 `displayName()`)。/account 頁可自行編輯。〔adjustment 輪追加,沿革見開發日誌〕 |
 | 角色 | 狀態 | 學生/管理員/最高權限者 |
 | 帳號狀態 | 狀態 | 未啟用/已啟用/已停用 |
 
-**預留欄位(資料庫先留、前台暫不做)**:照片、暱稱、生日……等個人資料,屆時於會員表補上即可,零結構成本。
+**預留欄位(資料庫先留、前台暫不做)**:照片、生日……等個人資料,屆時於會員表補上即可,零結構成本。(「名稱/暱稱」已啟用,見上表。)
 
 ### C-5. 會員 info 頁(第一階段功能)
 更改密碼、連結/解除 Google、管理常用 email(多筆)。
@@ -281,7 +282,7 @@
 
 **測試通過條件**(實作 + build/lint/typecheck 通過;端到端人工點測由開發者進行中)
 - [x] 預約時段衝突正確阻擋,學生僅能操作自己的預約;最高權限者可預約。〔`hasOverlap` + 整點/過期/額度檢查,皆於 server action 再驗〕
-- [x] 提前取消正常;未取消者於時段開始自動簽到、轉「使用中·未簽退」並產生簽退義務。〔`reconcile()`:cron 每 15 分 + 頁面載入 lazy 對帳〕
+- [x] 提前取消正常;未取消者於時段開始自動簽到、轉「使用中·未簽退」並產生簽退義務。〔`reconcile()`:cron 每小時 + 頁面載入 lazy 對帳〕
 - [x] QR 掃碼登入後正確帶出該人該機未簽退紀錄;無則顯示「無需簽退」。〔未登入導 `/login?next=…`,login 已支援 next〕
 - [x] 逾 3 天不再開放本人簽退;有效逾時未簽退達 3 筆即停止預約權(但仍可登入/簽退)。
 - [x] 負責人/管理員代簽正確標記「代簽」、機況預設正常不發警報;代簽後額度與停權正確恢復(衍生計算,自動)。
@@ -530,8 +531,8 @@
 ### 階段五:儀器預約管理系統
 - 完成日期:2026-06-25(實作 + build/lint/typecheck 通過;cron/權限/gating 已本機冒煙驗證;端到端人工點測由開發者進行中)
 - 實際與規格的偏差:
-  - **排程改為「Next API route(`/api/cron`)+ GitHub Actions 每 15 分」+「頁面載入 lazy 對帳」**,未採規格原述的 pg_cron(與使用者確認)。理由:自動簽到→簽退義務、判逾時、算停權等業務邏輯放 TS 較易維護、可與既有程式共用、好測。**對帳邏輯集中於 `src/lib/instruments.ts` 的 `reconcile()`(冪等)**;cron 僅為備援,準確性由「相關頁面載入前先 `reconcile()`」保證(GitHub Actions 排程本就會延遲)。已同步更新規格 §排程的實作描述。
-  - **預約時間模型=整點時段(每格 1 小時)**(與使用者確認):衝突 = 時段重疊;時數加總為整數。預約 UI 為「選日期→選整點起始→選時數」,client 送絕對時間 ISO(台灣 +08:00 整點對應到整點 UTC,故以 `getUTCMinutes()===0` 驗整點)。
+  - **排程改為「Next API route(`/api/cron`)+ GitHub Actions」+「頁面載入 lazy 對帳」**,未採規格原述的 pg_cron(與使用者確認)。理由:自動簽到→簽退義務、判逾時、算停權等業務邏輯放 TS 較易維護、可與既有程式共用、好測。**對帳邏輯集中於 `src/lib/instruments.ts` 的 `reconcile()`(冪等)**;cron 僅為備援,準確性由「相關頁面載入前先 `reconcile()`」保證(GitHub Actions 排程本就會延遲)。〔頻率原每 15 分,後於 adjustment 輪改**每小時**並加提醒信,見下方 2026-07-02 後記。〕
+  - **預約時間模型=整點時段(每格 1 小時)**(與使用者確認):衝突 = 時段重疊;時數加總為整數。預約 UI 為「選日期→**拉取式選連續整點範圍**(點起點→移動預覽→點終點)→(選填)備註」,client 送絕對時間 ISO(台灣 +08:00 整點對應到整點 UTC,故以 `getUTCMinutes()===0` 驗整點)。〔原「選整點起始→選時數」下拉,adjustment 輪改拉取式,見 2026-07-02 後記。〕
   - **Supabase 維持免費層、暫不升 Pro**(與使用者確認);沿用既有 keepalive,儀器排程本身也會持續產生 DB 活動。
   - **儀器非草稿/審核內容**:不套 `ContentStatus`,以 `deletedAt` 軟刪除;故未用通用 `content-actions`,自建 `admin/instruments/actions.ts`。
   - **停權與額度為衍生計算,不另設表**:停權 = `status=OVERDUE` 筆數 ≥ 3;已用額度 = `status∈{BOOKED,IN_USE,OVERDUE}` 的時數加總(CHECKED_OUT/CANCELLED 釋放,OVERDUE 不返還直到被代簽)。代簽把 OVERDUE→CHECKED_OUT,停權/額度即自動恢復。
@@ -624,7 +625,7 @@
     - ⚠️ **關鍵誤區**:吳教授帳號綁的是 **Gemini App 消費端訂閱(AI Pro / Plus,每月固定費)**,與 **Gemini API(按 token 計費、綁 Google Cloud billing)是兩套完全獨立的計費**,App 訂閱對 API 金鑰額度**毫無幫助**。
     - **解法(不改程式)**:到 Google AI Studio 找這支金鑰所屬專案 → Google Cloud Console 幫**該專案**啟用 billing(綁卡),金鑰即自動升付費層。務必確認「綁 billing 的專案」與「金鑰所屬專案」是同一個(AI Studio 常自動建無 billing 的新專案)。
     - **成本評估**:以一天 200 次估,gemini-2.5-flash 付費層月費約 US$8–28(典型 ~NT$500);訪客少實際多半遠低於此。這是**獨立於 App 訂閱、需綁教授名下的另一筆帳單**(交接時與 Resend/Supabase 並列說明)。
-  - **多段 IP 限流改 DB 持久化(同日)**:原聊天限流為記憶體版(每 IP 10 分鐘 30 次),serverless 多實例/冷啟動不共享,長窗形同虛設。應教授要求新增多段窗(同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500),**日/月窗唯有存 DB 才有意義** → 新增 `RateHit` 表(migration `add_rate_hits`)與 `src/lib/ratelimit.ts`(`checkRateLimit`:抓最長窗內的列於記憶體分窗計數,通過才記一列並清該 IP 過期列;`purgeOldRateHits` 由 `/api/cron` 每 15 分全域回收 >32 天舊列)。`/api/chat` 改呼叫 `checkRateLimit("chat", ip)`。**fail-open**:限流本身 DB 讀寫出錯時放行並 `console.error`,不因限流故障拖垮聊天(燒錢有 Google 月花費上限兜底)。後台/聯絡表單暫未套用,需要時同一 helper 換 scope 即可。
+  - **多段 IP 限流改 DB 持久化(同日)**:原聊天限流為記憶體版(每 IP 10 分鐘 30 次),serverless 多實例/冷啟動不共享,長窗形同虛設。應教授要求新增多段窗(同一 IP 每小時 50 / 每 6 小時 100 / 每日 150 / 每月 500),**日/月窗唯有存 DB 才有意義** → 新增 `RateHit` 表(migration `add_rate_hits`)與 `src/lib/ratelimit.ts`(`checkRateLimit`:抓最長窗內的列於記憶體分窗計數,通過才記一列並清該 IP 過期列;`purgeOldRateHits` 由 `/api/cron`(每小時)全域回收 >32 天舊列)。`/api/chat` 改呼叫 `checkRateLimit("chat", ip)`。**fail-open**:限流本身 DB 讀寫出錯時放行並 `console.error`,不因限流故障拖垮聊天(燒錢有 Google 月花費上限兜底)。後台/聯絡表單暫未套用,需要時同一 helper 換 scope 即可。
   - **小幫手對話後台 + IP 封鎖(同日)**:教授要求可在後台檢視訪客與前台小幫手的對話,並能關掉特定 IP 的小幫手。**這反轉了階段七「對話不存 DB」的刻意取捨** → 新增 `ChatLog`(留存每則訊息)與 `IpBlock`(封鎖清單)兩表(migration `add_chat_logs_ip_block`)、`src/lib/chatlog.ts`(留存/查詢/封鎖/清理)。
     - **後台頁 `/admin/chat-logs`(ADMIN 以上)**:日期 filter(預設今日,台灣時區)→ 列出當天對話過的 IP(訊息數/最後時間/封鎖狀態);點 IP 進 `/admin/chat-logs/[ip]`(對話頁,日期 filter 預設帶入點進來的日期,逐則氣泡呈現)。兩頁 IP 旁皆有封鎖 switch(`toggleIpBlock` server action,ADMIN 守衛)。側邊欄「管理」區加入口。
     - **封鎖生效 + 到量隱藏**:root `layout.tsx` 讀訪客 IP,`isIpBlocked` 命中**或** `isRateLimited("chat")` 已達任一窗上限,即不掛 `ChatWidget`(「到達上限直接隱藏小幫手」);`/api/chat` 亦擋(封鎖 403、限流 429,雙保險)。留存於 `/api/chat`:記使用者訊息 + 串流結束後記完整回覆(fire-and-forget、內建 try/catch,不影響聊天)。`isRateLimited` 為 `ratelimit.ts` 新增的**唯讀**檢查(不記錄),供 layout 用。
@@ -656,6 +657,23 @@
   - ⚠️ **永久規則**:因架構永不經匿名 REST API,**日後每 `prisma migrate` 新增的表,都要對新表 `enable row level security`**(Prisma 不會自動開)。新表上線前於 SQL Editor 重跑上面那段(冪等)即可,或部署後回 Advisors 重掃確認無 `rls_disabled_in_public`。
 - **keepalive GitHub Action 失敗(exit code 2,連不上 DB)**:`SUPABASE_DB_URL` secret 過期——`.env` 的 `DIRECT_URL` pooler host 已是 `aws-1-ap-southeast-1.pooler.supabase.com`,但 GitHub secret 仍是舊 host。**解法**:GitHub repo → Settings → Secrets and variables → Actions 把 `SUPABASE_DB_URL` 更新為現行 `DIRECT_URL`(密碼含特殊字元須 URL 編碼),再 workflow_dispatch 手動觸發驗證變綠。診斷心法:exit 1 = secret 未設(workflow 自寫);exit 2 = psql 連不上(host 錯/專案暫停/密碼未編碼)。
 - **交接提醒**:教授 GitHub 帳號 `az481863-stack` 須於 **2026-08-08 前開啟 2FA**,否則帳號動作被限制。
+
+### adjustment 輪:儀器體驗優化 + 會員名稱 + 預約提醒信(2026-07-02)
+> 教授使用儀器系統後提出的一批修正。均為既有階段的增強,非新階段。schema 只加欄位、**無新表**(故不觸發 §資安後記「新表要開 RLS」規則)。新增 migration:`instrument_reservation_checkout_notes`、`member_name_and_anomaly_cleared`、`reservation_reminder_flags`。
+
+- **會員「名稱」欄位(全站優先顯示)**:新增 `Member.name`,/account 頁可自行編輯。全站呈現會員身分處一律改走 `src/lib/display-name.ts` 的 `displayName()`(**優先 name、留空 fallback loginEmail**):會員管理列表、儀器負責人、預約人、異常警報信回報人。**實際 email 用途不動**(寄信收件人 `getAnomalyRecipients`、負責人 email 編輯欄仍顯示 email)。規格已更新 §C-4。
+- **預約面板改「拉取式」選時段**:原「選整點起始 + 下拉時數」改為點起點→滑鼠移動即時預覽範圍→點終點選定**連續整點區間**(跨越已占用/過去會自動夾住)。端點=accent 實色、範圍中間=accent 淡色。並**以綠色標示本人既有預約**(`busy` 帶 `mine` 旗標,由 page 比對 `me.id`)。規格 §階段五 UI 描述已更新。
+- **預約 / 簽退備註**:`Reservation.note`(預約時填)、`Checkout.note`(簽退時填,**任何機況皆可填**,與僅異常時、會進警報信的 `anomalyNote` 並存)。備註顯示於「我的預約」、後台綜覽、管理列表的使用者資訊。
+- **「我的預約」深色卡片**:套 `.band-dark` + accent 主色標示儀器名(教授要求視覺區別)。
+- **儀器介紹頁登入問候**:登入後標題下以主色顯示「歡迎,{displayName}」。
+- **儀器管理列表「❗」異常標記 + 解除按鈕**:列表依「各儀器**最新一筆簽退機況回報**」是否異常(🟡/🔴)標紅色「❗」,免點進綜覽即知。新增 `Instrument.anomalyClearedAt`:綜覽頁「解除異常標記」按鈕(`clearAnomaly` action,ADMIN 或該機負責人)把它設為 now,列表只顯示「晚於此刻」的異常回報→ ❗ 即消失;日後再報異常會重新出現。**與機況燈號(🟢/🟡 手動調整)脫鉤**,呼應「事後發現異常另行調整儀器狀態」條款。
+- **管理列表顯示目前/下一位使用者**:每台儀器下方以可縮放(原生 `<details>`,共用元件 `admin/instruments/usage-summary.tsx`,server/client 皆用)顯示「目前使用(IN_USE)」與「下一位(最近的未來 BOOKED)」的名稱·時段·備註。
+- **cron 改每小時 + 兩種提醒信**(教授要求):
+  - GitHub Actions 排程由 `*/15 * * * *` 改 **`0 * * * *`**(每小時)。自動簽到/逾時精準度降到小時級,仍由頁面 lazy `reconcile()` 校正,可接受。
+  - **預約前提醒**:開始前 3 小時內、未寄過的 BOOKED → 寄預約人 → 標記 `Reservation.reminderSentAt`。涵蓋「不足 3 小時前才預約」的邊界(下次整點 cron 掃到即寄)。
+  - **未簽退提醒**:結束後滿 24 小時仍 `IN_USE`、未寄過 → 寄提醒 → 標記 `checkoutReminderSentAt`。**只鎖定 IN_USE**(此時本人仍可自簽退;逾時 OVERDUE 要滿 3 天才轉,hourly cron 早已在 24h 點掃到)。
+  - 集中於 `src/lib/instruments.ts` 的 `sendDueReminders()`,**只由 `/api/cron` 在 `reconcile()` 之後呼叫**(先簽到才判 BOOKED/IN_USE);**勿放頁面載入**以免瀏覽即寄。每筆 try/catch,**寄成功才標記**,失敗只 `console.error`、留待下小時重試。信件樣板 `sendReservationReminder`/`sendCheckoutReminder` 於 `src/lib/email.ts`,沿用既有 `RESEND_API_KEY`(未設則 console)、`SITE_URL` 組連結,**無新環境變數**。
+- 給後續的提醒:任何「寄信給預約人/使用者」的排程,沿用 `sendDueReminders()` 的「cron-only + 時間戳防重寄 + 寄成功才標記」範式,勿在頁面載入觸發副作用。
 
 ### 交付與交接
 - 完成日期:

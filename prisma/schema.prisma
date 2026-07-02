@@ -49,6 +49,7 @@ model Member {
   authUserId String? @unique @map("auth_user_id")
 
   loginEmail String       @unique @map("login_email") // 主要識別
+  name       String? // 顯示名稱(選;全站優先顯示,無則顯示 loginEmail)
   role       Role         @default(STUDENT)
   status     MemberStatus @default(PENDING)
 
@@ -466,6 +467,8 @@ model Instrument {
   photoUrl  String?          @map("photo_url")
   status    InstrumentStatus @default(NORMAL) // 目前狀態(手動調整)
   sortOrder Int              @default(0) @map("sort_order")
+  // 異常標記解除時間點:僅顯示「晚於此時間」的異常機況回報為 ❗(手動解除用)。
+  anomalyClearedAt DateTime? @map("anomaly_cleared_at")
 
   managers     InstrumentManager[]
   reservations Reservation[]
@@ -508,8 +511,12 @@ model Reservation {
   startAt     DateTime          @map("start_at") // 整點
   endAt       DateTime          @map("end_at") // 整點
   status      ReservationStatus @default(BOOKED)
+  note        String? // 預約備註(選,預約人填寫)
   cancelledAt DateTime?         @map("cancelled_at")
   checkedInAt DateTime?         @map("checked_in_at") // 自動簽到時間
+  // 提醒信寄送標記(cron 每小時掃描;寄過即不重寄)。
+  reminderSentAt         DateTime? @map("reminder_sent_at") // 預約前 3 小時提醒
+  checkoutReminderSentAt DateTime? @map("checkout_reminder_sent_at") // 結束後 24 小時未簽退提醒
 
   checkout Checkout?
 
@@ -574,7 +581,8 @@ model Checkout {
   reservation   Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   hours         Int // 確認時數
   condition     ConditionReport // 機況回報(強制)
-  anomalyNote   String?         @map("anomaly_note") // 異常描述(選)
+  anomalyNote   String?         @map("anomaly_note") // 異常描述(選,🟡/🔴 時填,進警報信)
+  note          String? // 簽退備註(選,任何機況皆可填)
   byMemberId    String          @map("by_member_id") // 簽退執行者
   isProxy       Boolean         @default(false) @map("is_proxy") // 代簽
 

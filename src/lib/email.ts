@@ -106,6 +106,70 @@ export async function sendInvitationEmail(opts: {
   return send(opts.to, subject, html);
 }
 
+// 台灣時區時段字串(給提醒信)。
+function fmtRange(startAt: Date, endAt: Date): string {
+  const opt: Intl.DateTimeFormatOptions = {
+    timeZone: "Asia/Taipei",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  return `${startAt.toLocaleString("zh-TW", opt)} – ${endAt.toLocaleString("zh-TW", opt)}`;
+}
+
+// 儀器預約提醒(cron):預約開始前約 3 小時寄給預約人。
+export async function sendReservationReminder(opts: {
+  to: string;
+  instrumentName: string;
+  startAt: Date;
+  endAt: Date;
+  bookingUrl?: string;
+}): Promise<SendResult> {
+  const range = fmtRange(opts.startAt, opts.endAt);
+  const subject = `[預約提醒] ${opts.instrumentName} 即將於 3 小時內開始`;
+  const html = `
+    <div style="font-family: -apple-system, 'Noto Sans TC', Arial, sans-serif; line-height:1.7; color:#111; max-width:520px;">
+      <h2 style="font-weight:600;">儀器預約提醒</h2>
+      <p>您預約的儀器即將開始使用,提醒您準時前往。</p>
+      <table style="border-collapse:collapse; font-size:15px;">
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">儀器</td><td><strong>${escapeHtml(opts.instrumentName)}</strong></td></tr>
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">時段</td><td>${escapeHtml(range)}</td></tr>
+      </table>
+      <p style="color:#6b6b6b;font-size:13px;margin-top:24px;">時段開始後即自動簽到並產生簽退義務;使用後請記得掃機台 QR 簽退。${
+        opts.bookingUrl ? `<br>預約頁:${escapeHtml(opts.bookingUrl)}` : ""
+      }</p>
+    </div>
+  `;
+  return send(opts.to, subject, html);
+}
+
+// 未簽退提醒(cron):使用結束後滿 24 小時仍未簽退時寄給預約人。
+export async function sendCheckoutReminder(opts: {
+  to: string;
+  instrumentName: string;
+  startAt: Date;
+  endAt: Date;
+  checkoutUrl?: string;
+}): Promise<SendResult> {
+  const range = fmtRange(opts.startAt, opts.endAt);
+  const subject = `[簽退提醒] ${opts.instrumentName} 尚未簽退`;
+  const html = `
+    <div style="font-family: -apple-system, 'Noto Sans TC', Arial, sans-serif; line-height:1.7; color:#111; max-width:520px;">
+      <h2 style="font-weight:600; color:#b45309;">儀器尚未簽退</h2>
+      <p>您以下的使用時段已結束超過 24 小時,系統尚未收到簽退。請儘速掃描機台 QR Code 完成簽退。</p>
+      <table style="border-collapse:collapse; font-size:15px;">
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">儀器</td><td><strong>${escapeHtml(opts.instrumentName)}</strong></td></tr>
+        <tr><td style="color:#6b6b6b; padding:4px 16px 4px 0;">時段</td><td>${escapeHtml(range)}</td></tr>
+      </table>
+      <p style="color:#6b6b6b;font-size:13px;margin-top:24px;">提醒:使用結束後 3 天內未簽退將標記為「逾時未簽退」,累積 3 筆會暫停預約權,屆時須洽機台負責人代簽。${
+        opts.checkoutUrl ? `<br>簽退頁:${escapeHtml(opts.checkoutUrl)}` : ""
+      }</p>
+    </div>
+  `;
+  return send(opts.to, subject, html);
+}
+
 // 階段五:儀器異常警報(特急)。簽退勾選 🟡/🔴 時立即寄給教授與該台負責人。
 const CONDITION_LABEL: Record<string, string> = {
   UNSTABLE: "🟡 異音不穩",

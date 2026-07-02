@@ -26,15 +26,19 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { DeleteInstrumentButton } from "./row-actions";
 import { reorderInstruments } from "./actions";
+import { UsageSummary, type UserSlot } from "./usage-summary";
 
 export interface InstrumentRow {
   id: string;
   name: string;
   maintenance: boolean;
+  anomaly: string | null; // 最新機況回報異常時的燈號(🟡/🔴),正常則 null
   photoUrl: string | null;
   inUse: number;
   overdue: number;
   managerEmails: string[];
+  current: UserSlot | null; // 目前使用者
+  next: UserSlot | null; // 下一位使用者
 }
 
 function Row({ item }: { item: InstrumentRow }) {
@@ -79,6 +83,11 @@ function Row({ item }: { item: InstrumentRow }) {
               className="font-medium underline-offset-4 hover:underline"
             >
               {item.maintenance ? "🟡" : "🟢"} {item.name}
+              {item.anomaly && (
+                <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                  ❗{item.anomaly}
+                </span>
+              )}
             </Link>
             <p className="mt-1 text-sm text-muted">
               使用中 {item.inUse} · 逾時未簽退 {item.overdue}
@@ -89,6 +98,7 @@ function Row({ item }: { item: InstrumentRow }) {
                 ? item.managerEmails.join("、")
                 : "(未指派)"}
             </p>
+            <UsageSummary current={item.current} next={item.next} />
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-sm">

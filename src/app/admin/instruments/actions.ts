@@ -181,6 +181,28 @@ export async function setInstrumentStatus(
   return { ok: true, message: "已更新機況。" };
 }
 
+// 解除異常標記:把 anomalyClearedAt 設為現在,列表/綜覽的「❗」即消失
+// (僅隱藏「早於此刻」的異常回報;之後若再回報異常會再度出現)。ADMIN 或該機負責人。
+export async function clearAnomaly(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { ok: false, message: "請先登入。" };
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, message: "參數錯誤。" };
+  const allowed = roleAtLeast(me.role, "ADMIN") || (await isManagerOf(me.id, id));
+  if (!allowed) return { ok: false, message: "權限不足。" };
+
+  await prisma.instrument.update({
+    where: { id },
+    data: { anomalyClearedAt: new Date(), updatedBy: me.id },
+  });
+  revalidatePath(`/admin/instruments/${id}`);
+  revalidatePath("/admin/instruments");
+  return { ok: true, message: "已解除異常標記。" };
+}
+
 // 代簽:負責人/管理員代為簽退「使用中/逾時」紀錄。
 // 一律標記代簽、機況預設正常、不觸發警報(CLAUDE.md 代簽豁免)。
 export async function proxyCheckout(

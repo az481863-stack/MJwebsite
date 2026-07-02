@@ -9,9 +9,15 @@
 //         正常/代簽簽退釋放額度,逾時未簽退不返還。
 
 import { prisma } from "@/lib/prisma";
+import { sendReservationReminder, sendCheckoutReminder } from "@/lib/email";
+import { siteUrl } from "@/lib/site";
 
 // 逾時門檻:使用結束後 3 天未簽退即逾時。
 export const OVERDUE_DAYS = 3;
+// 預約前提醒:開始前這麼多小時內寄提醒。
+const REMINDER_LEAD_HOURS = 3;
+// 未簽退提醒:結束後這麼多小時仍未簽退則寄提醒。
+const CHECKOUT_REMINDER_AFTER_HOURS = 24;
 // 有效「逾時未簽退」達此數即停權。
 export const SUSPEND_THRESHOLD = 3;
 
@@ -36,6 +42,90 @@ export async function reconcile(): Promise<{ checkedIn: number; overdue: number 
   });
 
   return { checkedIn: checkedIn.count, overdue: overdue.count };
+}
+
+// 提醒信寄送(僅由 cron 每小時呼叫,勿放頁面載入以免瀏覽即寄信)。
+// - 預約前:開始前 3 小時內、尚未寄過的 BOOKED → 寄提醒、標記 reminderSentAt。
+// - 未簽退:結束後滿 24 小時仍 IN_USE、尚未寄過 → 寄提醒、標記 checkoutReminderSentAt。
+// 寄信失敗(例外)則不標記,留待下一小時重試。
+export async function sendDueReminders(): Promise<{
+  reminded: number;
+  checkoutReminded: number;
+}> {
+  const now = new Date();
+  const base = siteUrl();
+
+  // (1) 預約前提醒:開始時間落在 [now, now+3h]。
+  const leadCutoff = new Date(now.getTime() + REMINDER_LEAD_HOURS * 60 * 60 * 1000);
+  const upcoming = await prisma.reservation.findMany({
+    where: {
+      status: "BOOKED",
+      deletedAt: null,
+      reminderSentAt: null,
+      startAt: { lte: leadCutoff, gt: now },
+    },
+    include: {
+      instrument: { select: { name: true } },
+      member: { select: { loginEmail: true } },
+    },
+  });
+  let reminded = 0;
+  for (const r of upcoming) {
+    try {
+      await sendReservationReminder({
+        to: r.member.loginEmail,
+        instrumentName: r.instrument.name,
+        startAt: r.startAt,
+        endAt: r.endAt,
+        bookingUrl: `${base}/instruments`,
+      });
+      await prisma.reservation.update({
+        where: { id: r.id },
+        data: { reminderSentAt: now },
+      });
+      reminded++;
+    } catch (err) {
+      console.error("[reminder] 預約前提醒寄送失敗,留待重試:", r.id, err);
+    }
+  }
+
+  // (2) 未簽退提醒:結束後滿 24 小時仍 IN_USE。
+  const checkoutCutoff = new Date(
+    now.getTime() - CHECKOUT_REMINDER_AFTER_HOURS * 60 * 60 * 1000,
+  );
+  const unclosed = await prisma.reservation.findMany({
+    where: {
+      status: "IN_USE",
+      deletedAt: null,
+      checkoutReminderSentAt: null,
+      endAt: { lte: checkoutCutoff },
+    },
+    include: {
+      instrument: { select: { id: true, name: true } },
+      member: { select: { loginEmail: true } },
+    },
+  });
+  let checkoutReminded = 0;
+  for (const r of unclosed) {
+    try {
+      await sendCheckoutReminder({
+        to: r.member.loginEmail,
+        instrumentName: r.instrument.name,
+        startAt: r.startAt,
+        endAt: r.endAt,
+        checkoutUrl: `${base}/instruments/${r.instrument.id}/checkout`,
+      });
+      await prisma.reservation.update({
+        where: { id: r.id },
+        data: { checkoutReminderSentAt: now },
+      });
+      checkoutReminded++;
+    } catch (err) {
+      console.error("[reminder] 未簽退提醒寄送失敗,留待重試:", r.id, err);
+    }
+  }
+
+  return { reminded, checkoutReminded };
 }
 
 // 當前有效「逾時未簽退」筆數。

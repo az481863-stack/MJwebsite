@@ -35,6 +35,7 @@ export default async function AccountPage({
     <Container className="max-w-2xl py-16">
       <AccountView
         loginEmail={member.loginEmail}
+        name={member.name ?? ""}
         roleLabel={ROLE_LABEL[member.role] ?? member.role}
         contactEmails={emails.map((e) => ({ id: e.id, email: e.email }))}
         hasGoogle={hasGoogle}

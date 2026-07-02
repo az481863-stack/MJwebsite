@@ -4,8 +4,9 @@ import QRCode from "qrcode";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reconcile, isManagerOf } from "@/lib/instruments";
+import { displayName } from "@/lib/display-name";
 import { siteUrl } from "@/lib/site";
-import { StatusControl, ProxyCheckoutButton } from "../row-actions";
+import { StatusControl, ProxyCheckoutButton, ClearAnomalyButton } from "../row-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -50,19 +51,30 @@ export default async function InstrumentDetailPage({
   const inst = await prisma.instrument.findFirst({
     where: { id, deletedAt: null },
     include: {
-      managers: { include: { member: { select: { loginEmail: true } } } },
+      managers: { include: { member: { select: { name: true, loginEmail: true } } } },
       reservations: {
         where: { deletedAt: null },
         orderBy: { startAt: "desc" },
         take: 100,
         include: {
-          member: { select: { loginEmail: true } },
+          member: { select: { name: true, loginEmail: true } },
           checkout: true,
         },
       },
     },
   });
   if (!inst) notFound();
+
+  // 最新機況回報異常且晚於「解除時間點」→ 顯示異常橫幅與解除按鈕。
+  const latestCheckout = await prisma.checkout.findFirst({
+    where: { reservation: { instrumentId: id } },
+    orderBy: { createdAt: "desc" },
+    select: { condition: true, createdAt: true },
+  });
+  const hasAnomaly =
+    !!latestCheckout &&
+    latestCheckout.condition !== "NORMAL" &&
+    (!inst.anomalyClearedAt || latestCheckout.createdAt > inst.anomalyClearedAt);
 
   const checkoutUrl = `${siteUrl()}/instruments/${inst.id}/checkout`;
   const qrDataUrl = await QRCode.toDataURL(checkoutUrl, { width: 220, margin: 1 });
@@ -79,9 +91,19 @@ export default async function InstrumentDetailPage({
       <p className="mt-2 text-xs text-muted">
         負責人:
         {inst.managers.length
-          ? inst.managers.map((m) => m.member.loginEmail).join("、")
+          ? inst.managers.map((m) => displayName(m.member)).join("、")
           : "(未指派)"}
       </p>
+
+      {hasAnomaly && (
+        <div className="mt-5 flex flex-wrap items-center gap-3 border border-red-500 bg-red-50 p-3 text-sm text-red-700">
+          <span className="font-semibold">
+            ❗ 最新機況回報為{latestCheckout!.condition === "BROKEN" ? "🔴 故障" : "🟡 異音不穩"}
+          </span>
+          <span className="text-xs">確認處理後可解除標記(不影響機況燈號)。</span>
+          <ClearAnomalyButton instrumentId={inst.id} />
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <StatusControl instrumentId={inst.id} status={inst.status} />
@@ -121,8 +143,13 @@ export default async function InstrumentDetailPage({
                 <tr key={r.id} className="border-b border-line/60 align-top">
                   <td className="py-2 pr-4 whitespace-nowrap">
                     {fmt(r.startAt)}–{fmt(r.endAt)}
+                    {r.note ? (
+                      <span className="mt-0.5 block whitespace-normal text-xs text-muted">
+                        備註:{r.note}
+                      </span>
+                    ) : null}
                   </td>
-                  <td className="py-2 pr-4">{r.member.loginEmail}</td>
+                  <td className="py-2 pr-4">{displayName(r.member)}</td>
                   <td className="py-2 pr-4">{RES_LABEL[r.status] ?? r.status}</td>
                   <td className="py-2 pr-4">
                     {r.checkout ? (
@@ -130,6 +157,11 @@ export default async function InstrumentDetailPage({
                         {COND_LABEL[r.checkout.condition] ?? r.checkout.condition}
                         {r.checkout.isProxy ? "(代簽)" : ""}
                         {r.checkout.anomalyNote ? ` — ${r.checkout.anomalyNote}` : ""}
+                        {r.checkout.note ? (
+                          <span className="mt-0.5 block text-xs text-muted">
+                            簽退備註:{r.checkout.note}
+                          </span>
+                        ) : null}
                       </span>
                     ) : (
                       <span className="text-muted">—</span>

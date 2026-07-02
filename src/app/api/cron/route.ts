@@ -1,8 +1,9 @@
-// 階段五排程入口:由 GitHub Actions 定時(每 15 分)以 Bearer CRON_SECRET 呼叫。
-// 執行儀器預約對帳(自動簽到 + 標記逾時)。頁面載入也會 lazy 對帳,此處為備援保證。
+// 階段五排程入口:由 GitHub Actions 定時(每小時)以 Bearer CRON_SECRET 呼叫。
+// 執行儀器預約對帳(自動簽到 + 標記逾時)+ 寄送提醒信(預約前 3 小時 / 未簽退滿 24 小時)。
+// 對帳頁面載入也會 lazy 執行(此處為備援);提醒信只在此寄,避免瀏覽即寄。
 
 import { NextResponse } from "next/server";
-import { reconcile } from "@/lib/instruments";
+import { reconcile, sendDueReminders } from "@/lib/instruments";
 import { purgeOldRateHits } from "@/lib/ratelimit";
 import { purgeOldChatLogs } from "@/lib/chatlog";
 
@@ -26,11 +27,14 @@ export async function GET(req: Request) {
   }
 
   const result = await reconcile();
+  // 對帳後再寄提醒(先簽到再判斷 BOOKED/IN_USE 狀態才正確)。
+  const reminders = await sendDueReminders();
   const purgedRateHits = await purgeOldRateHits(RATE_HIT_TTL_MS);
   const purgedChatLogs = await purgeOldChatLogs(CHAT_LOG_TTL_MS);
   return NextResponse.json({
     ok: true,
     ...result,
+    ...reminders,
     purgedRateHits,
     purgedChatLogs,
     at: new Date().toISOString(),

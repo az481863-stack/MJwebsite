@@ -14,6 +14,7 @@ import {
 } from "@/lib/instruments";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
+import { displayName } from "@/lib/display-name";
 import { InstrumentList, type InstrumentItem } from "./instrument-list";
 import { CancelButton } from "./cancel-button";
 
@@ -53,7 +54,7 @@ export default async function InstrumentsPage() {
           status: { in: ["BOOKED", "IN_USE", "OVERDUE"] },
           endAt: { gte: now },
         },
-        select: { startAt: true, endAt: true },
+        select: { startAt: true, endAt: true, memberId: true },
       },
     },
   });
@@ -65,6 +66,7 @@ export default async function InstrumentsPage() {
     status: string;
     startAt: Date;
     endAt: Date;
+    note: string | null;
     instrument: { name: string };
   };
   let usedHours = 0;
@@ -100,6 +102,7 @@ export default async function InstrumentsPage() {
     busy: inst.reservations.map((r) => ({
       start: r.startAt.toISOString(),
       end: r.endAt.toISOString(),
+      mine: !!me && r.memberId === me.id,
     })),
     disabled: !me || suspended || inst.status === "MAINTENANCE",
     disabledReason: !me
@@ -114,6 +117,9 @@ export default async function InstrumentsPage() {
   return (
     <Container className="py-12">
       <h1 className="text-3xl font-semibold tracking-tight">儀器介紹</h1>
+      {me && (
+        <p className="mt-2 text-lg font-medium text-accent">歡迎,{displayName(me)}</p>
+      )}
       <p className="mt-2 text-muted">
         瀏覽實驗室各項儀器;登入後可展開預約區塊、選擇整點時段預約。
       </p>
@@ -156,11 +162,14 @@ export default async function InstrumentsPage() {
             {myReservations.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-2 border border-line p-3 text-sm"
+                className="band-dark flex flex-wrap items-center justify-between gap-2 border border-accent/40 p-3 text-sm"
               >
                 <span>
-                  <strong>{r.instrument.name}</strong> · {fmt(r.startAt)}–{fmt(r.endAt)} ·{" "}
-                  {RES_LABEL[r.status] ?? r.status}
+                  <strong className="text-accent">{r.instrument.name}</strong> ·{" "}
+                  {fmt(r.startAt)}–{fmt(r.endAt)} · {RES_LABEL[r.status] ?? r.status}
+                  {r.note ? (
+                    <span className="mt-0.5 block text-xs text-muted">備註:{r.note}</span>
+                  ) : null}
                 </span>
                 <span>
                   {r.status === "BOOKED" && r.startAt.getTime() > now.getTime() && (

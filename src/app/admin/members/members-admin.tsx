@@ -16,6 +16,7 @@ import {
 interface MemberRow {
   id: string;
   loginEmail: string;
+  name: string | null;
   role: "STUDENT" | "ADMIN" | "SUPERADMIN";
   status: "PENDING" | "ACTIVE" | "DISABLED";
 }
@@ -194,7 +195,16 @@ function MemberRowItem({
   return (
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{member.loginEmail}</p>
+        <p className="truncate text-sm font-medium">
+          {member.name?.trim() ? (
+            <>
+              {member.name.trim()}{" "}
+              <span className="font-normal text-muted">({member.loginEmail})</span>
+            </>
+          ) : (
+            member.loginEmail
+          )}
+        </p>
         <p className="mt-0.5 text-xs text-muted">
           {ROLE_LABEL[member.role]} · {STATUS_LABEL[member.status]}
           {isSelf && " · 你"}

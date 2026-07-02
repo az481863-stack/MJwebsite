@@ -20,7 +20,7 @@ export interface InstrumentItem {
   purposeEn: string | null;
   photoUrl: string | null;
   maintenance: boolean;
-  busy: { start: string; end: string }[];
+  busy: { start: string; end: string; mine?: boolean }[];
   disabled: boolean;
   disabledReason?: string;
 }

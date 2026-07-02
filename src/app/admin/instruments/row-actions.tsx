@@ -10,6 +10,7 @@ import {
   setInstrumentStatus,
   proxyCheckout,
   softDeleteInstrument,
+  clearAnomaly,
 } from "./actions";
 
 function useRefreshOnOk(state: ActionResult | null) {
@@ -72,6 +73,28 @@ export function ProxyCheckoutButton({ reservationId }: { reservationId: string }
         className="border border-line-strong px-3 py-1 text-xs font-medium transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
       >
         {pending ? "處理中…" : "代簽結案"}
+      </button>
+      {state && !state.ok && <span className="ml-2 text-xs text-red-600">{state.message}</span>}
+    </form>
+  );
+}
+
+// 解除異常標記:清除列表/綜覽上的「❗」。
+export function ClearAnomalyButton({ instrumentId }: { instrumentId: string }) {
+  const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
+    clearAnomaly,
+    null,
+  );
+  useRefreshOnOk(state);
+  return (
+    <form action={formAction} className="inline">
+      <input type="hidden" name="id" value={instrumentId} />
+      <button
+        type="submit"
+        disabled={pending}
+        className="border border-red-500 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50"
+      >
+        {pending ? "解除中…" : "解除異常標記"}
       </button>
       {state && !state.ok && <span className="ml-2 text-xs text-red-600">{state.message}</span>}
     </form>

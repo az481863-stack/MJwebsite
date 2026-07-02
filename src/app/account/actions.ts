@@ -15,6 +15,23 @@ export interface ActionResult {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export async function updateName(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { ok: false, message: "請先登入。" };
+
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60) || null;
+  await prisma.member.update({
+    where: { id: me.id },
+    data: { name, updatedBy: me.id },
+  });
+  revalidatePath("/account");
+  revalidatePath("/", "layout");
+  return { ok: true, message: name ? "名稱已更新。" : "已清除名稱(改顯示登入 email)。" };
+}
+
 export async function changePassword(
   _prev: ActionResult | null,
   formData: FormData,

@@ -4,10 +4,22 @@ import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reconcile, managedInstrumentIds } from "@/lib/instruments";
+import { displayName } from "@/lib/display-name";
 import { DeleteInstrumentButton } from "./row-actions";
 import { InstrumentAdminList } from "./instrument-admin-list";
+import { UsageSummary, type UserSlot } from "./usage-summary";
 
 export const dynamic = "force-dynamic";
+
+function fmt(d: Date): string {
+  return new Date(d).toLocaleString("zh-TW", {
+    timeZone: "Asia/Taipei",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default async function InstrumentsAdminPage() {
   const me = await getCurrentMember();
@@ -15,6 +27,7 @@ export default async function InstrumentsAdminPage() {
 
   await reconcile();
 
+  const nowMs = new Date().getTime();
   const isAdmin = roleAtLeast(me.role, "ADMIN");
   const managedIds = isAdmin ? [] : await managedInstrumentIds(me.id);
   if (!isAdmin && managedIds.length === 0) redirect("/admin");
@@ -26,13 +39,63 @@ export default async function InstrumentsAdminPage() {
     },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: {
-      managers: { include: { member: { select: { loginEmail: true } } } },
+      managers: { include: { member: { select: { name: true, loginEmail: true } } } },
       reservations: {
-        where: { deletedAt: null, status: { in: ["IN_USE", "OVERDUE"] } },
-        select: { status: true },
+        where: { deletedAt: null, status: { in: ["IN_USE", "OVERDUE", "BOOKED"] } },
+        orderBy: { startAt: "asc" },
+        select: {
+          status: true,
+          startAt: true,
+          endAt: true,
+          note: true,
+          member: { select: { name: true, loginEmail: true } },
+        },
       },
     },
   });
+
+  // 最新機況回報:各儀器最近一筆簽退的機況;非正常且晚於「異常解除時間點」才標「❗」。
+  const ids = instruments.map((i) => i.id);
+  const checkouts = await prisma.checkout.findMany({
+    where: { reservation: { instrumentId: { in: ids } } },
+    orderBy: { createdAt: "desc" },
+    select: {
+      condition: true,
+      createdAt: true,
+      reservation: { select: { instrumentId: true } },
+    },
+  });
+  const latest = new Map<string, { condition: string; createdAt: Date }>();
+  for (const c of checkouts) {
+    const iid = c.reservation.instrumentId;
+    if (!latest.has(iid)) latest.set(iid, { condition: c.condition, createdAt: c.createdAt });
+  }
+  const clearedAt = new Map(instruments.map((i) => [i.id, i.anomalyClearedAt]));
+  const anomalyEmoji = (iid: string): string | null => {
+    const l = latest.get(iid);
+    if (!l || l.condition === "NORMAL") return null;
+    const cleared = clearedAt.get(iid);
+    if (cleared && l.createdAt <= cleared) return null;
+    return l.condition === "BROKEN" ? "🔴" : "🟡";
+  };
+
+  // 目前使用者(IN_USE)與下一位使用者(最近的未來 BOOKED)。
+  type Inst = (typeof instruments)[number];
+  const slotOf = (r: Inst["reservations"][number]): UserSlot => ({
+    who: displayName(r.member),
+    time: `${fmt(r.startAt)}–${fmt(r.endAt)}`,
+    note: r.note,
+  });
+  const currentSlot = (inst: Inst): UserSlot | null => {
+    const r = inst.reservations.find((x) => x.status === "IN_USE");
+    return r ? slotOf(r) : null;
+  };
+  const nextSlot = (inst: Inst): UserSlot | null => {
+    const r = inst.reservations.find(
+      (x) => x.status === "BOOKED" && x.startAt.getTime() >= nowMs,
+    );
+    return r ? slotOf(r) : null;
+  };
 
   return (
     <div>
@@ -58,11 +121,14 @@ export default async function InstrumentsAdminPage() {
             id: inst.id,
             name: inst.name,
             maintenance: inst.status === "MAINTENANCE",
+            anomaly: anomalyEmoji(inst.id),
             photoUrl: inst.photoUrl,
             inUse: inst.reservations.filter((r) => r.status === "IN_USE").length,
             overdue: inst.reservations.filter((r) => r.status === "OVERDUE")
               .length,
-            managerEmails: inst.managers.map((m) => m.member.loginEmail),
+            managerEmails: inst.managers.map((m) => displayName(m.member)),
+            current: currentSlot(inst),
+            next: nextSlot(inst),
           }))}
         />
       ) : (
@@ -70,6 +136,8 @@ export default async function InstrumentsAdminPage() {
         {instruments.map((inst) => {
           const inUse = inst.reservations.filter((r) => r.status === "IN_USE").length;
           const overdue = inst.reservations.filter((r) => r.status === "OVERDUE").length;
+          const current = currentSlot(inst);
+          const next = nextSlot(inst);
           return (
             <li key={inst.id} className="border border-line p-4">
               <div className="flex items-start justify-between gap-4">
@@ -94,6 +162,11 @@ export default async function InstrumentsAdminPage() {
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {inst.status === "MAINTENANCE" ? "🟡" : "🟢"} {inst.name}
+                      {anomalyEmoji(inst.id) && (
+                        <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                          ❗{anomalyEmoji(inst.id)}
+                        </span>
+                      )}
                     </Link>
                     <p className="mt-1 text-sm text-muted">
                       使用中 {inUse} · 逾時未簽退 {overdue}
@@ -101,9 +174,10 @@ export default async function InstrumentsAdminPage() {
                     <p className="mt-1 text-xs text-muted">
                       負責人:
                       {inst.managers.length
-                        ? inst.managers.map((m) => m.member.loginEmail).join("、")
+                        ? inst.managers.map((m) => displayName(m.member)).join("、")
                         : "(未指派)"}
                     </p>
+                    <UsageSummary current={current} next={next} />
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1 text-sm">

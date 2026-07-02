@@ -1,14 +1,14 @@
-# 階段五:儀器預約對帳排程(自動簽到 + 標記逾時)。
-# 每 15 分鐘呼叫一次受保護的 /api/cron;頁面載入也會 lazy 對帳,此為備援保證。
+# 階段五:儀器預約對帳排程(自動簽到 + 標記逾時)+ 提醒信(預約前 3 小時 / 未簽退滿 24 小時)。
+# 每小時呼叫一次受保護的 /api/cron;對帳頁面載入也會 lazy 執行,此為備援保證。
 # 設定:repo → Settings → Secrets and variables → Actions 新增
 #   - secret  CRON_SECRET:與 Vercel 環境變數 CRON_SECRET 相同
 #   - secret  SITE_URL   :部署網址(如 https://your-site.vercel.app,無結尾斜線)
-# 註:GitHub Actions 排程可能延遲數分鐘,屬正常;準確性由頁面 lazy 對帳保證。
+# 註:GitHub Actions 排程可能延遲數分鐘,屬正常;對帳準確性由頁面 lazy 執行保證。
 name: instruments-cron
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 * * * *"
   workflow_dispatch: {} # 允許手動觸發測試
 
 jobs:
