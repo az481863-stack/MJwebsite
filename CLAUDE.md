@@ -643,6 +643,20 @@
 - 偏差/決策:管理員小幫手知識**綁使用說明頁內容**(非另開知識庫、非寫死 prompt),與教授確認;顏色採 Emerald(與前台重點色系區隔)。後台一律繁中,故管理員小幫手不做 i18n。
 - 提醒:無新環境變數(沿用 `GEMINI_API_KEY`)。說明頁需先按「編輯」填入內容,管理員小幫手才會出現且答得準;交接說明應含此步驟。
 
+### 資安後記(2026-07-02):Supabase RLS 未啟用 + keepalive secret 過期
+- **RLS(Row-Level Security)全表未開 → 已修復**:Supabase Security Advisor 寄信警告 `rls_disabled_in_public`(CRITICAL,專案 `drfavckspwtifotuyiqs`):`public` schema 所有表都被 Supabase 自動開了公開 REST API(`https://<ref>.supabase.co/rest/v1/<表>`),用的是**對外公開的 `NEXT_PUBLIC_SUPABASE_ANON_KEY`**;未開 RLS 時任何人拿這把 anon key 就能讀/改/刪全表資料(Member、Booking、Invitation token、ChatLog…)。
+  - **為何修了不會壞**:本專案 Supabase client **只用於 Auth**(`src/lib/supabase/*`:登入/綁 Google/admin ban),**全站零 `.from()` 資料查詢**——所有資料存取走 **Prisma 直連 Postgres**(pooler,以 table owner `postgres` 角色)。Postgres table owner **天生繞過 RLS**,故全表開 RLS 後 Prisma 照常、Auth 走獨立 `auth` schema 不受影響;唯一被擋掉的正是那個沒在用卻對外洞開的匿名 REST API。
+  - **解法(已於 2026-07-02 於 Supabase SQL Editor 執行)**:對 `public` 每張表 `alter table ... enable row level security;`(不加任何 policy = 預設全拒),SQL 見下。**只 enable、不 force**——`force` 會連 owner(Prisma 連的角色)都擋掉,反而弄壞自己。
+    ```sql
+    do $$ declare r record; begin
+      for r in select tablename from pg_tables where schemaname='public' loop
+        execute format('alter table public.%I enable row level security;', r.tablename);
+      end loop; end $$;
+    ```
+  - ⚠️ **永久規則**:因架構永不經匿名 REST API,**日後每 `prisma migrate` 新增的表,都要對新表 `enable row level security`**(Prisma 不會自動開)。新表上線前於 SQL Editor 重跑上面那段(冪等)即可,或部署後回 Advisors 重掃確認無 `rls_disabled_in_public`。
+- **keepalive GitHub Action 失敗(exit code 2,連不上 DB)**:`SUPABASE_DB_URL` secret 過期——`.env` 的 `DIRECT_URL` pooler host 已是 `aws-1-ap-southeast-1.pooler.supabase.com`,但 GitHub secret 仍是舊 host。**解法**:GitHub repo → Settings → Secrets and variables → Actions 把 `SUPABASE_DB_URL` 更新為現行 `DIRECT_URL`(密碼含特殊字元須 URL 編碼),再 workflow_dispatch 手動觸發驗證變綠。診斷心法:exit 1 = secret 未設(workflow 自寫);exit 2 = psql 連不上(host 錯/專案暫停/密碼未編碼)。
+- **交接提醒**:教授 GitHub 帳號 `az481863-stack` 須於 **2026-08-08 前開啟 2FA**,否則帳號動作被限制。
+
 ### 交付與交接
 - 完成日期:
 - 實際與規格的偏差:
