@@ -31,6 +31,7 @@ export interface InstrumentRow {
   id: string;
   name: string;
   maintenance: boolean;
+  anomaly: string | null; // 最新機況回報異常時的燈號(🟡/🔴),正常則 null
   photoUrl: string | null;
   inUse: number;
   overdue: number;
@@ -79,6 +80,11 @@ function Row({ item }: { item: InstrumentRow }) {
               className="font-medium underline-offset-4 hover:underline"
             >
               {item.maintenance ? "🟡" : "🟢"} {item.name}
+              {item.anomaly && (
+                <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                  ❗{item.anomaly}
+                </span>
+              )}
             </Link>
             <p className="mt-1 text-sm text-muted">
               使用中 {item.inUse} · 逾時未簽退 {item.overdue}

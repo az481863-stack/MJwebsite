@@ -44,8 +44,10 @@ export function InstrumentBooking({
   const [now] = useState(() => Date.now()); // 一次性,避免 render 期呼叫 Date.now
   const [open, setOpen] = useState(false); // 預約區塊預設收合
   const [dateStr, setDateStr] = useState<string>(() => todayStr());
-  const [startHour, setStartHour] = useState<number | null>(null);
-  const [hours, setHours] = useState(1);
+  // 拉取式選取:第一下設 anchor,第二下設 target;之間即為預約範圍。
+  const [anchor, setAnchor] = useState<number | null>(null);
+  const [target, setTarget] = useState<number | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
     reserve,
     null,
@@ -69,20 +71,43 @@ export function InstrumentBooking({
     return busyMs.some((b) => b.s < e && b.e > s);
   };
   const isPast = (hour: number) => slotStartDate(hour).getTime() <= now;
+  const isFree = (hour: number) => !isBusy(hour) && !isPast(hour);
 
-  // 從 startHour 起算最多可連續預約的時數(遇 busy/過去/超出當日 24:00 即止)。
-  const maxHours = useMemo(() => {
-    if (startHour == null) return 1;
-    let n = 0;
-    for (let h = startHour; h < HOURS_PER_DAY; h++) {
-      if (isPast(h) || isBusy(h)) break;
-      n++;
+  // 從 anchor 起、朝 to 的方向,回傳最遠可連續選到的整點(遇 busy/過去即止)。
+  const clampTo = (to: number): number => {
+    if (anchor == null) return to;
+    const step = to >= anchor ? 1 : -1;
+    let last = anchor;
+    for (let h = anchor + step; step > 0 ? h <= to : h >= to; h += step) {
+      if (!isFree(h)) break;
+      last = h;
     }
-    return Math.max(1, n);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startHour, dateStr, busyMs]);
+    return last;
+  };
 
-  const startISO = startHour != null ? slotStartDate(startHour).toISOString() : "";
+  // 目前選取範圍:target 已定則 [anchor,target];否則以 hover 預覽;僅 anchor 則單格。
+  const range = useMemo<[number, number] | null>(() => {
+    if (anchor == null) return null;
+    const other = target != null ? target : hover != null ? clampTo(hover) : anchor;
+    return [Math.min(anchor, other), Math.max(anchor, other)];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchor, target, hover, dateStr, busyMs]);
+
+  const selStart = range ? range[0] : null;
+  const hours = range ? range[1] - range[0] + 1 : 0;
+  const startISO = selStart != null ? slotStartDate(selStart).toISOString() : "";
+
+  function pick(h: number) {
+    if (anchor == null || target != null) {
+      // 開始新的一輪選取。
+      setAnchor(h);
+      setTarget(null);
+      setHover(null);
+    } else {
+      // 第二下:定下範圍(夾在連續空檔內)。
+      setTarget(clampTo(h));
+    }
+  }
 
   // 未登入 / 維護中 / 停權:不顯示預約區塊。有原因才顯示(未登入則完全不顯示)。
   if (disabled) {
@@ -128,33 +153,42 @@ export function InstrumentBooking({
           min={todayStr()}
           onChange={(e) => {
             setDateStr(e.target.value || todayStr());
-            setStartHour(null);
+            setAnchor(null);
+            setTarget(null);
+            setHover(null);
           }}
           className="mt-1 border border-line px-3 py-1.5 text-sm outline-none focus:border-line-strong"
         />
       </div>
 
-      {/* 整點空檔(全天 24 小時) */}
-      <div className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8">
+      {/* 整點空檔(全天 24 小時):點起點 → 移到終點 → 再點一下即選定連續範圍 */}
+      <p className="mt-3 text-xs text-muted">
+        點選起始整點,移動滑鼠預覽範圍,再點終點即選定連續時段。
+      </p>
+      <div
+        className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8"
+        onMouseLeave={() => setHover(null)}
+      >
         {Array.from({ length: HOURS_PER_DAY }, (_, h) => h).map((h) => {
           const busyOrPast = isBusy(h) || isPast(h);
-          const selected = startHour === h;
+          const inRange = range != null && h >= range[0] && h <= range[1];
+          const isEnd = range != null && (h === range[0] || h === range[1]);
+          // 色1(端點)= accent 實色;色2(範圍中間)= accent 淡色。
+          const cls = busyOrPast
+            ? "cursor-not-allowed border-line bg-foreground/[0.04] text-muted line-through"
+            : inRange && isEnd
+              ? "border-accent bg-accent/25 font-semibold text-foreground"
+              : inRange
+                ? "border-accent/60 bg-accent/10 text-foreground"
+                : "border-line hover:border-line-strong";
           return (
             <button
               key={h}
               type="button"
               disabled={busyOrPast}
-              onClick={() => {
-                setStartHour(h);
-                setHours(1);
-              }}
-              className={`border px-1 py-1.5 text-xs tabular-nums ${
-                selected
-                  ? "border-accent bg-accent/15 font-semibold text-foreground"
-                  : busyOrPast
-                    ? "cursor-not-allowed border-line bg-foreground/[0.04] text-muted line-through"
-                    : "border-line hover:border-line-strong"
-              }`}
+              onClick={() => pick(h)}
+              onMouseEnter={() => !busyOrPast && setHover(h)}
+              className={`border px-1 py-1.5 text-xs tabular-nums ${cls}`}
             >
               {String(h).padStart(2, "0")}:00
             </button>
@@ -162,35 +196,44 @@ export function InstrumentBooking({
         })}
       </div>
 
-      {startHour != null ? (
-        <form action={formAction} className="mt-3 flex flex-wrap items-end gap-3">
+      {selStart != null && target != null ? (
+        <form action={formAction} className="mt-3 space-y-3">
           <input type="hidden" name="instrumentId" value={instrumentId} />
           <input type="hidden" name="startAt" value={startISO} />
+          <input type="hidden" name="hours" value={hours} />
+          <p className="text-sm">
+            已選:
+            <strong className="text-accent">
+              {String(range![0]).padStart(2, "0")}:00–
+              {String(range![1] + 1).padStart(2, "0")}:00
+            </strong>{" "}
+            (共 {hours} 小時)
+          </p>
           <div>
-            <label className="block text-xs text-muted">時數(小時)</label>
-            <select
-              name="hours"
-              value={hours}
-              onChange={(e) => setHours(parseInt(e.target.value, 10))}
-              className="mt-1 border border-line px-2 py-1.5 text-sm"
-            >
-              {Array.from({ length: maxHours }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+            <label className="block text-xs text-muted" htmlFor={`note-${instrumentId}`}>
+              備註(選填)
+            </label>
+            <textarea
+              id={`note-${instrumentId}`}
+              name="note"
+              rows={2}
+              maxLength={500}
+              placeholder="如:實驗用途、樣品編號等(選填)。"
+              className="mt-1 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+            />
           </div>
           <button
             type="submit"
             disabled={pending}
             className="bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85 disabled:opacity-50"
           >
-            {pending ? "預約中…" : `預約 ${String(startHour).padStart(2, "0")}:00 起 ${hours} 小時`}
+            {pending ? "預約中…" : `預約 ${hours} 小時`}
           </button>
         </form>
       ) : (
-        <p className="mt-3 text-xs text-muted">點選上方空檔以預約。</p>
+        <p className="mt-3 text-xs text-muted">
+          {anchor != null ? "再點一下終點以選定範圍。" : "點選上方空檔以開始預約。"}
+        </p>
       )}
 
       {state && (

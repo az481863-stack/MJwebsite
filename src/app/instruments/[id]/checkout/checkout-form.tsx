@@ -94,6 +94,20 @@ export function CheckoutForm({
         </div>
       )}
 
+      <div>
+        <label className="block text-sm font-medium" htmlFor="note">
+          簽退備註(選填)
+        </label>
+        <textarea
+          id="note"
+          name="note"
+          rows={2}
+          maxLength={500}
+          placeholder="使用情形、交接事項等(選填)。"
+          className="mt-1.5 w-full border border-line px-3 py-2.5 text-sm outline-none focus:border-line-strong"
+        />
+      </div>
+
       {state && !state.ok && <p className="text-sm text-red-600">{state.message}</p>}
 
       <button

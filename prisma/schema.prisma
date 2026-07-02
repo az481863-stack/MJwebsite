@@ -508,6 +508,7 @@ model Reservation {
   startAt     DateTime          @map("start_at") // 整點
   endAt       DateTime          @map("end_at") // 整點
   status      ReservationStatus @default(BOOKED)
+  note        String? // 預約備註(選,預約人填寫)
   cancelledAt DateTime?         @map("cancelled_at")
   checkedInAt DateTime?         @map("checked_in_at") // 自動簽到時間
 
@@ -574,7 +575,8 @@ model Checkout {
   reservation   Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   hours         Int // 確認時數
   condition     ConditionReport // 機況回報(強制)
-  anomalyNote   String?         @map("anomaly_note") // 異常描述(選)
+  anomalyNote   String?         @map("anomaly_note") // 異常描述(選,🟡/🔴 時填,進警報信)
+  note          String? // 簽退備註(選,任何機況皆可填)
   byMemberId    String          @map("by_member_id") // 簽退執行者
   isProxy       Boolean         @default(false) @map("is_proxy") // 代簽
 

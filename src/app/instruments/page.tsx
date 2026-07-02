@@ -65,6 +65,7 @@ export default async function InstrumentsPage() {
     status: string;
     startAt: Date;
     endAt: Date;
+    note: string | null;
     instrument: { name: string };
   };
   let usedHours = 0;
@@ -156,11 +157,14 @@ export default async function InstrumentsPage() {
             {myReservations.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-2 border border-line p-3 text-sm"
+                className="band-dark flex flex-wrap items-center justify-between gap-2 border border-accent/40 p-3 text-sm"
               >
                 <span>
-                  <strong>{r.instrument.name}</strong> · {fmt(r.startAt)}–{fmt(r.endAt)} ·{" "}
-                  {RES_LABEL[r.status] ?? r.status}
+                  <strong className="text-accent">{r.instrument.name}</strong> ·{" "}
+                  {fmt(r.startAt)}–{fmt(r.endAt)} · {RES_LABEL[r.status] ?? r.status}
+                  {r.note ? (
+                    <span className="mt-0.5 block text-xs text-muted">備註:{r.note}</span>
+                  ) : null}
                 </span>
                 <span>
                   {r.status === "BOOKED" && r.startAt.getTime() > now.getTime() && (

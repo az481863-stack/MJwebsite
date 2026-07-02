@@ -34,6 +34,23 @@ export default async function InstrumentsAdminPage() {
     },
   });
 
+  // 最新機況回報:各儀器最近一筆簽退的機況;非正常則於列表標「❗」,免點進綜覽。
+  const ids = instruments.map((i) => i.id);
+  const checkouts = await prisma.checkout.findMany({
+    where: { reservation: { instrumentId: { in: ids } } },
+    orderBy: { createdAt: "desc" },
+    select: { condition: true, reservation: { select: { instrumentId: true } } },
+  });
+  const latestCondition = new Map<string, string>();
+  for (const c of checkouts) {
+    const iid = c.reservation.instrumentId;
+    if (!latestCondition.has(iid)) latestCondition.set(iid, c.condition);
+  }
+  const anomalyEmoji = (iid: string): string | null => {
+    const cond = latestCondition.get(iid);
+    return cond === "BROKEN" ? "🔴" : cond === "UNSTABLE" ? "🟡" : null;
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -58,6 +75,7 @@ export default async function InstrumentsAdminPage() {
             id: inst.id,
             name: inst.name,
             maintenance: inst.status === "MAINTENANCE",
+            anomaly: anomalyEmoji(inst.id),
             photoUrl: inst.photoUrl,
             inUse: inst.reservations.filter((r) => r.status === "IN_USE").length,
             overdue: inst.reservations.filter((r) => r.status === "OVERDUE")
@@ -94,6 +112,11 @@ export default async function InstrumentsAdminPage() {
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {inst.status === "MAINTENANCE" ? "🟡" : "🟢"} {inst.name}
+                      {anomalyEmoji(inst.id) && (
+                        <span className="ml-1.5 font-semibold text-red-600" title="最新機況回報異常">
+                          ❗{anomalyEmoji(inst.id)}
+                        </span>
+                      )}
                     </Link>
                     <p className="mt-1 text-sm text-muted">
                       使用中 {inUse} · 逾時未簽退 {overdue}

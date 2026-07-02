@@ -121,6 +121,11 @@ export default async function InstrumentDetailPage({
                 <tr key={r.id} className="border-b border-line/60 align-top">
                   <td className="py-2 pr-4 whitespace-nowrap">
                     {fmt(r.startAt)}–{fmt(r.endAt)}
+                    {r.note ? (
+                      <span className="mt-0.5 block whitespace-normal text-xs text-muted">
+                        備註:{r.note}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="py-2 pr-4">{r.member.loginEmail}</td>
                   <td className="py-2 pr-4">{RES_LABEL[r.status] ?? r.status}</td>
@@ -130,6 +135,11 @@ export default async function InstrumentDetailPage({
                         {COND_LABEL[r.checkout.condition] ?? r.checkout.condition}
                         {r.checkout.isProxy ? "(代簽)" : ""}
                         {r.checkout.anomalyNote ? ` — ${r.checkout.anomalyNote}` : ""}
+                        {r.checkout.note ? (
+                          <span className="mt-0.5 block text-xs text-muted">
+                            簽退備註:{r.checkout.note}
+                          </span>
+                        ) : null}
                       </span>
                     ) : (
                       <span className="text-muted">—</span>

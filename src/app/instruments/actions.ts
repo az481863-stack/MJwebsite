@@ -31,6 +31,7 @@ export async function reserve(
   const instrumentId = String(formData.get("instrumentId") ?? "");
   const startISO = String(formData.get("startAt") ?? "");
   const hours = parseInt(String(formData.get("hours") ?? "0"), 10);
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null;
 
   const start = new Date(startISO);
   if (!instrumentId || isNaN(start.getTime()))
@@ -73,6 +74,7 @@ export async function reserve(
       startAt: start,
       endAt: end,
       status: "BOOKED",
+      note,
       createdBy: me.id,
       updatedBy: me.id,
     },
@@ -116,7 +118,8 @@ export async function selfCheckout(
   const reservationId = String(formData.get("reservationId") ?? "");
   const hours = parseInt(String(formData.get("hours") ?? "0"), 10);
   const condition = String(formData.get("condition") ?? "");
-  const note = String(formData.get("anomalyNote") ?? "").trim() || null;
+  const anomalyNote = String(formData.get("anomalyNote") ?? "").trim() || null;
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null;
 
   if (!["NORMAL", "UNSTABLE", "BROKEN"].includes(condition))
     return { ok: false, message: "請回報機況。" };
@@ -145,7 +148,8 @@ export async function selfCheckout(
         reservationId: r.id,
         hours: finalHours,
         condition: condition as ConditionReport,
-        anomalyNote: note,
+        anomalyNote,
+        note,
         byMemberId: me.id,
         isProxy: false,
       },
@@ -164,7 +168,7 @@ export async function selfCheckout(
       instrumentName: r.instrument.name,
       reporterName: me.loginEmail,
       condition,
-      note: note ?? undefined,
+      note: anomalyNote ?? undefined,
     });
   }
 
