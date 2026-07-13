@@ -29,6 +29,7 @@ export default async function EditPublicationPage({
           year: p.year,
           doiUrl: p.doiUrl,
           abstract: p.abstract,
+          imageUrl: p.imageUrl,
           highlight: p.highlight,
         }}
       />

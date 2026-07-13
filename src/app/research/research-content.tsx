@@ -7,6 +7,7 @@ import { useLanguage } from "@/lib/i18n/context";
 import { Section } from "@/components/ui/Section";
 import { PageNav } from "@/components/PageNav";
 import { ResearchAreas } from "@/components/ResearchAreas";
+import { ZoomableImage } from "@/components/ZoomableImage";
 
 export interface IndustryEntry {
   id: string;
@@ -24,6 +25,7 @@ export interface PublicationEntry {
   venue: string;
   year: number;
   doiUrl: string | null;
+  imageUrl: string | null;
   highlight: boolean;
 }
 
@@ -125,6 +127,15 @@ export function ResearchContent({
                 <span className="shrink-0 font-mono text-sm text-muted">
                   {pub.year}
                 </span>
+                {pub.imageUrl && (
+                  <ZoomableImage
+                    src={pub.imageUrl}
+                    alt={pub.title}
+                    width={112}
+                    height={84}
+                    thumbClassName="h-20 w-28 shrink-0 border border-line object-cover"
+                  />
+                )}
                 <div>
                   <p
                     className={
