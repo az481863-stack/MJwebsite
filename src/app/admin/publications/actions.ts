@@ -20,6 +20,7 @@ function parse(formData: FormData) {
     year: parseInt(String(formData.get("year") ?? ""), 10),
     doiUrl: String(formData.get("doiUrl") ?? "").trim() || null,
     abstract: String(formData.get("abstract") ?? "").trim() || null,
+    imageUrl: String(formData.get("imageUrl") ?? "").trim() || null,
     highlight: formData.get("highlight") === "on",
   };
 }
@@ -43,6 +44,7 @@ export async function createPublication(
       year: f.year,
       doiUrl: f.doiUrl,
       abstract: f.abstract,
+      imageUrl: f.imageUrl,
       highlight: f.highlight,
       // 管理員可選擇立即發布,否則存為草稿。
       status: formData.get("publish") === "on" ? "PUBLISHED" : "DRAFT",
@@ -81,6 +83,7 @@ export async function updatePublication(
       year: f.year,
       doiUrl: f.doiUrl,
       abstract: f.abstract,
+      imageUrl: f.imageUrl,
       highlight: f.highlight,
       updatedBy: me.id,
     },

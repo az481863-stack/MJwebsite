@@ -199,6 +199,7 @@ model Publication {
   year      Int
   doiUrl    String?       @map("doi_url")
   abstract  String?       // 摘要(選填;供聊天機器人回答論文主旨,階段六 AI 可抽)
+  imageUrl  String?       @map("image_url") // 圖片(選填;前台列表顯示於年份與標題之間)
   highlight Boolean       @default(false) // 精選:前台加粗放大
   status    ContentStatus @default(DRAFT)
 

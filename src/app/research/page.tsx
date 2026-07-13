@@ -46,6 +46,7 @@ export default async function ResearchPage() {
         venue: p.venue,
         year: p.year,
         doiUrl: p.doiUrl,
+        imageUrl: p.imageUrl,
         highlight: p.highlight,
       }))}
     />

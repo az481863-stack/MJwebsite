@@ -6,6 +6,7 @@ import {
   fieldCls,
   type ActionResult,
 } from "@/components/admin/form-kit";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 export interface PublicationInitial {
   id: string;
@@ -15,6 +16,7 @@ export interface PublicationInitial {
   year: number;
   doiUrl: string | null;
   abstract: string | null;
+  imageUrl: string | null;
   highlight: boolean;
 }
 
@@ -67,6 +69,12 @@ export function PublicationForm({
           className={fieldCls}
         />
       </Labeled>
+      <ImageUpload
+        name="imageUrl"
+        folder="publications"
+        defaultUrl={initial?.imageUrl}
+        label="圖片(前台列表顯示於年份與標題之間)"
+      />
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="highlight" defaultChecked={initial?.highlight} />
         精選(前台加粗放大)
