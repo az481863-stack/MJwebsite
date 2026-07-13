@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAiEnabled, extractPublication } from "@/lib/ai/gemini";
-import { extractDocxText } from "@/lib/ai/docx";
+import { extractDocxText, fetchUploadedDocx } from "@/lib/ai/docx";
 
 export interface ActionResult {
   ok: boolean;
@@ -24,15 +24,12 @@ export async function quickAddPublicationFromWord(
     return { ok: false, message: "權限不足。" };
   if (!isAiEnabled()) return { ok: false, message: "AI 功能未啟用。" };
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0)
-    return { ok: false, message: "請選擇一個 Word(.docx)檔。" };
-  if (!file.name.toLowerCase().endsWith(".docx"))
-    return { ok: false, message: "僅支援 .docx 檔。" };
+  const path = String(formData.get("path") ?? "");
+  if (!path) return { ok: false, message: "請選擇一個 Word(.docx)檔。" };
 
   let newId: string;
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = await fetchUploadedDocx(path);
     const { text } = await extractDocxText(buffer);
     const ai = await extractPublication(text);
 
