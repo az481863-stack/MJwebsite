@@ -1,5 +1,6 @@
 // Publications 列表(僅管理員以上;學生無 Publications 權限)。
 
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentMember, roleAtLeast } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -40,15 +41,27 @@ export default async function PublicationsAdminPage() {
         items={items}
         deleted={deleted}
         renderRow={(p) => (
-          <>
-            <p className="text-sm font-medium">
-              {p.highlight && <span title="精選">★ </span>}
-              {p.title}
-            </p>
-            <p className="text-xs text-muted">
-              {p.authors} · {p.venue} · {p.year}
-            </p>
-          </>
+          <div className="flex items-start gap-3">
+            {p.imageUrl && (
+              <Image
+                src={p.imageUrl}
+                alt={p.title}
+                width={80}
+                height={60}
+                unoptimized
+                className="h-14 w-20 shrink-0 border border-line object-cover"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium">
+                {p.highlight && <span title="精選">★ </span>}
+                {p.title}
+              </p>
+              <p className="text-xs text-muted">
+                {p.authors} · {p.venue} · {p.year}
+              </p>
+            </div>
+          </div>
         )}
         renderDeleted={(p) => p.title}
       />
