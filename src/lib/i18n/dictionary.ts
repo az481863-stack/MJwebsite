@@ -131,6 +131,7 @@ export interface Dictionary {
   };
   courses: { heading: string; intro: string; empty: string; handout: string };
   forStudents: { heading: string; intro: string; empty: string };
+  qrExpired: { heading: string; intro: string; home: string; contact: string };
   chat: {
     title: string;
     open: string;
@@ -394,6 +395,12 @@ Email:____`,
     heading: "給高中生的話",
     intro: "寫給對光電物理好奇的你。",
     empty: "內容準備中。",
+  },
+  qrExpired: {
+    heading: "此 QR Code 已失效",
+    intro: "這個 QR Code 已過期或已被移除,無法再前往原本的連結。若您需要相關資訊,歡迎直接與我們聯絡。",
+    home: "回首頁",
+    contact: "聯絡教授",
   },
   chat: {
     title: "實驗室小幫手",
@@ -660,6 +667,13 @@ Email: ____`,
     heading: "For High-School Students",
     intro: "A note for those curious about optoelectronic physics.",
     empty: "Content coming soon.",
+  },
+  qrExpired: {
+    heading: "This QR code is no longer active",
+    intro:
+      "This QR code has expired or has been removed, so it no longer leads anywhere. Please contact us if you still need the information it pointed to.",
+    home: "Back to home",
+    contact: "Contact the professor",
   },
   chat: {
     title: "Lab Assistant",
