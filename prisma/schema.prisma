@@ -591,3 +591,27 @@ model Checkout {
 
   @@map("checkouts")
 }
+
+// ── QR Code 管理(站內短網址 + 掃描計數 + 到期) ──────────────────
+// QR 圖片編的不是 targetUrl 本身,而是站內轉址端點 /q/<slug>:
+// 唯有讓掃碼者先經過我們的伺服器,才可能計數(直接編目標網址則永遠算不到)。
+// 副作用即優點:QR 印出去後,目標網址仍可隨時於後台改,不必重印。
+// 🔒 只累加總次數,不存任何 IP/裝置識別(無個資,故不受 ChatLog 那套保留期規範)。
+model QrCode {
+  id        String    @id @default(uuid())
+  slug      String    @unique // 短碼;建立後不可改(QR 可能已印出)
+  label     String // 名稱/用途(後台辨識用)
+  targetUrl String    @map("target_url")
+  expiresAt DateTime? @map("expires_at") // 選填,null = 永久有效
+  scanCount Int       @default(0) @map("scan_count")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  @@index([deletedAt])
+  @@map("qr_codes")
+}
