@@ -103,11 +103,9 @@ export interface Dictionary {
     labName: string;
     address: string;
     email: string;
-    phone: string;
     officeHours: string;
     addressLabel: string;
     emailLabel: string;
-    phoneLabel: string;
     officeHoursLabel: string;
     formNote: string;
     form: {
@@ -128,6 +126,43 @@ export interface Dictionary {
       errRate: string;
       errGeneric: string;
     };
+  };
+  instruments: {
+    heading: string;
+    welcome: string; // {name}
+    intro: string;
+    loginBefore: string;
+    loginLink: string;
+    loginAfter: string;
+    quota: string; // {used} {max}
+    suspended: string; // {n} {threshold}
+    overdueWarn: string; // {n} {threshold}
+    myReservations: string;
+    statusLabels: Record<"BOOKED" | "IN_USE" | "OVERDUE", string>;
+    noteLabel: string;
+    cancel: string;
+    cancelling: string;
+    cancelConfirm: string;
+    goCheckout: string;
+    overdueHint: string;
+    reasonMaintenance: string;
+    reasonSuspended: string;
+    bookBtn: string;
+    bookHeading: string;
+    collapse: string;
+    dateLabel: string;
+    pickHint: string;
+    mineLegend: string;
+    dayListHeading: string;
+    dayListEmpty: string;
+    dayListMine: string;
+    selected: string; // {range} {hours}
+    notePlaceholder: string;
+    noteOptional: string;
+    submit: string; // {hours}
+    submitting: string;
+    pickStart: string;
+    pickEnd: string;
   };
   courses: { heading: string; intro: string; empty: string; handout: string };
   forStudents: { heading: string; intro: string; empty: string };
@@ -355,13 +390,11 @@ Email:____`,
     labName: "光電物理實驗室 — 吳孟哲 教授",
     address: "台灣 · 物理學系 光電物理實驗室",
     email: "mjwu.lab@example.edu.tw",
-    phone: "+886-2-0000-0000",
     officeHours: "週一至週五 09:00–17:00",
     addressLabel: "地址",
     emailLabel: "電子郵件",
-    phoneLabel: "電話",
     officeHoursLabel: "聯絡時間",
-    formNote: "亦可直接以上方 email、電話與我們聯繫。",
+    formNote: "亦可直接以上方 email 與我們聯繫。",
     form: {
       heading: "線上聯絡表單",
       intro: "請選擇主題並留下您的訊息,我們會儘速回覆。",
@@ -384,6 +417,48 @@ Email:____`,
       errRate: "送出過於頻繁,請稍後再試。",
       errGeneric: "送出失敗,請稍後再試,或直接以 email 與我們聯繫。",
     },
+  },
+  instruments: {
+    heading: "儀器介紹",
+    welcome: "歡迎,{name}",
+    intro: "瀏覽實驗室各項儀器;登入後可展開預約區塊、選擇整點時段預約。",
+    loginBefore: "請先",
+    loginLink: "登入",
+    loginAfter: "後預約。",
+    quota: "預約總時數:已用 {used} / 上限 {max} 小時",
+    suspended:
+      "您有 {n} 筆逾時未簽退(達 {threshold} 筆),預約權已暫停;完成簽退後自動恢復。",
+    overdueWarn: "您有 {n} 筆逾時未簽退;達 {threshold} 筆將暫停預約權。",
+    myReservations: "我的預約",
+    statusLabels: {
+      BOOKED: "已預約",
+      IN_USE: "使用中·未簽退",
+      OVERDUE: "逾時未簽退",
+    },
+    noteLabel: "備註",
+    cancel: "提前取消",
+    cancelling: "取消中…",
+    cancelConfirm: "確定取消此預約?",
+    goCheckout: "前往簽退",
+    overdueHint: "逾期,請洽負責人代簽",
+    reasonMaintenance: "此儀器維護中,暫不開放預約。",
+    reasonSuspended: "預約權暫停中(逾時未簽退達 3 筆)。",
+    bookBtn: "預約時段 ▾",
+    bookHeading: "選擇時段預約",
+    collapse: "收合 ▴",
+    dateLabel: "日期",
+    pickHint: "點選起始整點,移動滑鼠預覽範圍,再點終點即選定連續時段。",
+    mineLegend: "為您的預約。",
+    dayListHeading: "當日預約",
+    dayListEmpty: "本日尚無預約。",
+    dayListMine: "(本人)",
+    selected: "已選:{range}(共 {hours} 小時)",
+    noteOptional: "備註(選填)",
+    notePlaceholder: "如:實驗用途、樣品編號等(選填)。",
+    submit: "預約 {hours} 小時",
+    submitting: "預約中…",
+    pickStart: "點選上方空檔以開始預約。",
+    pickEnd: "再點一下終點以選定範圍。",
   },
   courses: {
     heading: "課程紀錄",
@@ -627,13 +702,11 @@ Email: ____`,
     labName: "Optoelectronic Physics Lab — Prof. Meng-Jer Wu",
     address: "Department of Physics, Optoelectronic Physics Lab, Taiwan",
     email: "mjwu.lab@example.edu.tw",
-    phone: "+886-2-0000-0000",
     officeHours: "Mon–Fri 09:00–17:00",
     addressLabel: "Address",
     emailLabel: "Email",
-    phoneLabel: "Phone",
     officeHoursLabel: "Hours",
-    formNote: "You may also reach us directly via the email or phone above.",
+    formNote: "You may also reach us directly via the email above.",
     form: {
       heading: "Contact form",
       intro: "Pick a topic and leave your message; we'll get back to you soon.",
@@ -656,6 +729,51 @@ Email: ____`,
       errRate: "Too many submissions, please try again later.",
       errGeneric: "Could not send. Please try again later or email us directly.",
     },
+  },
+  instruments: {
+    heading: "Instruments",
+    welcome: "Welcome, {name}",
+    intro:
+      "Browse the lab instruments; sign in to open the booking panel and reserve hourly slots.",
+    loginBefore: "Please ",
+    loginLink: "sign in",
+    loginAfter: " to make a reservation.",
+    quota: "Total booked hours: {used} used / {max} limit",
+    suspended:
+      "You have {n} overdue check-outs (limit {threshold}); booking is suspended and will resume automatically once they are checked out.",
+    overdueWarn:
+      "You have {n} overdue check-outs; booking is suspended at {threshold}.",
+    myReservations: "My reservations",
+    statusLabels: {
+      BOOKED: "Booked",
+      IN_USE: "In use · not checked out",
+      OVERDUE: "Overdue",
+    },
+    noteLabel: "Note",
+    cancel: "Cancel",
+    cancelling: "Cancelling…",
+    cancelConfirm: "Cancel this reservation?",
+    goCheckout: "Check out",
+    overdueHint: "Overdue — ask the instrument manager to check out for you",
+    reasonMaintenance: "This instrument is under maintenance and cannot be booked.",
+    reasonSuspended: "Booking suspended (3 overdue check-outs).",
+    bookBtn: "Book a slot ▾",
+    bookHeading: "Choose a time slot",
+    collapse: "Collapse ▴",
+    dateLabel: "Date",
+    pickHint:
+      "Click a starting hour, move the pointer to preview the range, then click the end hour.",
+    mineLegend: "marks your own reservations.",
+    dayListHeading: "Reservations on this day",
+    dayListEmpty: "No reservations on this day.",
+    dayListMine: "(you)",
+    selected: "Selected: {range} ({hours} h)",
+    noteOptional: "Note (optional)",
+    notePlaceholder: "e.g. experiment purpose, sample id (optional).",
+    submit: "Book {hours} h",
+    submitting: "Booking…",
+    pickStart: "Click a free slot above to start.",
+    pickEnd: "Click once more to set the end of the range.",
   },
   courses: {
     heading: "Courses",

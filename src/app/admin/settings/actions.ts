@@ -66,7 +66,6 @@ export async function saveSettings(
     contactAddressZh: text("contactAddressZh"),
     contactAddressEn: text("contactAddressEn"),
     contactEmail: text("contactEmail"),
-    contactPhone: text("contactPhone"),
     contactOfficeHoursZh: text("contactOfficeHoursZh"),
     contactOfficeHoursEn: text("contactOfficeHoursEn"),
     updatedBy: me.id,

@@ -1,5 +1,6 @@
-// QR 簽退頁:掃機台 QR → 要求登入 → 查本人在該機「使用中·未簽退」紀錄 →
-// 有則帶往簽退表單;無則顯示「無需簽退」。
+// QR 落地頁:掃機台 QR → 要求登入 → 查本人在該機「使用中·未簽退」紀錄 →
+// 有則帶往簽退表單;沒有則直接導到預約頁(帶 ?q=機台名稱,自動捲到該台並可展開預約)。
+// 逾期(超過 3 天)無法本人簽退者仍留在本頁顯示說明,以免使用者不知情。
 
 import { notFound, redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
@@ -40,6 +41,11 @@ export default async function CheckoutPage({
         where: { instrumentId: id, memberId: me.id, status: "OVERDUE", deletedAt: null },
       });
 
+  // 無簽退義務(也非逾期)→ 一律導向預約系統,讓同一張 QR 兼作「預約入口」。
+  if (!inUse && !overdue) {
+    redirect(`/instruments?q=${encodeURIComponent(inst.name)}`);
+  }
+
   return (
     <Container className="flex min-h-[60vh] items-center justify-center py-12">
       <div className="w-full max-w-md">
@@ -56,11 +62,7 @@ export default async function CheckoutPage({
             <div className="border border-line p-5 text-sm">
               此紀錄已逾期超過 3 天,本人無法簽退,請洽機台負責人或管理員代簽。
             </div>
-          ) : (
-            <div className="border border-line p-5 text-sm">
-              您目前在此儀器沒有「使用中·未簽退」的紀錄,無需簽退。
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </Container>

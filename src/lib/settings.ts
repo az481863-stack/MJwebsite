@@ -40,7 +40,6 @@ export interface SiteSettingsData {
   contactAddressZh: string;
   contactAddressEn: string;
   contactEmail: string;
-  contactPhone: string;
   contactOfficeHoursZh: string;
   contactOfficeHoursEn: string;
 }
@@ -81,7 +80,6 @@ export const DEFAULT_SETTINGS: SiteSettingsData = {
   contactAddressZh: "",
   contactAddressEn: "",
   contactEmail: "",
-  contactPhone: "",
   contactOfficeHoursZh: "",
   contactOfficeHoursEn: "",
 };
@@ -128,7 +126,6 @@ export async function getSettings(): Promise<SiteSettingsData> {
       contactAddressZh: s.contactAddressZh,
       contactAddressEn: s.contactAddressEn,
       contactEmail: s.contactEmail,
-      contactPhone: s.contactPhone,
       contactOfficeHoursZh: s.contactOfficeHoursZh,
       contactOfficeHoursEn: s.contactOfficeHoursEn,
     };

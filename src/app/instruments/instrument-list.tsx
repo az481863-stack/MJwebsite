@@ -20,9 +20,10 @@ export interface InstrumentItem {
   purposeEn: string | null;
   photoUrl: string | null;
   maintenance: boolean;
-  busy: { start: string; end: string; mine?: boolean }[];
+  busy: { start: string; end: string; mine?: boolean; name?: string }[];
   disabled: boolean;
-  disabledReason?: string;
+  // 停用原因以「代碼」傳遞,由 client 依語系轉成文案(勿在 server 端寫死中文)。
+  disabledReason?: "maintenance" | "suspended";
 }
 
 function matches(inst: InstrumentItem, q: string): boolean {

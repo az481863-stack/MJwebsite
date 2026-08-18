@@ -1,7 +1,7 @@
 // 階段五:儀器預約頁(學生視角)。僅見各台空檔並預約,看不到管理資訊。
 // 受 Settings.showInstruments 控制(關閉時 404)。
+// 介面文字全部交給 client 的 InstrumentsContent 渲染,以隨前台語系切換(規格 A-1)。
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -12,29 +12,11 @@ import {
   getActiveOverdueCount,
   SUSPEND_THRESHOLD,
 } from "@/lib/instruments";
-import { Suspense } from "react";
-import { Container } from "@/components/ui/Container";
 import { displayName } from "@/lib/display-name";
-import { InstrumentList, type InstrumentItem } from "./instrument-list";
-import { CancelButton } from "./cancel-button";
+import { InstrumentsContent, type MyReservation } from "./instruments-content";
+import type { InstrumentItem } from "./instrument-list";
 
 export const dynamic = "force-dynamic";
-
-const RES_LABEL: Record<string, string> = {
-  BOOKED: "已預約",
-  IN_USE: "使用中·未簽退",
-  OVERDUE: "逾時未簽退",
-};
-
-function fmt(d: Date): string {
-  return new Date(d).toLocaleString("zh-TW", {
-    timeZone: "Asia/Taipei",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function InstrumentsPage() {
   const settings = await getSettings();
@@ -54,32 +36,28 @@ export default async function InstrumentsPage() {
           status: { in: ["BOOKED", "IN_USE", "OVERDUE"] },
           endAt: { gte: now },
         },
-        select: { startAt: true, endAt: true, memberId: true },
+        select: {
+          startAt: true,
+          endAt: true,
+          memberId: true,
+          member: { select: { name: true, loginEmail: true } },
+        },
       },
     },
   });
 
   // 額度 / 停權 / 我的預約(僅登入時)。
-  type MyRes = {
-    id: string;
-    instrumentId: string;
-    status: string;
-    startAt: Date;
-    endAt: Date;
-    note: string | null;
-    instrument: { name: string };
-  };
   let usedHours = 0;
   let overdueCount = 0;
   let suspended = false;
-  let myReservations: MyRes[] = [];
+  let myReservations: MyReservation[] = [];
   if (me) {
     [usedHours, overdueCount] = await Promise.all([
       getUsedHours(me.id),
       getActiveOverdueCount(me.id),
     ]);
     suspended = overdueCount >= SUSPEND_THRESHOLD;
-    myReservations = await prisma.reservation.findMany({
+    const rows = await prisma.reservation.findMany({
       where: {
         memberId: me.id,
         deletedAt: null,
@@ -88,9 +66,20 @@ export default async function InstrumentsPage() {
       orderBy: { startAt: "asc" },
       include: { instrument: { select: { name: true } } },
     });
+    myReservations = rows.map((r) => ({
+      id: r.id,
+      instrumentId: r.instrumentId,
+      instrumentName: r.instrument.name,
+      status: r.status as MyReservation["status"],
+      start: r.startAt.toISOString(),
+      end: r.endAt.toISOString(),
+      note: r.note,
+      canCancel: r.status === "BOOKED" && r.startAt.getTime() > now.getTime(),
+    }));
   }
 
   // 序列化給 client 清單(含各台的預約 disabled 判斷)。
+  // 預約者名稱只在「已登入」時附上:未登入的訪客看得到空檔,但看不到是誰預約。
   const items: InstrumentItem[] = instruments.map((inst) => ({
     id: inst.id,
     name: inst.name,
@@ -103,100 +92,29 @@ export default async function InstrumentsPage() {
       start: r.startAt.toISOString(),
       end: r.endAt.toISOString(),
       mine: !!me && r.memberId === me.id,
+      name: me ? displayName(r.member) : undefined,
     })),
     disabled: !me || suspended || inst.status === "MAINTENANCE",
     disabledReason: !me
       ? undefined
       : inst.status === "MAINTENANCE"
-        ? "此儀器維護中,暫不開放預約。"
+        ? "maintenance"
         : suspended
-          ? "預約權暫停中(逾時未簽退達 3 筆)。"
+          ? "suspended"
           : undefined,
   }));
 
   return (
-    <Container className="py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">儀器介紹</h1>
-      {me && (
-        <p className="mt-2 text-lg font-medium text-accent">歡迎,{displayName(me)}</p>
-      )}
-      <p className="mt-2 text-muted">
-        瀏覽實驗室各項儀器;登入後可展開預約區塊、選擇整點時段預約。
-      </p>
-
-      {!me && (
-        <p className="mt-4 border border-line bg-foreground/[0.03] p-3 text-sm">
-          請先
-          <Link href="/login?next=/instruments" className="mx-1 underline underline-offset-4">
-            登入
-          </Link>
-          後預約。
-        </p>
-      )}
-
-      {me && (
-        <div className="mt-4 border border-line p-4 text-sm">
-          <p>
-            預約總時數:已用 <strong>{usedHours}</strong> / 上限{" "}
-            <strong>{settings.instrumentMaxHours}</strong> 小時
-          </p>
-          {suspended ? (
-            <p className="mt-1 text-red-600">
-              您有 {overdueCount} 筆逾時未簽退(達 {SUSPEND_THRESHOLD} 筆),預約權已暫停;完成簽退後自動恢復。
-            </p>
-          ) : (
-            overdueCount > 0 && (
-              <p className="mt-1 text-amber-700">
-                您有 {overdueCount} 筆逾時未簽退;達 {SUSPEND_THRESHOLD} 筆將暫停預約權。
-              </p>
-            )
-          )}
-        </div>
-      )}
-
-      {/* 我的預約 */}
-      {me && myReservations.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">我的預約</h2>
-          <ul className="mt-3 space-y-2">
-            {myReservations.map((r) => (
-              <li
-                key={r.id}
-                className="band-dark flex flex-wrap items-center justify-between gap-2 border border-accent/40 p-3 text-sm"
-              >
-                <span>
-                  <strong className="text-accent">{r.instrument.name}</strong> ·{" "}
-                  {fmt(r.startAt)}–{fmt(r.endAt)} · {RES_LABEL[r.status] ?? r.status}
-                  {r.note ? (
-                    <span className="mt-0.5 block text-xs text-muted">備註:{r.note}</span>
-                  ) : null}
-                </span>
-                <span>
-                  {r.status === "BOOKED" && r.startAt.getTime() > now.getTime() && (
-                    <CancelButton reservationId={r.id} />
-                  )}
-                  {r.status === "IN_USE" && (
-                    <Link
-                      href={`/instruments/${r.instrumentId}/checkout`}
-                      className="text-xs underline underline-offset-4 hover:text-accent"
-                    >
-                      前往簽退
-                    </Link>
-                  )}
-                  {r.status === "OVERDUE" && (
-                    <span className="text-xs text-red-600">逾期,請洽負責人代簽</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* 機台清單 + 搜尋(client 篩選,搜尋框讀 ?q= 供小幫手深連結) */}
-      <Suspense fallback={null}>
-        <InstrumentList instruments={items} />
-      </Suspense>
-    </Container>
+    <InstrumentsContent
+      loggedIn={!!me}
+      memberName={me ? displayName(me) : ""}
+      usedHours={usedHours}
+      maxHours={settings.instrumentMaxHours}
+      overdueCount={overdueCount}
+      suspended={suspended}
+      threshold={SUSPEND_THRESHOLD}
+      myReservations={myReservations}
+      instruments={items}
+    />
   );
 }

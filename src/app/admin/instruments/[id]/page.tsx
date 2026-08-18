@@ -120,10 +120,13 @@ export default async function InstrumentDetailPage({
       </div>
 
       <section className="mt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">簽退 QR Code</h2>
-        <p className="mt-1 text-xs text-muted">列印貼於機台;使用者掃描後登入即可簽退。</p>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">機台 QR Code</h2>
+        <p className="mt-1 text-xs text-muted">
+          列印貼於機台。使用者掃描後須先登入:若在本機有「使用中·未簽退」紀錄即帶往簽退表單,
+          否則自動轉往預約頁並定位到本機台。同一張 QR 兼作簽退與預約入口。
+        </p>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="簽退 QR Code" width={180} height={180} className="mt-3 border border-line" />
+        <img src={qrDataUrl} alt="機台 QR Code" width={180} height={180} className="mt-3 border border-line" />
         <p className="mt-2 break-all text-xs text-muted">{checkoutUrl}</p>
       </section>
 

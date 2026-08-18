@@ -15,7 +15,6 @@ export default async function ContactPage() {
         addressZh: settings.contactAddressZh,
         addressEn: settings.contactAddressEn,
         email: settings.contactEmail,
-        phone: settings.contactPhone,
         officeHoursZh: settings.contactOfficeHoursZh,
         officeHoursEn: settings.contactOfficeHoursEn,
       }}

@@ -4,10 +4,13 @@
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/context";
 import type { ActionResult } from "@/components/admin/form-kit";
 import { cancelReservation } from "./actions";
 
 export function CancelButton({ reservationId }: { reservationId: string }) {
+  const { t } = useLanguage();
+  const i = t.instruments;
   const router = useRouter();
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
     cancelReservation,
@@ -21,7 +24,7 @@ export function CancelButton({ reservationId }: { reservationId: string }) {
       action={formAction}
       className="inline"
       onSubmit={(e) => {
-        if (!confirm("確定取消此預約?")) e.preventDefault();
+        if (!confirm(i.cancelConfirm)) e.preventDefault();
       }}
     >
       <input type="hidden" name="reservationId" value={reservationId} />
@@ -30,7 +33,7 @@ export function CancelButton({ reservationId }: { reservationId: string }) {
         disabled={pending}
         className="text-xs text-muted underline-offset-4 hover:text-red-600 hover:underline disabled:opacity-50"
       >
-        {pending ? "取消中…" : "提前取消"}
+        {pending ? i.cancelling : i.cancel}
       </button>
       {state && !state.ok && <span className="ml-2 text-xs text-red-600">{state.message}</span>}
     </form>

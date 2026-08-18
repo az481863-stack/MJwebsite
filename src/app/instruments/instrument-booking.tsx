@@ -6,7 +6,9 @@
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/context";
 import type { ActionResult } from "@/components/admin/form-kit";
+import { fill } from "./instruments-content";
 import { reserve } from "./actions";
 
 const HOURS_PER_DAY = 24; // 全天 24 個整點時段
@@ -15,6 +17,7 @@ interface Busy {
   start: string;
   end: string;
   mine?: boolean; // 是否為目前使用者本人的預約
+  name?: string; // 預約者顯示名稱(僅登入者看得到;未登入時為 undefined)
 }
 
 // 以本地時間組出某日某整點的 Date。
@@ -39,8 +42,10 @@ export function InstrumentBooking({
   instrumentId: string;
   busy: Busy[];
   disabled?: boolean;
-  disabledReason?: string;
+  disabledReason?: "maintenance" | "suspended";
 }) {
+  const { t } = useLanguage();
+  const i = t.instruments;
   const router = useRouter();
   const [now] = useState(() => Date.now()); // 一次性,避免 render 期呼叫 Date.now
   const [open, setOpen] = useState(false); // 預約區塊預設收合
@@ -65,6 +70,7 @@ export function InstrumentBooking({
         s: new Date(b.start).getTime(),
         e: new Date(b.end).getTime(),
         mine: !!b.mine,
+        name: b.name,
       })),
     [busy],
   );
@@ -105,6 +111,30 @@ export function InstrumentBooking({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor, target, hover, dateStr, busyMs]);
 
+  // 當日預約清單:讓一般帳號也看得到「誰預約了哪個時段」(規格 §階段五 adjustment)。
+  // 只列出仍有效(未取消/未過期)的預約,時間夾在所選日期內顯示。
+  const dayList = useMemo(() => {
+    const dayStart = localDate(dateStr, 0).getTime();
+    const dayEnd = dayStart + HOURS_PER_DAY * 60 * 60 * 1000;
+    return busyMs
+      .filter((b) => b.s < dayEnd && b.e > dayStart)
+      .sort((a, b) => a.s - b.s)
+      .map((b) => {
+        const s0 = Math.max(b.s, dayStart);
+        const e0 = Math.min(b.e, dayEnd);
+        const hh = (ms: number) => {
+          const d = new Date(ms);
+          return `${String(d.getHours()).padStart(2, "0")}:00`;
+        };
+        return {
+          key: `${b.s}-${b.e}`,
+          range: `${hh(s0)}–${e0 === dayEnd ? "24:00" : hh(e0)}`,
+          name: b.name ?? "",
+          mine: b.mine,
+        };
+      });
+  }, [busyMs, dateStr]);
+
   const selStart = range ? range[0] : null;
   const hours = range ? range[1] - range[0] + 1 : 0;
   const startISO = selStart != null ? slotStartDate(selStart).toISOString() : "";
@@ -124,7 +154,9 @@ export function InstrumentBooking({
   // 未登入 / 維護中 / 停權:不顯示預約區塊。有原因才顯示(未登入則完全不顯示)。
   if (disabled) {
     return disabledReason ? (
-      <p className="mt-4 text-sm text-muted">{disabledReason}</p>
+      <p className="mt-4 text-sm text-muted">
+        {disabledReason === "maintenance" ? i.reasonMaintenance : i.reasonSuspended}
+      </p>
     ) : null;
   }
 
@@ -135,7 +167,7 @@ export function InstrumentBooking({
         onClick={() => setOpen(true)}
         className="mt-4 border border-line-strong px-4 py-2 text-sm font-medium transition-colors hover:bg-foreground hover:text-background"
       >
-        預約時段 ▾
+        {i.bookBtn}
       </button>
     );
   }
@@ -143,20 +175,20 @@ export function InstrumentBooking({
   return (
     <div className="mt-4 border-t border-line pt-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">選擇時段預約</h4>
+        <h4 className="text-sm font-medium">{i.bookHeading}</h4>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="text-xs text-muted underline-offset-4 hover:underline"
         >
-          收合 ▴
+          {i.collapse}
         </button>
       </div>
 
       {/* 日期選擇(日曆) */}
       <div className="mt-3">
         <label className="block text-xs text-muted" htmlFor={`date-${instrumentId}`}>
-          日期
+          {i.dateLabel}
         </label>
         <input
           id={`date-${instrumentId}`}
@@ -175,10 +207,10 @@ export function InstrumentBooking({
 
       {/* 整點空檔(全天 24 小時):點起點 → 移到終點 → 再點一下即選定連續範圍 */}
       <p className="mt-3 text-xs text-muted">
-        點選起始整點,移動滑鼠預覽範圍,再點終點即選定連續時段。
+        {i.pickHint}
         <span className="ml-1 inline-flex items-center gap-1">
           <span className="inline-block h-3 w-3 border border-green-600 bg-green-100 align-middle" />
-          為您的預約。
+          {i.mineLegend}
         </span>
       </p>
       <div
@@ -215,29 +247,49 @@ export function InstrumentBooking({
         })}
       </div>
 
+      {/* 當日預約清單(誰預約了哪個時段) */}
+      <div className="mt-4 border-t border-line pt-3">
+        <h5 className="text-xs font-semibold uppercase tracking-wider text-muted">
+          {i.dayListHeading}
+        </h5>
+        {dayList.length === 0 ? (
+          <p className="mt-1 text-xs text-muted">{i.dayListEmpty}</p>
+        ) : (
+          <ul className="mt-1 space-y-0.5 text-xs">
+            {dayList.map((d) => (
+              <li key={d.key} className={d.mine ? "text-green-700" : "text-muted"}>
+                <span className="tabular-nums">{d.range}</span>
+                {d.name ? <span className="ml-2">{d.name}</span> : null}
+                {d.mine ? <span className="ml-1">{i.dayListMine}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {selStart != null && target != null ? (
         <form action={formAction} className="mt-3 space-y-3">
           <input type="hidden" name="instrumentId" value={instrumentId} />
           <input type="hidden" name="startAt" value={startISO} />
           <input type="hidden" name="hours" value={hours} />
           <p className="text-sm">
-            已選:
-            <strong className="text-accent">
-              {String(range![0]).padStart(2, "0")}:00–
-              {String(range![1] + 1).padStart(2, "0")}:00
-            </strong>{" "}
-            (共 {hours} 小時)
+            {fill(i.selected, {
+              range: `${String(range![0]).padStart(2, "0")}:00–${String(
+                range![1] + 1,
+              ).padStart(2, "0")}:00`,
+              hours,
+            })}
           </p>
           <div>
             <label className="block text-xs text-muted" htmlFor={`note-${instrumentId}`}>
-              備註(選填)
+              {i.noteOptional}
             </label>
             <textarea
               id={`note-${instrumentId}`}
               name="note"
               rows={2}
               maxLength={500}
-              placeholder="如:實驗用途、樣品編號等(選填)。"
+              placeholder={i.notePlaceholder}
               className="mt-1 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
             />
           </div>
@@ -246,12 +298,12 @@ export function InstrumentBooking({
             disabled={pending}
             className="bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85 disabled:opacity-50"
           >
-            {pending ? "預約中…" : `預約 ${hours} 小時`}
+            {pending ? i.submitting : fill(i.submit, { hours })}
           </button>
         </form>
       ) : (
         <p className="mt-3 text-xs text-muted">
-          {anchor != null ? "再點一下終點以選定範圍。" : "點選上方空檔以開始預約。"}
+          {anchor != null ? i.pickEnd : i.pickStart}
         </p>
       )}
 
