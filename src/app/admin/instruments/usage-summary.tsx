@@ -1,5 +1,9 @@
 // 儀器「目前使用者 / 下一位使用者」摘要:可縮放(原生 <details>,無需 JS)。
 // 不含 hooks,server 與 client 元件皆可使用。
+// `data-usage-summary` 供頂部的 ToggleAllUsage 一次展開/收合所有列。
+//
+// ⚠️「使用中」的定義:預約時段**尚未結束**且未簽退。時段已過但還沒簽退者
+// (學生用完人就走了)算「待簽退」,機台實體上是空的,故燈號顯示「目前空閒」。
 
 export interface UserSlot {
   who: string; // 顯示名稱(無則 email)
@@ -30,13 +34,15 @@ function SlotRow({ label, slot }: { label: string; slot: UserSlot | null }) {
 
 export function UsageSummary({
   current,
+  pending,
   next,
 }: {
   current: UserSlot | null;
+  pending?: UserSlot | null; // 時段已結束但尚未簽退(不算佔用機台)
   next: UserSlot | null;
 }) {
   return (
-    <details className="group mt-2">
+    <details data-usage-summary className="group mt-2">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-muted">
         <span className="transition-transform group-open:rotate-90">▸</span>
         <span>使用狀況</span>
@@ -52,6 +58,7 @@ export function UsageSummary({
       </summary>
       <div className="mt-2 space-y-2 border-l-2 border-line pl-3 text-xs">
         <SlotRow label="目前使用" slot={current} />
+        {pending ? <SlotRow label="待簽退" slot={pending} /> : null}
         <SlotRow label="下一位" slot={next} />
       </div>
     </details>

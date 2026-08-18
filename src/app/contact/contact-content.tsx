@@ -13,7 +13,6 @@ export interface ContactOverrides {
   addressZh: string;
   addressEn: string;
   email: string;
-  phone: string;
   officeHoursZh: string;
   officeHoursEn: string;
 }
@@ -42,7 +41,6 @@ export function ContactContent({
   const address =
     (lang === "en" ? overrides.addressEn : overrides.addressZh) || c.address;
   const email = overrides.email || c.email;
-  const phone = overrides.phone || c.phone;
   const officeHours =
     (lang === "en" ? overrides.officeHoursEn : overrides.officeHoursZh) ||
     c.officeHours;
@@ -50,7 +48,6 @@ export function ContactContent({
   const rows = [
     { label: c.addressLabel, value: address },
     { label: c.emailLabel, value: email, href: `mailto:${email}` },
-    { label: c.phoneLabel, value: phone },
     { label: c.officeHoursLabel, value: officeHours },
   ];
 

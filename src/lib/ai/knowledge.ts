@@ -55,7 +55,7 @@ export async function aggregateSiteContent(): Promise<string> {
   parts.push(`# 主持人(PI)理念\n${zh.home.philosophyBody.join("\n")}`);
   parts.push(
     `# 聯絡資訊\n實驗室:${zh.contact.labName}\n地址:${zh.contact.address}\n` +
-      `Email:${zh.contact.email}\n電話:${zh.contact.phone}\n聯絡時間:${zh.contact.officeHours}\n` +
+      `Email:${zh.contact.email}\n聯絡時間:${zh.contact.officeHours}\n` +
       `聯絡表單主題分類:${zh.contact.form.categories.industry}、${zh.contact.form.categories.academic}、${zh.contact.form.categories.recruit}`,
   );
   parts.push(`# 如何應徵 / 加入實驗室\n請至「團隊與招募」查看開放職缺,並透過「聯絡教授」頁送出應徵洽詢(主題選「應徵面談」)。應徵範本:\n${zh.team.templateBody}`);

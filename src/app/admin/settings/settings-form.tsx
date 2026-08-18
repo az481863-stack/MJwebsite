@@ -253,7 +253,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
         <h2 className="text-lg font-semibold">聯絡資訊</h2>
         <p className="mt-1 text-sm text-muted">
           聯絡教授頁的基本資訊。名稱、地址、辦公時間中、英各一(隨前台語系切換);
-          Email、電話為單欄。<span className="font-medium text-foreground">留空</span>則沿用系統預設(灰字提示即為預設)。
+          Email 為單欄。<span className="font-medium text-foreground">留空</span>則沿用系統預設(灰字提示即為預設)。
         </p>
 
         <div className="mt-4 space-y-5">
@@ -306,15 +306,6 @@ export function SettingsForm({ initial }: { initial: SiteSettingsData }) {
                 name="contactEmail"
                 defaultValue={initial.contactEmail}
                 placeholder={dictionaries.zh.contact.email}
-                className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="font-medium">電話</span>
-              <input
-                name="contactPhone"
-                defaultValue={initial.contactPhone}
-                placeholder={dictionaries.zh.contact.phone}
                 className="mt-1.5 w-full border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
               />
             </label>

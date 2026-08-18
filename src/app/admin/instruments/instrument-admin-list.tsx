@@ -35,10 +35,12 @@ export interface InstrumentRow {
   canView: boolean; // 是否可進該儀器綜覽頁(該台負責人或最高權限者)
   anomaly: string | null; // 最新機況回報異常時的燈號(🟡/🔴),正常則 null
   photoUrl: string | null;
-  inUse: number;
+  inUse: number; // 時段進行中且未簽退(真正佔用機台)
+  pending: number; // 時段已結束但未簽退(不算佔用)
   overdue: number;
   managerEmails: string[];
   current: UserSlot | null; // 目前使用者
+  pendingSlot: UserSlot | null; // 待簽退者(時段已結束)
   next: UserSlot | null; // 下一位使用者
 }
 
@@ -102,7 +104,7 @@ function Row({ item }: { item: InstrumentRow }) {
               </span>
             )}
             <p className="mt-1 text-sm text-muted">
-              使用中 {item.inUse} · 逾時未簽退 {item.overdue}
+              使用中 {item.inUse} · 待簽退 {item.pending} · 逾時未簽退 {item.overdue}
             </p>
             <p className="mt-1 text-xs text-muted">
               負責人:
@@ -110,7 +112,11 @@ function Row({ item }: { item: InstrumentRow }) {
                 ? item.managerEmails.join("、")
                 : "(未指派)"}
             </p>
-            <UsageSummary current={item.current} next={item.next} />
+            <UsageSummary
+              current={item.current}
+              pending={item.pendingSlot}
+              next={item.next}
+            />
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-sm">
