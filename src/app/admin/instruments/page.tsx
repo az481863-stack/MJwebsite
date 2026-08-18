@@ -8,6 +8,7 @@ import { displayName } from "@/lib/display-name";
 import { DeleteInstrumentButton } from "./row-actions";
 import { InstrumentAdminList } from "./instrument-admin-list";
 import { UsageSummary, type UserSlot } from "./usage-summary";
+import { ToggleAllUsage } from "./toggle-all-usage";
 
 export const dynamic = "force-dynamic";
 
@@ -91,8 +92,22 @@ export default async function InstrumentsAdminPage() {
     time: `${fmt(r.startAt)}–${fmt(r.endAt)}`,
     note: r.note,
   });
+  // 「目前使用」= IN_USE 且時段**尚未結束**。時段已過但還沒簽退的(人已離開、
+  // 只是忘了簽退)不算佔用機台,改列為「待簽退」,燈號顯示「目前空閒」。
+  const inUseNow = (inst: Inst) =>
+    inst.reservations.filter(
+      (x) => x.status === "IN_USE" && x.endAt.getTime() > nowMs,
+    );
+  const pendingCheckout = (inst: Inst) =>
+    inst.reservations.filter(
+      (x) => x.status === "IN_USE" && x.endAt.getTime() <= nowMs,
+    );
   const currentSlot = (inst: Inst): UserSlot | null => {
-    const r = inst.reservations.find((x) => x.status === "IN_USE");
+    const r = inUseNow(inst)[0];
+    return r ? slotOf(r) : null;
+  };
+  const pendingSlot = (inst: Inst): UserSlot | null => {
+    const r = pendingCheckout(inst)[0];
     return r ? slotOf(r) : null;
   };
   const nextSlot = (inst: Inst): UserSlot | null => {
@@ -104,8 +119,11 @@ export default async function InstrumentsAdminPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">儀器管理</h1>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">儀器管理</h1>
+          <ToggleAllUsage />
+        </div>
         {isAdmin && (
           <Link
             href="/admin/instruments/new"
@@ -129,20 +147,24 @@ export default async function InstrumentsAdminPage() {
             canView: canView(inst.id),
             anomaly: anomalyEmoji(inst.id),
             photoUrl: inst.photoUrl,
-            inUse: inst.reservations.filter((r) => r.status === "IN_USE").length,
+            inUse: inUseNow(inst).length,
+            pending: pendingCheckout(inst).length,
             overdue: inst.reservations.filter((r) => r.status === "OVERDUE")
               .length,
             managerEmails: inst.managers.map((m) => displayName(m.member)),
             current: currentSlot(inst),
+            pendingSlot: pendingSlot(inst),
             next: nextSlot(inst),
           }))}
         />
       ) : (
       <ul className="mt-6 space-y-3">
         {instruments.map((inst) => {
-          const inUse = inst.reservations.filter((r) => r.status === "IN_USE").length;
+          const inUse = inUseNow(inst).length;
+          const pending = pendingCheckout(inst).length;
           const overdue = inst.reservations.filter((r) => r.status === "OVERDUE").length;
           const current = currentSlot(inst);
+          const pendingUser = pendingSlot(inst);
           const next = nextSlot(inst);
           return (
             <li key={inst.id} className="border border-line p-4">
@@ -186,7 +208,7 @@ export default async function InstrumentsAdminPage() {
                       </span>
                     )}
                     <p className="mt-1 text-sm text-muted">
-                      使用中 {inUse} · 逾時未簽退 {overdue}
+                      使用中 {inUse} · 待簽退 {pending} · 逾時未簽退 {overdue}
                     </p>
                     <p className="mt-1 text-xs text-muted">
                       負責人:
@@ -194,7 +216,7 @@ export default async function InstrumentsAdminPage() {
                         ? inst.managers.map((m) => displayName(m.member)).join("、")
                         : "(未指派)"}
                     </p>
-                    <UsageSummary current={current} next={next} />
+                    <UsageSummary current={current} pending={pendingUser} next={next} />
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1 text-sm">
